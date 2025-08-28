@@ -280,6 +280,27 @@ export class MessageManager {
   }
 
   /**
+   * Get message mapping by Matrix event ID (synchronous version for compatibility)
+   */
+  getMessageMappingByMatrixEventId(matrixEventId: string): MessageMapping | undefined {
+    for (const [, mapping] of this.messageMappings) {
+      if (mapping.matrixEventId === matrixEventId) {
+        return mapping;
+      }
+    }
+    return undefined;
+  }
+
+  /**
+   * Get all message mappings for a specific room
+   */
+  getMessageMappingsByRoom(roomId: string): MessageMapping[] {
+    return Array.from(this.messageMappings.values()).filter(
+      mapping => mapping.matrixRoomId === roomId
+    );
+  }
+
+  /**
    * Get message mapping by Google Play review ID
    */
   async getMessageMappingByReviewId(reviewId: string): Promise<MessageMapping | undefined> {

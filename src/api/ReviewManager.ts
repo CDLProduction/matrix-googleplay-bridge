@@ -290,6 +290,27 @@ export class ReviewManager {
       review.text = reviewData.text;
     }
 
+    // Add optional metadata if available
+    if (reviewData.languageCode) {
+      review.languageCode = reviewData.languageCode;
+    }
+
+    if (reviewData.device) {
+      review.device = reviewData.device;
+    }
+
+    if (reviewData.androidOsVersion) {
+      review.androidOsVersion = reviewData.androidOsVersion;
+    }
+
+    if (reviewData.appVersionCode) {
+      review.appVersionCode = reviewData.appVersionCode;
+    }
+
+    if (reviewData.appVersionName) {
+      review.appVersionName = reviewData.appVersionName;
+    }
+
     // Check if this is a new review or an update
     const existingReview = this.messageManager.getGooglePlayReview(reviewData.reviewId);
     const isNewReview = !existingReview;

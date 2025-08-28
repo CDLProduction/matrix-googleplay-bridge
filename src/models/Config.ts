@@ -19,6 +19,9 @@ export interface GooglePlayApp {
   packageName: string;
   matrixRoom: string;
   appName?: string;
+  pollIntervalMs?: number;
+  maxReviewsPerPoll?: number;
+  lookbackDays?: number;
 }
 
 export interface GooglePlayAuthConfig {

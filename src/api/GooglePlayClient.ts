@@ -8,6 +8,11 @@ export interface GooglePlayReviewData {
   authorName: string;
   text?: string;
   starRating: number;
+  languageCode?: string;
+  device?: string;
+  androidOsVersion?: string;
+  appVersionCode?: number;
+  appVersionName?: string;
   createdAt: Date;
   lastModifiedAt: Date;
   developerComment?: {
@@ -200,6 +205,29 @@ export class GooglePlayClient {
           lastModifiedAt: new Date((parseInt(userComment?.lastModified?.seconds as string) || 0) * 1000),
           hasReply: !!developerComment,
         };
+
+        // Add optional metadata if available
+        if (userComment?.reviewerLanguage) {
+          reviewResult.languageCode = userComment.reviewerLanguage;
+        }
+
+        if (userComment?.device) {
+          reviewResult.device = userComment.device;
+        }
+
+        if (userComment?.androidOsVersion) {
+          reviewResult.androidOsVersion = String(userComment.androidOsVersion);
+        }
+
+        if (userComment?.appVersionCode) {
+          reviewResult.appVersionCode = typeof userComment.appVersionCode === 'string' 
+            ? parseInt(userComment.appVersionCode) 
+            : userComment.appVersionCode;
+        }
+
+        if (userComment?.appVersionName) {
+          reviewResult.appVersionName = userComment.appVersionName;
+        }
         
         if (userComment?.text) {
           reviewResult.text = userComment.text;
@@ -291,6 +319,29 @@ export class GooglePlayClient {
         lastModifiedAt: new Date((parseInt(userComment?.lastModified?.seconds as string) || 0) * 1000),
         hasReply: !!developerComment,
       };
+
+      // Add optional metadata if available
+      if (userComment?.reviewerLanguage) {
+        singleReviewResult.languageCode = userComment.reviewerLanguage;
+      }
+
+      if (userComment?.device) {
+        singleReviewResult.device = userComment.device;
+      }
+
+      if (userComment?.androidOsVersion) {
+        singleReviewResult.androidOsVersion = String(userComment.androidOsVersion);
+      }
+
+      if (userComment?.appVersionCode) {
+        singleReviewResult.appVersionCode = typeof userComment.appVersionCode === 'string' 
+          ? parseInt(userComment.appVersionCode) 
+          : userComment.appVersionCode;
+      }
+
+      if (userComment?.appVersionName) {
+        singleReviewResult.appVersionName = userComment.appVersionName;
+      }
       
       if (userComment?.text) {
         singleReviewResult.text = userComment.text;

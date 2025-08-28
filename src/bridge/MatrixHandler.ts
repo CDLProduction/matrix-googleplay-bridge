@@ -227,31 +227,360 @@ export class MatrixHandler {
   /**
    * Handle potential reply to Google Play
    */
-  private async handlePotentialReply(event: WeakEvent, _packageName: string): Promise<void> {
+  private async handlePotentialReply(event: WeakEvent, packageName: string): Promise<void> {
     const messageBody = event.content?.body as string;
+    const roomId = event.room_id!;
+    const senderId = event.sender!;
+    const eventId = event.event_id!;
+
+    // Check if this is a reply to a bridge message
+    let reviewId: string | null = null;
     
-    // Simple heuristic: if message starts with "reply:" or is a reply to a bridge message
-    // In a full implementation, this would be more sophisticated
-    if (messageBody.toLowerCase().startsWith('reply:') || 
-        (event.content as any)['m.relates_to']?.['m.in_reply_to']) {
+    // Check for thread/reply relationship
+    if ((event.content as any)['m.relates_to']?.['m.in_reply_to']) {
+      const replyToEventId = (event.content as any)['m.relates_to']['m.in_reply_to']['event_id'];
+      reviewId = await this.extractReviewIdFromReply(replyToEventId);
+    }
+    
+    // Check for command format: "!reply <reviewId> <message>"
+    const commandMatch = messageBody.match(/^!reply\s+([^\s]+)\s+(.+)/i);
+    if (commandMatch) {
+      reviewId = commandMatch[1] || null;
+    }
+
+    // Handle other commands
+    if (messageBody.startsWith('!edit ')) {
+      await this.handleEditCommand(messageBody, packageName, eventId, roomId, senderId);
+      return;
+    }
+    
+    if (messageBody.startsWith('!delete ')) {
+      await this.handleDeleteCommand(messageBody, packageName, eventId, roomId, senderId);
+      return;
+    }
+
+    if (messageBody.startsWith('!status ')) {
+      await this.handleStatusCommand(messageBody, packageName, roomId);
+      return;
+    }
+
+    // Check for simple reply prefix format: "reply: <message>"
+    if (messageBody.toLowerCase().startsWith('reply:') && !reviewId) {
+      // Try to find the most recent review in this room
+      reviewId = await this.findMostRecentReviewInRoom(roomId, packageName);
+    }
+
+    if (!reviewId) {
+      this.logger.debug(`No valid reply format detected for message in room ${roomId}`);
+      return;
+    }
+
+    // Validate and process the reply
+    await this.processReplyToReview(reviewId, packageName, messageBody, eventId, roomId, senderId);
+  }
+
+  /**
+   * Extract review ID from a Matrix event that was a reply to a bridge message
+   */
+  private async extractReviewIdFromReply(replyToEventId: string): Promise<string | null> {
+    try {
+      // Get the original message mapping
+      const mapping = this.messageManager.getMessageMappingByMatrixEventId(replyToEventId);
+      if (mapping && mapping.messageType === 'review') {
+        return mapping.googlePlayReviewId;
+      }
+      return null;
+    } catch (error) {
+      this.logger.error(`Error extracting review ID from reply: ${error instanceof Error ? error.message : error}`);
+      return null;
+    }
+  }
+
+  /**
+   * Find the most recent review posted to a room (for simple "reply:" format)
+   */
+  private async findMostRecentReviewInRoom(roomId: string, packageName: string): Promise<string | null> {
+    try {
+      const mappings = this.messageManager.getMessageMappingsByRoom(roomId);
+      const reviewMappings = mappings
+        .filter(m => m.messageType === 'review' && m.packageName === packageName)
+        .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
       
-      this.logger.info(`Potential Google Play reply detected in room ${event.room_id}`);
-      
-      // Here we would normally:
-      // 1. Extract the actual reply content
-      // 2. Determine which review this is a reply to
-      // 3. Send the reply via GooglePlayClient
-      // 4. Send confirmation back to Matrix
-      
-      // TODO: Implement actual reply logic when GooglePlayClient is ready
-      
-      // For now, just send a placeholder confirmation
-      const intent = this.bridge.getIntent();
-      const confirmationContent = this.messageManager.formatReplyConfirmation(
-        true
+      return reviewMappings.length > 0 ? reviewMappings[0]?.googlePlayReviewId || null : null;
+    } catch (error) {
+      this.logger.error(`Error finding most recent review in room: ${error instanceof Error ? error.message : error}`);
+      return null;
+    }
+  }
+
+  /**
+   * Process and validate a reply to a Google Play review
+   */
+  private async processReplyToReview(
+    reviewId: string,
+    packageName: string,
+    rawMessage: string,
+    matrixEventId: string,
+    matrixRoomId: string,
+    senderId: string
+  ): Promise<void> {
+    try {
+      // Validate the review exists
+      const review = this.messageManager.getGooglePlayReview(reviewId);
+      if (!review) {
+        await this.sendErrorMessage(matrixRoomId, `Review ${reviewId} not found.`);
+        return;
+      }
+
+      // Validate the package name matches
+      if (review.packageName !== packageName) {
+        await this.sendErrorMessage(matrixRoomId, `Review ${reviewId} belongs to a different app.`);
+        return;
+      }
+
+      // Check if review already has a reply
+      if (review.hasReply) {
+        await this.sendErrorMessage(matrixRoomId, `Review ${reviewId} already has a reply. Use !edit to modify or !delete to remove.`);
+        return;
+      }
+
+      // Extract and validate the reply text
+      const replyText = this.extractReplyText(rawMessage);
+      if (!replyText?.trim()) {
+        await this.sendErrorMessage(matrixRoomId, 'Reply text is empty or invalid.');
+        return;
+      }
+
+      // Validate reply text length (Google Play limit is usually 350 characters)
+      if (replyText.length > 350) {
+        await this.sendErrorMessage(matrixRoomId, `Reply text too long (${replyText.length}/350 characters). Please shorten your reply.`);
+        return;
+      }
+
+      this.logger.info(`Processing reply to review ${reviewId}: ${replyText.substring(0, 50)}...`);
+
+      // Send confirmation that reply is being processed
+      await this.sendStatusMessage(matrixRoomId, `⏳ Sending reply to review ${reviewId}...`);
+
+      // Create message mapping for tracking
+      await this.messageManager.createMessageMapping(
+        reviewId,
+        matrixEventId,
+        matrixRoomId,
+        'reply',
+        packageName
       );
+
+      // Delegate to the bridge to queue the reply
+      await this.queueReplyToBridge(packageName, reviewId, replyText, matrixEventId, matrixRoomId, senderId);
       
-      await intent.sendMessage(event.room_id!, confirmationContent);
+    } catch (error) {
+      this.logger.error(`Error processing reply to review ${reviewId}: ${error instanceof Error ? error.message : error}`);
+      await this.sendErrorMessage(matrixRoomId, `Failed to process reply: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  /**
+   * Extract reply text from various message formats
+   */
+  private extractReplyText(rawMessage: string): string | null {
+    // Handle "reply: <text>" format
+    const replyMatch = rawMessage.match(/^reply:\s*(.+)/i);
+    if (replyMatch && replyMatch[1]) {
+      return replyMatch[1].trim();
+    }
+
+    // Handle "!reply <reviewId> <text>" format
+    const commandMatch = rawMessage.match(/^!reply\s+[^\s]+\s+(.+)/i);
+    if (commandMatch && commandMatch[1]) {
+      return commandMatch[1].trim();
+    }
+
+    // If it's a Matrix thread reply, use the entire message body
+    return rawMessage.trim() || null;
+  }
+
+  /**
+   * Queue a reply to be sent through the bridge
+   */
+  private async queueReplyToBridge(
+    packageName: string,
+    reviewId: string,
+    replyText: string,
+    matrixEventId: string,
+    matrixRoomId: string,
+    senderId: string
+  ): Promise<void> {
+    // This will be called through a callback to the main bridge
+    const controller = this.bridge.opts?.controller as any;
+    if (controller && controller.onBridgeReply) {
+      await controller.onBridgeReply(
+        packageName,
+        reviewId,
+        replyText,
+        matrixEventId,
+        matrixRoomId,
+        senderId
+      );
+    } else {
+      throw new Error('Bridge reply handler not configured');
+    }
+  }
+
+  /**
+   * Send an error message to a Matrix room
+   */
+  private async sendErrorMessage(roomId: string, errorText: string): Promise<void> {
+    const errorContent = this.messageManager.formatErrorMessage(errorText);
+    await this.sendMessageToRoom(roomId, errorContent);
+  }
+
+  /**
+   * Send a status message to a Matrix room
+   */
+  private async sendStatusMessage(roomId: string, statusText: string): Promise<void> {
+    const statusContent = this.messageManager.formatNotification(statusText);
+    await this.sendMessageToRoom(roomId, statusContent);
+  }
+
+  /**
+   * Handle edit command: !edit <reviewId> <new text>
+   */
+  private async handleEditCommand(
+    messageBody: string,
+    packageName: string,
+    matrixEventId: string,
+    matrixRoomId: string,
+    senderId: string
+  ): Promise<void> {
+    const editMatch = messageBody.match(/^!edit\s+([^\s]+)\s+(.+)/i);
+    if (!editMatch || !editMatch[1] || !editMatch[2]) {
+      await this.sendErrorMessage(matrixRoomId, 'Invalid edit command. Use: !edit <reviewId> <new text>');
+      return;
+    }
+
+    const reviewId = editMatch[1];
+    const newReplyText = editMatch[2].trim();
+
+    try {
+      // Validate the review exists and has a reply
+      const review = this.messageManager.getGooglePlayReview(reviewId);
+      if (!review) {
+        await this.sendErrorMessage(matrixRoomId, `Review ${reviewId} not found.`);
+        return;
+      }
+
+      if (!review.hasReply) {
+        await this.sendErrorMessage(matrixRoomId, `Review ${reviewId} has no reply to edit. Use !reply instead.`);
+        return;
+      }
+
+      // Validate text length
+      if (newReplyText.length > 350) {
+        await this.sendErrorMessage(matrixRoomId, `Reply text too long (${newReplyText.length}/350 characters). Please shorten your reply.`);
+        return;
+      }
+
+      this.logger.info(`Editing reply for review ${reviewId}: ${newReplyText.substring(0, 50)}...`);
+      await this.sendStatusMessage(matrixRoomId, `⏳ Updating reply for review ${reviewId}...`);
+
+      // Queue the edit (same as reply, Google Play API handles updates)
+      await this.queueReplyToBridge(packageName, reviewId, newReplyText, matrixEventId, matrixRoomId, senderId);
+
+    } catch (error) {
+      this.logger.error(`Error editing reply for review ${reviewId}: ${error instanceof Error ? error.message : error}`);
+      await this.sendErrorMessage(matrixRoomId, `Failed to edit reply: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  /**
+   * Handle delete command: !delete <reviewId>
+   */
+  private async handleDeleteCommand(
+    messageBody: string,
+    packageName: string,
+    matrixEventId: string,
+    matrixRoomId: string,
+    senderId: string
+  ): Promise<void> {
+    const deleteMatch = messageBody.match(/^!delete\s+([^\s]+)/i);
+    if (!deleteMatch || !deleteMatch[1]) {
+      await this.sendErrorMessage(matrixRoomId, 'Invalid delete command. Use: !delete <reviewId>');
+      return;
+    }
+
+    const reviewId = deleteMatch[1];
+
+    try {
+      // Validate the review exists and has a reply
+      const review = this.messageManager.getGooglePlayReview(reviewId);
+      if (!review) {
+        await this.sendErrorMessage(matrixRoomId, `Review ${reviewId} not found.`);
+        return;
+      }
+
+      if (!review.hasReply) {
+        await this.sendErrorMessage(matrixRoomId, `Review ${reviewId} has no reply to delete.`);
+        return;
+      }
+
+      this.logger.info(`Deleting reply for review ${reviewId}`);
+      await this.sendStatusMessage(matrixRoomId, `⏳ Deleting reply for review ${reviewId}...`);
+
+      // Queue the deletion (send empty reply to Google Play)
+      await this.queueReplyToBridge(packageName, reviewId, '', matrixEventId, matrixRoomId, senderId);
+
+    } catch (error) {
+      this.logger.error(`Error deleting reply for review ${reviewId}: ${error instanceof Error ? error.message : error}`);
+      await this.sendErrorMessage(matrixRoomId, `Failed to delete reply: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  /**
+   * Handle status command: !status [reviewId]
+   */
+  private async handleStatusCommand(
+    messageBody: string,
+    packageName: string,
+    matrixRoomId: string
+  ): Promise<void> {
+    const statusMatch = messageBody.match(/^!status(?:\s+([^\s]+))?/i);
+    const reviewId = statusMatch?.[1];
+
+    try {
+      if (reviewId) {
+        // Show status for specific review
+        const review = this.messageManager.getGooglePlayReview(reviewId);
+        if (!review) {
+          await this.sendErrorMessage(matrixRoomId, `Review ${reviewId} not found.`);
+          return;
+        }
+
+        const statusText = `**Review Status**: ${reviewId}\n` +
+          `📱 **App**: ${review.packageName}\n` +
+          `⭐ **Rating**: ${review.starRating}/5\n` +
+          `👤 **Author**: ${review.authorName}\n` +
+          `💬 **Has Reply**: ${review.hasReply ? 'Yes' : 'No'}\n` +
+          `📅 **Created**: ${review.createdAt.toLocaleDateString()}\n` +
+          `🔄 **Modified**: ${review.lastModifiedAt.toLocaleDateString()}`;
+
+        await this.sendStatusMessage(matrixRoomId, statusText);
+      } else {
+        // Show general status for this room/app
+        const mappings = this.messageManager.getMessageMappingsByRoom(matrixRoomId);
+        const reviewCount = mappings.filter(m => m.messageType === 'review' && m.packageName === packageName).length;
+        const replyCount = mappings.filter(m => m.messageType === 'reply' && m.packageName === packageName).length;
+
+        const statusText = `**Bridge Status for ${packageName}**\n` +
+          `📊 **Reviews in this room**: ${reviewCount}\n` +
+          `💬 **Replies sent**: ${replyCount}\n` +
+          `🔄 **Bridge**: Active`;
+
+        await this.sendStatusMessage(matrixRoomId, statusText);
+      }
+    } catch (error) {
+      this.logger.error(`Error showing status: ${error instanceof Error ? error.message : error}`);
+      await this.sendErrorMessage(matrixRoomId, `Failed to show status: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
