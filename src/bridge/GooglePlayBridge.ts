@@ -10,7 +10,11 @@ import { MessageManager } from '../models/Message';
 import { GooglePlayClient } from '../api/GooglePlayClient';
 import { ReviewManager } from '../api/ReviewManager';
 import { Config } from '../utils/Config';
-import { Logger } from '../utils/Logger';
+import { Logger, LogLevel } from '../utils/Logger';
+import { HealthMonitor, StandardHealthChecks, HealthStatus } from '../utils/HealthCheck';
+import { HttpServer } from '../utils/HttpServer';
+import { CircuitBreakerRegistry } from '../utils/CircuitBreaker';
+import { RateLimitingRegistry } from '../utils/RateLimiter';
 
 interface ExtendedBridgeController extends BridgeController {
   onBridgeReply?: (
@@ -37,13 +41,52 @@ export class GooglePlayBridge {
   private googlePlayClient?: GooglePlayClient;
   private reviewManager?: ReviewManager;
   private isRunning: boolean = false;
+  
+  // Production-ready components
+  private healthMonitor: HealthMonitor;
+  private httpServer?: HttpServer;
+  private circuitBreakerRegistry: CircuitBreakerRegistry;
+  private rateLimitingRegistry: RateLimitingRegistry;
+  private startTime: Date;
 
   constructor(config: Config) {
     this.config = config;
-    this.logger = Logger.getInstance();
+    
+    // Initialize production-ready logger
+    this.logger = Logger.getInstance({
+      level: this.getLogLevel(),
+      enableConsole: true,
+      enableFile: config.logging?.enableFile || false,
+      ...(config.logging?.filePath && { filePath: config.logging.filePath }),
+      enableStructured: config.logging?.enableStructured !== false,
+      enableColors: process.env.NODE_ENV !== 'production',
+    }).setComponent('GooglePlayBridge');
+    
     this.userManager = new UserManager();
     this.roomManager = new RoomManager();
     this.messageManager = new MessageManager();
+    this.startTime = new Date();
+    
+    // Initialize production components
+    this.healthMonitor = new HealthMonitor(config.version || '1.0.0');
+    this.circuitBreakerRegistry = CircuitBreakerRegistry.getInstance();
+    this.rateLimitingRegistry = RateLimitingRegistry.getInstance();
+    
+    // Initialize HTTP server if monitoring is enabled
+    if (config.monitoring?.enabled !== false) {
+      this.httpServer = new HttpServer({
+        port: config.monitoring?.port || 9090,
+        host: config.monitoring?.host || '0.0.0.0',
+        enableMetrics: config.monitoring?.enableMetrics !== false,
+        enableHealthCheck: config.monitoring?.enableHealthCheck !== false,
+        requestLogging: config.monitoring?.requestLogging !== false,
+      });
+      this.httpServer.setHealthMonitor(this.healthMonitor);
+    }
+    
+    this.setupHealthChecks();
+    this.setupCircuitBreakers();
+    this.setupRateLimiting();
   }
 
   /**
@@ -58,6 +101,15 @@ export class GooglePlayBridge {
     this.logger.info('Starting Google Play Bridge...');
 
     try {
+      // Start monitoring server first
+      if (this.httpServer) {
+        await this.httpServer.start();
+        this.logger.info('Monitoring server started');
+      }
+
+      // Start health monitoring
+      this.healthMonitor.startMonitoring();
+
       // Initialize components in order
       await this.initializeBridge();
       await this.initializeHandlers();
@@ -66,13 +118,16 @@ export class GooglePlayBridge {
       await this.startBridge();
 
       this.isRunning = true;
-      this.logger.info('Google Play Bridge started successfully');
+      this.logger.info('Google Play Bridge started successfully', {
+        uptime: Date.now() - this.startTime.getTime(),
+        monitoring: this.httpServer ? `http://${this.config.monitoring?.host || '0.0.0.0'}:${this.config.monitoring?.port || 9090}` : 'disabled',
+      });
 
       // Set up graceful shutdown handlers
       this.setupShutdownHandlers();
 
     } catch (error) {
-      this.logger.error(`Failed to start bridge: ${error instanceof Error ? error.message : error}`);
+      this.logger.error('Failed to start bridge', error);
       await this.cleanup();
       throw error;
     }
@@ -463,6 +518,14 @@ export class GooglePlayBridge {
     this.logger.info('Cleaning up bridge resources...');
 
     try {
+      // Stop health monitoring
+      this.healthMonitor.stopMonitoring();
+
+      // Stop HTTP server
+      if (this.httpServer) {
+        await this.httpServer.stop();
+      }
+
       // Shutdown Google Play components
       if (this.reviewManager) {
         await this.reviewManager.shutdown();
@@ -484,9 +547,13 @@ export class GooglePlayBridge {
         this.logger.debug('Bridge server will be cleaned up on process exit');
       }
 
+      // Final cleanup
+      this.healthMonitor.shutdown();
+      await this.logger.close();
+
       this.logger.info('Bridge cleanup completed');
     } catch (error) {
-      this.logger.error(`Error during cleanup: ${error instanceof Error ? error.message : error}`);
+      this.logger.error('Error during cleanup', error);
       throw error;
     }
   }
@@ -524,5 +591,258 @@ export class GooglePlayBridge {
    */
   getMessageManager(): MessageManager {
     return this.messageManager;
+  }
+
+  /**
+   * Get production monitoring components
+   */
+  getHealthMonitor(): HealthMonitor {
+    return this.healthMonitor;
+  }
+
+  getHttpServer(): HttpServer | undefined {
+    return this.httpServer;
+  }
+
+  getCircuitBreakerRegistry(): CircuitBreakerRegistry {
+    return this.circuitBreakerRegistry;
+  }
+
+  getRateLimitingRegistry(): RateLimitingRegistry {
+    return this.rateLimitingRegistry;
+  }
+
+  /**
+   * Setup health checks for all bridge components
+   */
+  private setupHealthChecks(): void {
+    this.logger.debug('Setting up health checks...');
+
+    // Memory usage check
+    this.healthMonitor.registerCheck(
+      'memory-usage',
+      StandardHealthChecks.memoryUsage(512) // 512MB limit
+    );
+
+    // Bridge components health
+    this.healthMonitor.registerCheck('bridge-status', async () => {
+      return {
+        name: 'bridge-status',
+        status: this.isRunning ? HealthStatus.HEALTHY : HealthStatus.UNHEALTHY,
+        message: this.isRunning ? 'Bridge is running' : 'Bridge is not running',
+        metadata: {
+          isRunning: this.isRunning,
+          uptime: Date.now() - this.startTime.getTime(),
+        },
+      };
+    });
+
+    // Matrix connection health
+    this.healthMonitor.registerCheck('matrix-connection', async () => {
+      try {
+        if (!this.bridge || !this.isRunning) {
+          return {
+            name: 'matrix-connection',
+            status: HealthStatus.UNHEALTHY,
+            message: 'Matrix bridge not initialized',
+          };
+        }
+
+        // Simple check - if bridge is running, assume Matrix connection is OK
+        const stats = this.getBridgeStats();
+        return {
+          name: 'matrix-connection',
+          status: HealthStatus.HEALTHY,
+          message: 'Matrix connection is healthy',
+          metadata: stats,
+        };
+      } catch (error) {
+        return {
+          name: 'matrix-connection',
+          status: HealthStatus.UNHEALTHY,
+          message: `Matrix connection error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          metadata: { error },
+        };
+      }
+    });
+
+    // Google Play API health
+    this.healthMonitor.registerCheck('googleplay-api', async () => {
+      try {
+        if (!this.googlePlayClient) {
+          return {
+            name: 'googleplay-api',
+            status: HealthStatus.UNHEALTHY,
+            message: 'Google Play client not initialized',
+          };
+        }
+
+        const isReady = this.googlePlayClient.isReady();
+        return {
+          name: 'googleplay-api',
+          status: isReady ? HealthStatus.HEALTHY : HealthStatus.DEGRADED,
+          message: isReady ? 'Google Play API is healthy' : 'Google Play API not ready',
+          metadata: { isReady },
+        };
+      } catch (error) {
+        return {
+          name: 'googleplay-api',
+          status: HealthStatus.UNHEALTHY,
+          message: `Google Play API error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          metadata: { error },
+        };
+      }
+    });
+
+    // Review processing health
+    this.healthMonitor.registerCheck('review-processing', async () => {
+      try {
+        if (!this.reviewManager) {
+          return {
+            name: 'review-processing',
+            status: HealthStatus.UNHEALTHY,
+            message: 'Review manager not initialized',
+          };
+        }
+
+        const pendingCount = this.reviewManager.getPendingRepliesCount();
+        const stats = this.reviewManager.getAllProcessingStats();
+        
+        let status = HealthStatus.HEALTHY;
+        let message = `Review processing is healthy (${pendingCount} pending replies)`;
+        
+        if (pendingCount > 50) {
+          status = HealthStatus.DEGRADED;
+          message = `High pending reply count: ${pendingCount}`;
+        } else if (pendingCount > 100) {
+          status = HealthStatus.UNHEALTHY;
+          message = `Critical pending reply count: ${pendingCount}`;
+        }
+
+        return {
+          name: 'review-processing',
+          status,
+          message,
+          metadata: { pendingCount, stats: Object.fromEntries(stats) },
+        };
+      } catch (error) {
+        return {
+          name: 'review-processing',
+          status: HealthStatus.UNHEALTHY,
+          message: `Review processing error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          metadata: { error },
+        };
+      }
+    });
+
+    this.logger.debug('Health checks configured');
+  }
+
+  /**
+   * Setup circuit breakers for external dependencies
+   */
+  private setupCircuitBreakers(): void {
+    this.logger.debug('Setting up circuit breakers...');
+
+    // Google Play API circuit breaker
+    this.circuitBreakerRegistry.getOrCreate('googleplay-api', {
+      failureThreshold: 5,
+      resetTimeout: 60000,
+      monitoringPeriod: 300000,
+      successThreshold: 3,
+      timeout: 30000,
+    });
+
+    // Matrix API circuit breaker
+    this.circuitBreakerRegistry.getOrCreate('matrix-api', {
+      failureThreshold: 3,
+      resetTimeout: 30000,
+      monitoringPeriod: 180000,
+      successThreshold: 2,
+      timeout: 15000,
+    });
+
+    this.logger.debug('Circuit breakers configured');
+  }
+
+  /**
+   * Setup rate limiting for API calls
+   */
+  private setupRateLimiting(): void {
+    this.logger.debug('Setting up rate limiting...');
+
+    // Google Play API rate limiting (per package)
+    this.rateLimitingRegistry.getRateLimiter('googleplay-reviews', {
+      windowSizeMs: 60000, // 1 minute
+      maxRequests: 100, // Google Play API allows ~100-200 reviews per request
+      keyGenerator: (context) => context?.packageName || 'default',
+    });
+
+    // Matrix API rate limiting
+    this.rateLimitingRegistry.getRateLimiter('matrix-send', {
+      windowSizeMs: 60000, // 1 minute
+      maxRequests: 300, // Conservative Matrix rate limit
+      keyGenerator: (context) => context?.roomId || 'default',
+    });
+
+    // Reply processing throttling
+    this.rateLimitingRegistry.getThrottler('reply-processing', {
+      baseDelayMs: 1000,
+      maxDelayMs: 30000,
+      backoffMultiplier: 2,
+      jitterMs: 200,
+    });
+
+    this.logger.debug('Rate limiting configured');
+  }
+
+  /**
+   * Get log level from config
+   */
+  private getLogLevel(): LogLevel {
+    const level = this.config.logging?.level?.toLowerCase();
+    
+    switch (level) {
+      case 'error': return LogLevel.ERROR;
+      case 'warn': case 'warning': return LogLevel.WARN;
+      case 'info': return LogLevel.INFO;
+      case 'http': return LogLevel.HTTP;
+      case 'debug': return LogLevel.DEBUG;
+      default:
+        return process.env.NODE_ENV === 'production' ? LogLevel.INFO : LogLevel.DEBUG;
+    }
+  }
+
+  /**
+   * Get comprehensive bridge statistics
+   */
+  getBridgeStats(): any {
+    const matrixStats = this.matrixHandler?.getBridgeStats() || {
+      connectedRooms: 0,
+      virtualUsers: 0,
+      messagesSent: 0,
+    };
+
+    const reviewStats = this.reviewManager ? 
+      Object.fromEntries(this.reviewManager.getAllProcessingStats()) : {};
+
+    const circuitBreakerStats = this.circuitBreakerRegistry.getStats();
+    const rateLimitingStats = this.rateLimitingRegistry.getAllStats();
+    
+    return {
+      isRunning: this.isRunning,
+      uptime: Date.now() - this.startTime.getTime(),
+      version: this.config.version || 'unknown',
+      matrix: matrixStats,
+      reviews: reviewStats,
+      circuitBreakers: circuitBreakerStats,
+      rateLimiting: rateLimitingStats,
+      memory: process.memoryUsage(),
+      system: {
+        nodeVersion: process.version,
+        platform: process.platform,
+        arch: process.arch,
+      },
+    };
   }
 }

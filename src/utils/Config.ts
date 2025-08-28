@@ -314,8 +314,16 @@ export class Config {
     return this.config.database;
   }
 
-  get logging(): LoggingConfig {
+  get logging(): LoggingConfig | undefined {
     return this.config.logging;
+  }
+  
+  get monitoring(): MonitoringConfig | undefined {
+    return this.config.monitoring;
+  }
+  
+  get version(): string | undefined {
+    return this.config.version;
   }
 
   get all(): BridgeConfig {

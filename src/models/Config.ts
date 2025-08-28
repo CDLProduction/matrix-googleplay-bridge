@@ -60,9 +60,44 @@ export interface DatabaseConfig {
 }
 
 export interface LoggingConfig {
-  level: 'error' | 'warn' | 'info' | 'debug';
-  file?: string;
-  console: boolean;
+  level?: 'error' | 'warn' | 'info' | 'http' | 'debug';
+  enableFile?: boolean;
+  filePath?: string;
+  enableStructured?: boolean;
+  maxFileSize?: number; // MB
+  maxFiles?: number;
+}
+
+export interface MonitoringConfig {
+  enabled?: boolean;
+  port?: number;
+  host?: string;
+  enableMetrics?: boolean;
+  enableHealthCheck?: boolean;
+  requestLogging?: boolean;
+}
+
+export interface CircuitBreakerConfig {
+  failureThreshold?: number;
+  resetTimeout?: number;
+  monitoringPeriod?: number;
+  successThreshold?: number;
+}
+
+export interface RateLimitingConfig {
+  googlePlayApi?: {
+    windowSizeMs?: number;
+    maxRequests?: number;
+  };
+  matrixApi?: {
+    windowSizeMs?: number;
+    maxRequests?: number;
+  };
+  replyProcessing?: {
+    baseDelayMs?: number;
+    maxDelayMs?: number;
+    backoffMultiplier?: number;
+  };
 }
 
 export interface BridgeConfig {
@@ -70,5 +105,12 @@ export interface BridgeConfig {
   appservice: AppserviceConfig;
   googleplay: GooglePlayConfig;
   database: DatabaseConfig;
-  logging: LoggingConfig;
+  logging?: LoggingConfig;
+  monitoring?: MonitoringConfig;
+  circuitBreakers?: {
+    googlePlayApi?: CircuitBreakerConfig;
+    matrixApi?: CircuitBreakerConfig;
+  };
+  rateLimiting?: RateLimitingConfig;
+  version?: string;
 }
