@@ -227,6 +227,13 @@ export class MessageManager {
   }
 
   /**
+   * Update an existing Google Play review
+   */
+  async updateGooglePlayReview(review: GooglePlayReview): Promise<void> {
+    this.googlePlayReviews.set(review.reviewId, review);
+  }
+
+  /**
    * Store a Matrix message
    */
   async storeMatrixMessage(message: MatrixMessage): Promise<void> {

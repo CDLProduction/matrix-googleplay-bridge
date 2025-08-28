@@ -21,10 +21,28 @@ export interface GooglePlayApp {
   appName?: string;
 }
 
+export interface GooglePlayAuthConfig {
+  // Option 1: Service Account Key File
+  keyFile?: string;
+  
+  // Option 2: Service Account Key Content (JSON string)
+  keyFileContent?: string;
+  
+  // Option 3: Individual credentials
+  clientEmail?: string;
+  privateKey?: string;
+  projectId?: string;
+  
+  // OAuth2 scopes (optional)
+  scopes?: string[];
+}
+
 export interface GooglePlayConfig {
-  serviceAccountKeyPath: string;
+  auth: GooglePlayAuthConfig;
   applications: GooglePlayApp[];
   pollIntervalMs: number;
+  maxReviewsPerPoll?: number;
+  rateLimitDelayMs?: number;
 }
 
 export interface DatabaseConfig {

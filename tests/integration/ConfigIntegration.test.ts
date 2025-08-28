@@ -41,7 +41,8 @@ appservice:
   botUsername: "integrationbot"
 
 googleplay:
-  serviceAccountKeyPath: "${testServiceAccountPath.replace(/\\/g, '/')}"
+  auth:
+    keyFile: "${testServiceAccountPath.replace(/\\/g, '/')}"
   pollIntervalMs: 600000
   applications:
     - packageName: "com.integration.test.app1"
@@ -100,7 +101,7 @@ logging:
     expect(config.appservice.botUsername).toBe('integrationbot');
 
     // Verify Google Play config
-    expect(config.googleplay.serviceAccountKeyPath).toBe(testServiceAccountPath.replace(/\\/g, '/'));
+    expect(config.googleplay.auth.keyFile).toBe(testServiceAccountPath.replace(/\\/g, '/'));
     expect(config.googleplay.pollIntervalMs).toBe(600000);
     expect(config.googleplay.applications).toHaveLength(2);
     expect(config.googleplay.applications[0]?.packageName).toBe('com.integration.test.app1');

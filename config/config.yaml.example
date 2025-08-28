@@ -23,10 +23,32 @@ appservice:
 
 # Google Play Console Configuration
 googleplay:
-  # Path to the Google Play service account JSON key file
-  serviceAccountKeyPath: "/path/to/service-account-key.json"
+  # Authentication configuration (choose one method)
+  auth:
+    # Option 1: Service Account Key File (recommended for local development)
+    keyFile: "/path/to/service-account-key.json"
+    
+    # Option 2: Service Account Key Content (recommended for Docker/production)
+    # keyFileContent: '{"type": "service_account", "project_id": "...", ...}'
+    
+    # Option 3: Individual credentials (alternative to JSON file)
+    # clientEmail: "bridge@project-id.iam.gserviceaccount.com"
+    # privateKey: "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
+    # projectId: "your-project-id"
+    
+    # Optional: Custom OAuth2 scopes (defaults to androidpublisher)
+    # scopes:
+    #   - "https://www.googleapis.com/auth/androidpublisher"
+  
   # Polling interval in milliseconds (minimum recommended: 300000 = 5 minutes)
   pollIntervalMs: 300000
+  
+  # Optional: Maximum reviews to fetch per polling cycle (default: 100)
+  # maxReviewsPerPoll: 100
+  
+  # Optional: Delay between API requests in milliseconds (default: 100)
+  # rateLimitDelayMs: 100
+  
   # List of applications to monitor
   applications:
     - packageName: "com.example.myapp"
@@ -69,8 +91,12 @@ logging:
 # AS_TOKEN                    - appservice.token
 # AS_ID                       - appservice.id
 # BOT_USERNAME                - appservice.botUsername
-# GOOGLE_SERVICE_ACCOUNT_KEY  - googleplay.serviceAccountKeyPath
-# GOOGLE_POLL_INTERVAL        - googleplay.pollIntervalMs
+# GOOGLE_SERVICE_ACCOUNT_KEY_FILE    - googleplay.auth.keyFile
+# GOOGLE_SERVICE_ACCOUNT_KEY_CONTENT - googleplay.auth.keyFileContent
+# GOOGLE_CLIENT_EMAIL                - googleplay.auth.clientEmail
+# GOOGLE_PRIVATE_KEY                 - googleplay.auth.privateKey
+# GOOGLE_PROJECT_ID                  - googleplay.auth.projectId
+# GOOGLE_POLL_INTERVAL               - googleplay.pollIntervalMs
 # DB_TYPE                     - database.type
 # DB_PATH                     - database.path (for SQLite)
 # DB_HOST                     - database.host (for PostgreSQL)

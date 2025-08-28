@@ -48,6 +48,7 @@
     "js-yaml": "^4.1.0",
     "matrix-appservice-bridge": "^11.0.0",
     "pg": "^8.16.3",
+    "sqlite": "^5.1.1",
     "sqlite3": "^5.1.7",
     "winston": "^3.17.0"
   },

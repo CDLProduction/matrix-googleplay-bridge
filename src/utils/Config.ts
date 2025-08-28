@@ -99,13 +99,33 @@ export class Config {
     }
 
     // Google Play overrides
-    if (process.env.GOOGLE_SERVICE_ACCOUNT_KEY) {
-      config.googleplay = config.googleplay || {};
-      config.googleplay.serviceAccountKeyPath =
-        process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
+    if (process.env.GOOGLE_SERVICE_ACCOUNT_KEY_FILE) {
+      config.googleplay = config.googleplay || { auth: {}, applications: [], pollIntervalMs: 300000 };
+      config.googleplay.auth = config.googleplay.auth || {};
+      config.googleplay.auth.keyFile = process.env.GOOGLE_SERVICE_ACCOUNT_KEY_FILE;
+    }
+    if (process.env.GOOGLE_SERVICE_ACCOUNT_KEY_CONTENT) {
+      config.googleplay = config.googleplay || { auth: {}, applications: [], pollIntervalMs: 300000 };
+      config.googleplay.auth = config.googleplay.auth || {};
+      config.googleplay.auth.keyFileContent = process.env.GOOGLE_SERVICE_ACCOUNT_KEY_CONTENT;
+    }
+    if (process.env.GOOGLE_CLIENT_EMAIL) {
+      config.googleplay = config.googleplay || { auth: {}, applications: [], pollIntervalMs: 300000 };
+      config.googleplay.auth = config.googleplay.auth || {};
+      config.googleplay.auth.clientEmail = process.env.GOOGLE_CLIENT_EMAIL;
+    }
+    if (process.env.GOOGLE_PRIVATE_KEY) {
+      config.googleplay = config.googleplay || { auth: {}, applications: [], pollIntervalMs: 300000 };
+      config.googleplay.auth = config.googleplay.auth || {};
+      config.googleplay.auth.privateKey = process.env.GOOGLE_PRIVATE_KEY;
+    }
+    if (process.env.GOOGLE_PROJECT_ID) {
+      config.googleplay = config.googleplay || { auth: {}, applications: [], pollIntervalMs: 300000 };
+      config.googleplay.auth = config.googleplay.auth || {};
+      config.googleplay.auth.projectId = process.env.GOOGLE_PROJECT_ID;
     }
     if (process.env.GOOGLE_POLL_INTERVAL) {
-      config.googleplay = config.googleplay || {};
+      config.googleplay = config.googleplay || { auth: {}, applications: [], pollIntervalMs: 300000 };
       config.googleplay.pollIntervalMs = parseInt(
         process.env.GOOGLE_POLL_INTERVAL,
         10
@@ -203,10 +223,7 @@ export class Config {
     validator.validatePort(config.appservice.port, 'appservice.port');
 
     // Validate Google Play
-    validator.validateRequired(
-      config.googleplay.serviceAccountKeyPath,
-      'googleplay.serviceAccountKeyPath'
-    );
+    validator.validateRequired(config.googleplay.auth, 'googleplay.auth');
     validator.validateRequired(
       config.googleplay.applications,
       'googleplay.applications'
@@ -216,9 +233,30 @@ export class Config {
       'googleplay.applications'
     );
 
-    if (!fs.existsSync(config.googleplay.serviceAccountKeyPath)) {
+    // Validate Google Play authentication - at least one method must be provided
+    const auth = config.googleplay.auth;
+    const hasKeyFile = auth.keyFile && fs.existsSync(auth.keyFile);
+    const hasKeyContent = auth.keyFileContent;
+    const hasIndividualCreds = auth.clientEmail && auth.privateKey;
+
+    if (!hasKeyFile && !hasKeyContent && !hasIndividualCreds) {
       throw new Error(
-        `Google Play service account key file not found: ${config.googleplay.serviceAccountKeyPath}`
+        'Google Play authentication configuration incomplete. Provide one of: ' +
+        '1) keyFile (path to service account JSON), ' +
+        '2) keyFileContent (service account JSON as string), or ' +
+        '3) clientEmail + privateKey (individual credentials)'
+      );
+    }
+
+    if (auth.keyFile && !fs.existsSync(auth.keyFile)) {
+      throw new Error(
+        `Google Play service account key file not found: ${auth.keyFile}`
+      );
+    }
+
+    if (hasIndividualCreds && (!auth.clientEmail || !auth.privateKey)) {
+      throw new Error(
+        'When using individual credentials, both clientEmail and privateKey are required'
       );
     }
 

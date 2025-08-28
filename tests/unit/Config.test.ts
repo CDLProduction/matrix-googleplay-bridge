@@ -33,7 +33,8 @@ appservice:
   botUsername: "testbot"
 
 googleplay:
-  serviceAccountKeyPath: "${testServiceAccountPath}"
+  auth:
+    keyFile: "${testServiceAccountPath}"
   pollIntervalMs: 300000
   applications:
     - packageName: "com.example.test"
@@ -115,7 +116,8 @@ appservice:
   id: "test_bridge"
   botUsername: "testbot"
 googleplay:
-  serviceAccountKeyPath: "${testServiceAccountPath}"
+  auth:
+    keyFile: "${testServiceAccountPath}"
   pollIntervalMs: 300000
   applications: []
 database:
@@ -168,7 +170,8 @@ appservice:
   id: "test_bridge"
   botUsername: "testbot"
 googleplay:
-  serviceAccountKeyPath: "${testServiceAccountPath}"
+  auth:
+    keyFile: "${testServiceAccountPath}"
   pollIntervalMs: 300000
   applications:
     - packageName: "com.example.test"
