@@ -1,0 +1,83 @@
+# Matrix Google Play Bridge Configuration
+# Copy this file to config.yaml and customize it for your setup
+
+# Matrix Homeserver Configuration
+homeserver:
+  # The URL of your Matrix homeserver
+  url: "https://matrix.example.com"
+  # The domain of your Matrix homeserver
+  domain: "example.com"
+
+# Application Service Configuration
+appservice:
+  # Port for the bridge to listen on
+  port: 9000
+  # Bind address (use 127.0.0.1 for local only, 0.0.0.0 for all interfaces)
+  bind: "127.0.0.1"
+  # Application Service token (generate a secure random token)
+  token: "your_as_token_here"
+  # Application Service ID (must match registration.yaml)
+  id: "googleplay_bridge"
+  # Bot username (without @domain.com)
+  botUsername: "googleplaybot"
+
+# Google Play Console Configuration
+googleplay:
+  # Path to the Google Play service account JSON key file
+  serviceAccountKeyPath: "/path/to/service-account-key.json"
+  # Polling interval in milliseconds (minimum recommended: 300000 = 5 minutes)
+  pollIntervalMs: 300000
+  # List of applications to monitor
+  applications:
+    - packageName: "com.example.myapp"
+      matrixRoom: "!roomid1:example.com"
+      appName: "My First App"
+    - packageName: "com.example.anotherapp"
+      matrixRoom: "!roomid2:example.com"
+      appName: "My Second App"
+
+# Database Configuration
+database:
+  # Database type: "sqlite" or "postgresql"
+  type: "sqlite"
+  # For SQLite: path to the database file
+  path: "./data/bridge.db"
+  # For PostgreSQL: connection details
+  # host: "localhost"
+  # port: 5432
+  # username: "bridge_user"
+  # password: "bridge_password"
+  # database: "matrix_googleplay_bridge"
+  # ssl: false
+
+# Logging Configuration
+logging:
+  # Log level: "error", "warn", "info", or "debug"
+  level: "info"
+  # Optional: log to file (comment out to disable file logging)
+  file: "./logs/bridge.log"
+  # Whether to also log to console
+  console: true
+
+# Environment Variable Overrides:
+# You can override any configuration value using environment variables:
+#
+# HOMESERVER_URL              - homeserver.url
+# HOMESERVER_DOMAIN           - homeserver.domain
+# AS_PORT                     - appservice.port
+# AS_BIND                     - appservice.bind
+# AS_TOKEN                    - appservice.token
+# AS_ID                       - appservice.id
+# BOT_USERNAME                - appservice.botUsername
+# GOOGLE_SERVICE_ACCOUNT_KEY  - googleplay.serviceAccountKeyPath
+# GOOGLE_POLL_INTERVAL        - googleplay.pollIntervalMs
+# DB_TYPE                     - database.type
+# DB_PATH                     - database.path (for SQLite)
+# DB_HOST                     - database.host (for PostgreSQL)
+# DB_PORT                     - database.port (for PostgreSQL)
+# DB_USERNAME                 - database.username (for PostgreSQL)
+# DB_PASSWORD                 - database.password (for PostgreSQL)
+# DB_DATABASE                 - database.database (for PostgreSQL)
+# LOG_LEVEL                   - logging.level
+# LOG_FILE                    - logging.file
+# LOG_CONSOLE                 - logging.console (true/false)

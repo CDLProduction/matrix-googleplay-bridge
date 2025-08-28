@@ -1,0 +1,81 @@
+{
+  "name": "matrix-googleplay-bridge",
+  "version": "0.1.0",
+  "description": "A Matrix Application Service that bridges Google Play Console reviews and comments with Matrix chat rooms for customer support teams",
+  "main": "dist/app.js",
+  "type": "commonjs",
+  "scripts": {
+    "build": "tsc",
+    "dev": "nodemon --exec ts-node src/app.ts",
+    "start": "node dist/app.js",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "lint": "eslint src/**/*.ts",
+    "lint:fix": "eslint src/**/*.ts --fix",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist",
+    "setup": "node scripts/setup.js",
+    "db:migrate": "node dist/scripts/migrate.js",
+    "docker:build": "docker build -t matrix-googleplay-bridge .",
+    "docker:dev": "docker build -f docker/Dockerfile.dev -t matrix-googleplay-bridge:dev ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/CDLProduction/matrix-googleplay-bridge.git"
+  },
+  "keywords": [
+    "matrix",
+    "bridge",
+    "google-play",
+    "customer-support",
+    "appservice",
+    "reviews",
+    "chat"
+  ],
+  "author": "CDLProduction",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/CDLProduction/matrix-googleplay-bridge/issues"
+  },
+  "homepage": "https://github.com/CDLProduction/matrix-googleplay-bridge#readme",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "dependencies": {
+    "googleapis": "^159.0.0",
+    "js-yaml": "^4.1.0",
+    "matrix-appservice-bridge": "^11.0.0",
+    "pg": "^8.16.3",
+    "sqlite3": "^5.1.7",
+    "winston": "^3.17.0"
+  },
+  "files": [
+    "dist/",
+    "config/",
+    "scripts/",
+    "README.md",
+    "LICENSE",
+    "Architecture.md",
+    "TASKS.md"
+  ],
+  "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^24.3.0",
+    "@types/pg": "^8.15.5",
+    "@types/sqlite3": "^3.1.11",
+    "@typescript-eslint/eslint-plugin": "^8.41.0",
+    "@typescript-eslint/parser": "^8.41.0",
+    "eslint": "^9.34.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.4",
+    "jest": "^30.1.1",
+    "nodemon": "^3.1.10",
+    "prettier": "^3.6.2",
+    "ts-jest": "^29.4.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.2"
+  }
+}
