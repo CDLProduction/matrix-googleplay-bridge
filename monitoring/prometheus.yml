@@ -1,0 +1,47 @@
+# Prometheus configuration for Matrix Google Play Bridge monitoring
+
+global:
+  scrape_interval: 30s
+  evaluation_interval: 30s
+
+# Rule files
+rule_files:
+  - "rules/*.yml"
+
+# Scrape configurations
+scrape_configs:
+  # Matrix Google Play Bridge metrics
+  - job_name: 'googleplay-bridge'
+    static_configs:
+      - targets: ['bridge:9090']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+    scrape_timeout: 10s
+    # Add custom labels
+    labels:
+      service: 'matrix-googleplay-bridge'
+      environment: 'production'
+
+  # Self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Node exporter (if available)
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']
+    scrape_interval: 15s
+
+# Alerting configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          - alertmanager:9093
+
+# Remote write (for external monitoring systems)
+# remote_write:
+#   - url: "https://your-remote-prometheus/api/v1/write"
+#     headers:
+#       Authorization: "Bearer your-token"

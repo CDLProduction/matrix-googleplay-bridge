@@ -1,0 +1,125 @@
+# Alerting rules for Matrix Google Play Bridge
+
+groups:
+  - name: googleplay-bridge.rules
+    rules:
+      # Bridge health alerts
+      - alert: BridgeDown
+        expr: up{job="googleplay-bridge"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Matrix Google Play Bridge is down"
+          description: "The Matrix Google Play Bridge service is not responding to health checks."
+
+      # High memory usage
+      - alert: HighMemoryUsage
+        expr: nodejs_memory_heap_used_bytes{job="googleplay-bridge"} / nodejs_memory_heap_total_bytes > 0.9
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage detected"
+          description: "Memory usage is above 90% ({{ $value }}%)"
+
+      # Circuit breaker alerts
+      - alert: CircuitBreakerOpen
+        expr: circuit_breaker_state{state="open"} == 1
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Circuit breaker is open"
+          description: "Circuit breaker {{ $labels.name }} has been open for more than 2 minutes"
+
+      # Rate limiting alerts
+      - alert: HighRateLimitHits
+        expr: rate(rate_limiter_requests_blocked_total[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High rate of requests being blocked"
+          description: "Rate limiter {{ $labels.name }} is blocking {{ $value }} requests/second"
+
+      # Review processing alerts
+      - alert: HighPendingReplies
+        expr: review_pending_replies_count > 50
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High number of pending replies"
+          description: "There are {{ $value }} pending replies waiting to be sent"
+
+      - alert: CriticalPendingReplies
+        expr: review_pending_replies_count > 100
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Critical number of pending replies"
+          description: "There are {{ $value }} pending replies - review processing may be stuck"
+
+      # Google Play API errors
+      - alert: GooglePlayAPIErrors
+        expr: rate(googleplay_api_errors_total[5m]) > 0.1
+        for: 3m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High Google Play API error rate"
+          description: "Google Play API error rate is {{ $value }} errors/second"
+
+      # Matrix API errors
+      - alert: MatrixAPIErrors
+        expr: rate(matrix_api_errors_total[5m]) > 0.1
+        for: 3m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High Matrix API error rate"
+          description: "Matrix API error rate is {{ $value }} errors/second"
+
+      # HTTP response time alerts
+      - alert: HighResponseTime
+        expr: histogram_quantile(0.95, rate(http_request_duration_ms_bucket[5m])) > 5000
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High HTTP response time"
+          description: "95th percentile response time is {{ $value }}ms"
+
+      # Database connection alerts
+      - alert: DatabaseConnectionFailure
+        expr: database_connection_status == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Database connection failure"
+          description: "Unable to connect to the database"
+
+  - name: system.rules
+    rules:
+      # CPU usage
+      - alert: HighCPUUsage
+        expr: rate(process_cpu_user_seconds_total[5m]) + rate(process_cpu_system_seconds_total[5m]) > 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage"
+          description: "CPU usage is above 80%"
+
+      # File descriptor usage
+      - alert: HighFileDescriptorUsage
+        expr: process_open_fds / process_max_fds > 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High file descriptor usage"
+          description: "File descriptor usage is above 80%"

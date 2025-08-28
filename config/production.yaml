@@ -1,0 +1,107 @@
+# Production Configuration for Matrix Google Play Bridge
+# This configuration includes all production-ready features
+
+# Bridge version (for monitoring and health checks)
+version: "1.0.0"
+
+# Matrix Homeserver Configuration
+homeserver:
+  url: "https://matrix.example.com"
+  domain: "example.com"
+
+# Application Service Configuration
+appservice:
+  port: 8080
+  bind: "0.0.0.0"
+  token: "your-appservice-token-here"
+  id: "googleplay-bridge"
+  botUsername: "googleplay-bot"
+
+# Google Play Console API Configuration
+googleplay:
+  # Authentication - Use one of the following methods:
+  auth:
+    # Option 1: Service Account Key File (recommended for production)
+    keyFile: "/path/to/service-account-key.json"
+    
+    # Option 2: Service Account Key Content (for containerized environments)
+    # keyFileContent: '{"type":"service_account","project_id":"...}'
+    
+    # Option 3: Individual credentials (for fine-grained control)
+    # clientEmail: "service-account@project-id.iam.gserviceaccount.com"
+    # privateKey: "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
+    # projectId: "your-project-id"
+    
+    scopes:
+      - "https://www.googleapis.com/auth/androidpublisher"
+
+  # Applications to monitor
+  applications:
+    - packageName: "com.example.app"
+      matrixRoom: "!roomid:example.com"
+      appName: "Example App"
+      pollIntervalMs: 300000  # 5 minutes
+      maxReviewsPerPoll: 50
+      lookbackDays: 7
+
+  # Global polling settings
+  pollIntervalMs: 300000  # 5 minutes default
+  maxReviewsPerPoll: 100
+  rateLimitDelayMs: 1000
+
+# Database Configuration
+database:
+  type: "postgresql"  # Use PostgreSQL for production
+  host: "localhost"
+  port: 5432
+  username: "bridge_user"
+  password: "secure_password"
+  database: "googleplay_bridge"
+  ssl: true
+
+# Enhanced Logging Configuration
+logging:
+  level: "info"  # error, warn, info, http, debug
+  enableFile: true
+  filePath: "/var/log/googleplay-bridge/bridge.log"
+  enableStructured: true  # JSON structured logs
+  maxFileSize: 50  # MB
+  maxFiles: 10
+
+# Production Monitoring Configuration
+monitoring:
+  enabled: true
+  port: 9090
+  host: "0.0.0.0"
+  enableMetrics: true      # Prometheus metrics endpoint
+  enableHealthCheck: true  # Health check endpoints
+  requestLogging: true     # Log HTTP requests
+
+# Circuit Breaker Configuration
+circuitBreakers:
+  googlePlayApi:
+    failureThreshold: 5     # Open after 5 failures
+    resetTimeout: 60000     # Try to close after 1 minute
+    monitoringPeriod: 300000  # 5 minute window
+    successThreshold: 3     # Close after 3 successes in half-open
+  
+  matrixApi:
+    failureThreshold: 3
+    resetTimeout: 30000     # 30 seconds
+    monitoringPeriod: 180000  # 3 minute window
+    successThreshold: 2
+
+# Rate Limiting Configuration
+rateLimiting:
+  googlePlayApi:
+    windowSizeMs: 60000   # 1 minute window
+    maxRequests: 100      # Max 100 requests per minute
+  
+  matrixApi:
+    windowSizeMs: 60000
+    maxRequests: 300      # Conservative Matrix rate limit
+  
+  replyProcessing:
+    baseDelayMs: 1000     # Start with 1 second delay
+    maxDelayMs: 30000     # Max 30 seconds
+    backoffMultiplier: 2  # Double delay each retry
