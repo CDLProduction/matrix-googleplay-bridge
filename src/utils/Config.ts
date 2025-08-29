@@ -7,6 +7,7 @@ import {
   AppserviceConfig,
   HomeserverConfig,
   LoggingConfig,
+  MonitoringConfig,
 } from '../models/Config';
 import { Validator } from './Validator';
 
@@ -63,6 +64,43 @@ export class Config {
   }
 
   /**
+   * Reload configuration from file and environment variables
+   */
+  static async reload(configPath?: string): Promise<Config> {
+    const finalConfigPath =
+      configPath || process.env.CONFIG_PATH || './config/config.yaml';
+
+    if (!fs.existsSync(finalConfigPath)) {
+      throw new Error(`Configuration file not found: ${finalConfigPath}`);
+    }
+
+    try {
+      const configContent = fs.readFileSync(finalConfigPath, 'utf8');
+      const rawConfig = yaml.load(configContent) as any;
+
+      // Apply environment variable overrides
+      const config = Config.applyEnvironmentOverrides(rawConfig);
+
+      // Validate configuration
+      Config.validateConfig(config);
+
+      // Update existing instance
+      if (Config.instance) {
+        Config.instance.config = config;
+      } else {
+        Config.instance = new Config(config);
+      }
+      
+      return Config.instance;
+    } catch (error) {
+      if (error instanceof Error) {
+        throw new Error(`Failed to reload configuration: ${error.message}`);
+      }
+      throw error;
+    }
+  }
+
+  /**
    * Apply environment variable overrides to configuration
    */
   private static applyEnvironmentOverrides(config: any): BridgeConfig {
@@ -100,32 +138,58 @@ export class Config {
 
     // Google Play overrides
     if (process.env.GOOGLE_SERVICE_ACCOUNT_KEY_FILE) {
-      config.googleplay = config.googleplay || { auth: {}, applications: [], pollIntervalMs: 300000 };
+      config.googleplay = config.googleplay || {
+        auth: {},
+        applications: [],
+        pollIntervalMs: 300000,
+      };
       config.googleplay.auth = config.googleplay.auth || {};
-      config.googleplay.auth.keyFile = process.env.GOOGLE_SERVICE_ACCOUNT_KEY_FILE;
+      config.googleplay.auth.keyFile =
+        process.env.GOOGLE_SERVICE_ACCOUNT_KEY_FILE;
     }
     if (process.env.GOOGLE_SERVICE_ACCOUNT_KEY_CONTENT) {
-      config.googleplay = config.googleplay || { auth: {}, applications: [], pollIntervalMs: 300000 };
+      config.googleplay = config.googleplay || {
+        auth: {},
+        applications: [],
+        pollIntervalMs: 300000,
+      };
       config.googleplay.auth = config.googleplay.auth || {};
-      config.googleplay.auth.keyFileContent = process.env.GOOGLE_SERVICE_ACCOUNT_KEY_CONTENT;
+      config.googleplay.auth.keyFileContent =
+        process.env.GOOGLE_SERVICE_ACCOUNT_KEY_CONTENT;
     }
     if (process.env.GOOGLE_CLIENT_EMAIL) {
-      config.googleplay = config.googleplay || { auth: {}, applications: [], pollIntervalMs: 300000 };
+      config.googleplay = config.googleplay || {
+        auth: {},
+        applications: [],
+        pollIntervalMs: 300000,
+      };
       config.googleplay.auth = config.googleplay.auth || {};
       config.googleplay.auth.clientEmail = process.env.GOOGLE_CLIENT_EMAIL;
     }
     if (process.env.GOOGLE_PRIVATE_KEY) {
-      config.googleplay = config.googleplay || { auth: {}, applications: [], pollIntervalMs: 300000 };
+      config.googleplay = config.googleplay || {
+        auth: {},
+        applications: [],
+        pollIntervalMs: 300000,
+      };
       config.googleplay.auth = config.googleplay.auth || {};
       config.googleplay.auth.privateKey = process.env.GOOGLE_PRIVATE_KEY;
     }
     if (process.env.GOOGLE_PROJECT_ID) {
-      config.googleplay = config.googleplay || { auth: {}, applications: [], pollIntervalMs: 300000 };
+      config.googleplay = config.googleplay || {
+        auth: {},
+        applications: [],
+        pollIntervalMs: 300000,
+      };
       config.googleplay.auth = config.googleplay.auth || {};
       config.googleplay.auth.projectId = process.env.GOOGLE_PROJECT_ID;
     }
     if (process.env.GOOGLE_POLL_INTERVAL) {
-      config.googleplay = config.googleplay || { auth: {}, applications: [], pollIntervalMs: 300000 };
+      config.googleplay = config.googleplay || {
+        auth: {},
+        applications: [],
+        pollIntervalMs: 300000,
+      };
       config.googleplay.pollIntervalMs = parseInt(
         process.env.GOOGLE_POLL_INTERVAL,
         10
@@ -242,9 +306,9 @@ export class Config {
     if (!hasKeyFile && !hasKeyContent && !hasIndividualCreds) {
       throw new Error(
         'Google Play authentication configuration incomplete. Provide one of: ' +
-        '1) keyFile (path to service account JSON), ' +
-        '2) keyFileContent (service account JSON as string), or ' +
-        '3) clientEmail + privateKey (individual credentials)'
+          '1) keyFile (path to service account JSON), ' +
+          '2) keyFileContent (service account JSON as string), or ' +
+          '3) clientEmail + privateKey (individual credentials)'
       );
     }
 
@@ -317,11 +381,15 @@ export class Config {
   get logging(): LoggingConfig | undefined {
     return this.config.logging;
   }
-  
+
   get monitoring(): MonitoringConfig | undefined {
     return this.config.monitoring;
   }
-  
+
+  get bridge(): import('../models/Config').BridgeAdminConfig | undefined {
+    return this.config.bridge;
+  }
+
   get version(): string | undefined {
     return this.config.version;
   }

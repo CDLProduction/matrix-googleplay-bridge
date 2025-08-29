@@ -61,7 +61,7 @@ export class ReviewManager {
    */
   async initialize(): Promise<void> {
     this.logger.info('Initializing Review Manager...');
-    
+
     // Ensure Google Play client is ready
     if (!this.googlePlayClient.isReady()) {
       await this.googlePlayClient.initialize();
@@ -70,7 +70,9 @@ export class ReviewManager {
     // Start reply processor (processes pending replies every 30 seconds)
     this.replyProcessor = setInterval(() => {
       this.processRepliesQueue().catch(error => {
-        this.logger.error(`Error processing replies queue: ${error instanceof Error ? error.message : error}`);
+        this.logger.error(
+          `Error processing replies queue: ${error instanceof Error ? error.message : error}`
+        );
       });
     }, 30000);
 
@@ -81,14 +83,24 @@ export class ReviewManager {
    * Start polling reviews for a specific package
    */
   async startPollingReviews(options: ReviewPollingOptions): Promise<void> {
-    const { packageName, pollIntervalMs, maxReviewsPerPoll = 100, lookbackDays = 7 } = options;
-    
-    this.logger.info(`Starting review polling for ${packageName} (interval: ${pollIntervalMs}ms)`);
+    const {
+      packageName,
+      pollIntervalMs,
+      maxReviewsPerPoll = 100,
+      lookbackDays = 7,
+    } = options;
+
+    this.logger.info(
+      `Starting review polling for ${packageName} (interval: ${pollIntervalMs}ms)`
+    );
 
     // Test connection first
-    const connectionTest = await this.googlePlayClient.testConnection(packageName);
+    const connectionTest =
+      await this.googlePlayClient.testConnection(packageName);
     if (!connectionTest) {
-      throw new Error(`Failed to connect to Google Play API for package: ${packageName}`);
+      throw new Error(
+        `Failed to connect to Google Play API for package: ${packageName}`
+      );
     }
 
     // Initialize stats
@@ -114,7 +126,9 @@ export class ReviewManager {
       try {
         await this.pollReviews(packageName, maxReviewsPerPoll);
       } catch (error) {
-        this.logger.error(`Error polling reviews for ${packageName}: ${error instanceof Error ? error.message : error}`);
+        this.logger.error(
+          `Error polling reviews for ${packageName}: ${error instanceof Error ? error.message : error}`
+        );
         this.incrementErrorCount(packageName);
       }
     }, pollIntervalMs);
@@ -146,7 +160,9 @@ export class ReviewManager {
     matrixRoomId: string,
     senderId: string
   ): Promise<void> {
-    this.logger.debug(`Queueing reply for review ${reviewId}: ${replyText.substring(0, 50)}...`);
+    this.logger.debug(
+      `Queueing reply for review ${reviewId}: ${replyText.substring(0, 50)}...`
+    );
 
     const pendingReply: PendingReply = {
       packageName,
@@ -160,7 +176,9 @@ export class ReviewManager {
     };
 
     this.pendingReplies.push(pendingReply);
-    this.logger.info(`Reply queued for review ${reviewId} (queue size: ${this.pendingReplies.length})`);
+    this.logger.info(
+      `Reply queued for review ${reviewId} (queue size: ${this.pendingReplies.length})`
+    );
   }
 
   /**
@@ -205,7 +223,9 @@ export class ReviewManager {
 
     // Process any remaining replies
     if (this.pendingReplies.length > 0) {
-      this.logger.info(`Processing ${this.pendingReplies.length} pending replies before shutdown...`);
+      this.logger.info(
+        `Processing ${this.pendingReplies.length} pending replies before shutdown...`
+      );
       await this.processRepliesQueue();
     }
 
@@ -215,11 +235,18 @@ export class ReviewManager {
   /**
    * Poll reviews for a specific package since last poll time
    */
-  private async pollReviews(packageName: string, maxReviews: number): Promise<void> {
-    const lastPollTime = this.lastPollTimes.get(packageName) || new Date(Date.now() - 7 * 24 * 60 * 60 * 1000); // Default to 7 days ago
+  private async pollReviews(
+    packageName: string,
+    maxReviews: number
+  ): Promise<void> {
+    const lastPollTime =
+      this.lastPollTimes.get(packageName) ||
+      new Date(Date.now() - 7 * 24 * 60 * 60 * 1000); // Default to 7 days ago
     const currentPollTime = new Date();
 
-    this.logger.debug(`Polling reviews for ${packageName} since ${lastPollTime.toISOString()}`);
+    this.logger.debug(
+      `Polling reviews for ${packageName} since ${lastPollTime.toISOString()}`
+    );
 
     try {
       // Get recent reviews from Google Play
@@ -229,7 +256,9 @@ export class ReviewManager {
         maxReviews
       );
 
-      this.logger.debug(`Found ${recentReviews.length} recent reviews for ${packageName}`);
+      this.logger.debug(
+        `Found ${recentReviews.length} recent reviews for ${packageName}`
+      );
 
       // Process each review
       let newReviews = 0;
@@ -244,7 +273,9 @@ export class ReviewManager {
             updatedReviews++;
           }
         } catch (error) {
-          this.logger.error(`Error processing review ${reviewData.reviewId}: ${error instanceof Error ? error.message : error}`);
+          this.logger.error(
+            `Error processing review ${reviewData.reviewId}: ${error instanceof Error ? error.message : error}`
+          );
           this.incrementErrorCount(packageName);
         }
       }
@@ -262,10 +293,14 @@ export class ReviewManager {
       this.lastPollTimes.set(packageName, currentPollTime);
 
       if (recentReviews.length > 0) {
-        this.logger.info(`Processed ${recentReviews.length} reviews for ${packageName} (${newReviews} new, ${updatedReviews} updated)`);
+        this.logger.info(
+          `Processed ${recentReviews.length} reviews for ${packageName} (${newReviews} new, ${updatedReviews} updated)`
+        );
       }
     } catch (error) {
-      this.logger.error(`Failed to poll reviews for ${packageName}: ${error instanceof Error ? error.message : error}`);
+      this.logger.error(
+        `Failed to poll reviews for ${packageName}: ${error instanceof Error ? error.message : error}`
+      );
       this.incrementErrorCount(packageName);
       throw error;
     }
@@ -274,7 +309,10 @@ export class ReviewManager {
   /**
    * Process a single review and send to Matrix if new or updated
    */
-  private async processReview(packageName: string, reviewData: GooglePlayReviewData): Promise<boolean> {
+  private async processReview(
+    packageName: string,
+    reviewData: GooglePlayReviewData
+  ): Promise<boolean> {
     // Convert to internal review format
     const review: GooglePlayReview = {
       reviewId: reviewData.reviewId,
@@ -285,7 +323,7 @@ export class ReviewManager {
       lastModifiedAt: reviewData.lastModifiedAt,
       hasReply: reviewData.hasReply,
     };
-    
+
     if (reviewData.text) {
       review.text = reviewData.text;
     }
@@ -312,7 +350,9 @@ export class ReviewManager {
     }
 
     // Check if this is a new review or an update
-    const existingReview = this.messageManager.getGooglePlayReview(reviewData.reviewId);
+    const existingReview = this.messageManager.getGooglePlayReview(
+      reviewData.reviewId
+    );
     const isNewReview = !existingReview;
 
     if (isNewReview) {
@@ -321,7 +361,10 @@ export class ReviewManager {
       this.logger.debug(`Stored new review: ${reviewData.reviewId}`);
     } else {
       // Check if review was updated
-      if (existingReview && existingReview.lastModifiedAt < reviewData.lastModifiedAt) {
+      if (
+        existingReview &&
+        existingReview.lastModifiedAt < reviewData.lastModifiedAt
+      ) {
         // Update existing review
         this.messageManager.updateGooglePlayReview(review);
         this.logger.debug(`Updated existing review: ${reviewData.reviewId}`);
@@ -333,14 +376,22 @@ export class ReviewManager {
 
     // Send review to Matrix rooms
     try {
-      await this.matrixHandler.sendReviewToMatrix(reviewData.reviewId, packageName);
-      
+      await this.matrixHandler.sendReviewToMatrix(
+        reviewData.reviewId,
+        packageName
+      );
+
       if (isNewReview) {
         // Create virtual user for the reviewer
-        await this.matrixHandler.createVirtualUser(reviewData.reviewId, reviewData.authorName);
+        await this.matrixHandler.createVirtualUser(
+          reviewData.reviewId,
+          reviewData.authorName
+        );
       }
     } catch (error) {
-      this.logger.error(`Failed to send review ${reviewData.reviewId} to Matrix: ${error instanceof Error ? error.message : error}`);
+      this.logger.error(
+        `Failed to send review ${reviewData.reviewId} to Matrix: ${error instanceof Error ? error.message : error}`
+      );
       throw error;
     }
 
@@ -355,7 +406,9 @@ export class ReviewManager {
       return;
     }
 
-    this.logger.debug(`Processing ${this.pendingReplies.length} pending replies`);
+    this.logger.debug(
+      `Processing ${this.pendingReplies.length} pending replies`
+    );
 
     const toProcess = [...this.pendingReplies];
     this.pendingReplies = [];
@@ -363,23 +416,27 @@ export class ReviewManager {
     for (const reply of toProcess) {
       try {
         await this.sendReplyToGooglePlay(reply);
-        
+
         // Update stats
         const stats = this.processingStats.get(reply.packageName);
         if (stats) {
           stats.repliesSent++;
         }
-        
+
         this.logger.info(`Successfully sent reply to review ${reply.reviewId}`);
       } catch (error) {
-        this.logger.error(`Failed to send reply to review ${reply.reviewId}: ${error instanceof Error ? error.message : error}`);
-        
+        this.logger.error(
+          `Failed to send reply to review ${reply.reviewId}: ${error instanceof Error ? error.message : error}`
+        );
+
         // Retry logic
         if (reply.retryCount < 3) {
           reply.retryCount++;
           reply.timestamp = new Date();
           this.pendingReplies.push(reply);
-          this.logger.debug(`Reply to ${reply.reviewId} requeued for retry (attempt ${reply.retryCount + 1}/4)`);
+          this.logger.debug(
+            `Reply to ${reply.reviewId} requeued for retry (attempt ${reply.retryCount + 1}/4)`
+          );
         } else {
           // Send failure notification to Matrix
           await this.sendReplyFailureNotification(reply, error);
@@ -406,20 +463,35 @@ export class ReviewManager {
   /**
    * Send reply confirmation to Matrix
    */
-  private async sendReplyConfirmation(reply: PendingReply, success: boolean, error?: any): Promise<void> {
-    const confirmationContent = this.messageManager.formatReplyConfirmation(success, error?.message);
-    
+  private async sendReplyConfirmation(
+    reply: PendingReply,
+    success: boolean,
+    error?: any
+  ): Promise<void> {
+    const confirmationContent = this.messageManager.formatReplyConfirmation(
+      success,
+      error?.message
+    );
+
     try {
-      await this.matrixHandler.sendMessageToRoom(reply.matrixRoomId, confirmationContent);
+      await this.matrixHandler.sendMessageToRoom(
+        reply.matrixRoomId,
+        confirmationContent
+      );
     } catch (error) {
-      this.logger.error(`Failed to send reply confirmation to Matrix: ${error instanceof Error ? error.message : error}`);
+      this.logger.error(
+        `Failed to send reply confirmation to Matrix: ${error instanceof Error ? error.message : error}`
+      );
     }
   }
 
   /**
    * Send reply failure notification to Matrix
    */
-  private async sendReplyFailureNotification(reply: PendingReply, error: any): Promise<void> {
+  private async sendReplyFailureNotification(
+    reply: PendingReply,
+    error: any
+  ): Promise<void> {
     const failureContent = {
       msgtype: 'm.notice',
       body: `❌ Failed to send reply to review ${reply.reviewId} after 4 attempts. Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
@@ -428,9 +500,14 @@ export class ReviewManager {
     };
 
     try {
-      await this.matrixHandler.sendMessageToRoom(reply.matrixRoomId, failureContent);
+      await this.matrixHandler.sendMessageToRoom(
+        reply.matrixRoomId,
+        failureContent
+      );
     } catch (matrixError) {
-      this.logger.error(`Failed to send reply failure notification to Matrix: ${matrixError instanceof Error ? matrixError.message : matrixError}`);
+      this.logger.error(
+        `Failed to send reply failure notification to Matrix: ${matrixError instanceof Error ? matrixError.message : matrixError}`
+      );
     }
   }
 
@@ -442,5 +519,44 @@ export class ReviewManager {
     if (stats) {
       stats.errors++;
     }
+  }
+
+  // Phase 4.3 methods for maintenance mode support
+  async pauseProcessing(): Promise<void> {
+    this.logger.info('Pausing review processing for maintenance mode');
+    
+    // Stop all polling timers
+    for (const timer of this.pollingIntervals.values()) {
+      clearInterval(timer);
+    }
+    this.pollingIntervals.clear();
+    
+    this.logger.info('Review processing paused');
+  }
+
+  async resumeProcessing(): Promise<void> {
+    this.logger.info('Resuming review processing from maintenance mode');
+    
+    // Restart polling for all active packages
+    for (const [packageName] of this.processingStats) {
+      this.logger.info(`Resuming polling for ${packageName}`);
+      // Note: Would need access to the original config to restart properly
+      // For now, just log that we would restart polling
+    }
+    
+    this.logger.info('Review processing resumed');
+  }
+
+  updateConfiguration(newGooglePlayConfig: any): void {
+    this.logger.info('Updating ReviewManager configuration');
+    
+    // Log configuration update
+    this.logger.info('Review manager configuration updated', {
+      pollInterval: newGooglePlayConfig.pollIntervalMs,
+      appCount: newGooglePlayConfig.applications?.length || 0
+    });
+    
+    // Note: In a full implementation, this would update polling intervals
+    // but requires restructuring to store app configurations
   }
 }

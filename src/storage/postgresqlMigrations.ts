@@ -43,10 +43,18 @@ export const postgresqlMigrations: Migration[] = [
       `);
 
       // Create indexes for common queries
-      await db.run('CREATE INDEX idx_user_mappings_review_id ON user_mappings(review_id)');
-      await db.run('CREATE INDEX idx_user_mappings_matrix_user_id ON user_mappings(matrix_user_id)');
-      await db.run('CREATE INDEX idx_user_mappings_package_name ON user_mappings(package_name)');
-      await db.run('CREATE INDEX idx_user_mappings_last_active ON user_mappings(last_active_at)');
+      await db.run(
+        'CREATE INDEX idx_user_mappings_review_id ON user_mappings(review_id)'
+      );
+      await db.run(
+        'CREATE INDEX idx_user_mappings_matrix_user_id ON user_mappings(matrix_user_id)'
+      );
+      await db.run(
+        'CREATE INDEX idx_user_mappings_package_name ON user_mappings(package_name)'
+      );
+      await db.run(
+        'CREATE INDEX idx_user_mappings_last_active ON user_mappings(last_active_at)'
+      );
     },
     down: async (db: DatabaseInterface) => {
       await db.run('DROP TABLE user_mappings');
@@ -83,11 +91,21 @@ export const postgresqlMigrations: Migration[] = [
       `);
 
       // Create indexes for common queries
-      await db.run('CREATE INDEX idx_room_mappings_package_name ON room_mappings(package_name)');
-      await db.run('CREATE INDEX idx_room_mappings_matrix_room_id ON room_mappings(matrix_room_id)');
-      await db.run('CREATE INDEX idx_room_mappings_room_type ON room_mappings(room_type)');
-      await db.run('CREATE INDEX idx_room_mappings_is_primary ON room_mappings(is_primary)');
-      await db.run('CREATE INDEX idx_room_mappings_config_gin ON room_mappings USING GIN (config)');
+      await db.run(
+        'CREATE INDEX idx_room_mappings_package_name ON room_mappings(package_name)'
+      );
+      await db.run(
+        'CREATE INDEX idx_room_mappings_matrix_room_id ON room_mappings(matrix_room_id)'
+      );
+      await db.run(
+        'CREATE INDEX idx_room_mappings_room_type ON room_mappings(room_type)'
+      );
+      await db.run(
+        'CREATE INDEX idx_room_mappings_is_primary ON room_mappings(is_primary)'
+      );
+      await db.run(
+        'CREATE INDEX idx_room_mappings_config_gin ON room_mappings USING GIN (config)'
+      );
     },
     down: async (db: DatabaseInterface) => {
       await db.run('DROP TABLE room_mappings');
@@ -125,11 +143,21 @@ export const postgresqlMigrations: Migration[] = [
       `);
 
       // Create indexes for common queries
-      await db.run('CREATE INDEX idx_message_mappings_review_id ON message_mappings(google_play_review_id)');
-      await db.run('CREATE INDEX idx_message_mappings_matrix_event_id ON message_mappings(matrix_event_id)');
-      await db.run('CREATE INDEX idx_message_mappings_matrix_room_id ON message_mappings(matrix_room_id)');
-      await db.run('CREATE INDEX idx_message_mappings_package_name ON message_mappings(package_name)');
-      await db.run('CREATE INDEX idx_message_mappings_message_type ON message_mappings(message_type)');
+      await db.run(
+        'CREATE INDEX idx_message_mappings_review_id ON message_mappings(google_play_review_id)'
+      );
+      await db.run(
+        'CREATE INDEX idx_message_mappings_matrix_event_id ON message_mappings(matrix_event_id)'
+      );
+      await db.run(
+        'CREATE INDEX idx_message_mappings_matrix_room_id ON message_mappings(matrix_room_id)'
+      );
+      await db.run(
+        'CREATE INDEX idx_message_mappings_package_name ON message_mappings(package_name)'
+      );
+      await db.run(
+        'CREATE INDEX idx_message_mappings_message_type ON message_mappings(message_type)'
+      );
     },
     down: async (db: DatabaseInterface) => {
       await db.run('DROP TABLE message_mappings');
@@ -163,14 +191,26 @@ export const postgresqlMigrations: Migration[] = [
       `);
 
       // Create indexes for common queries
-      await db.run('CREATE INDEX idx_google_play_reviews_package_name ON google_play_reviews(package_name)');
-      await db.run('CREATE INDEX idx_google_play_reviews_last_modified ON google_play_reviews(last_modified_at)');
-      await db.run('CREATE INDEX idx_google_play_reviews_star_rating ON google_play_reviews(star_rating)');
-      await db.run('CREATE INDEX idx_google_play_reviews_has_reply ON google_play_reviews(has_reply)');
-      await db.run('CREATE INDEX idx_google_play_reviews_created_at ON google_play_reviews(created_at)');
-      
+      await db.run(
+        'CREATE INDEX idx_google_play_reviews_package_name ON google_play_reviews(package_name)'
+      );
+      await db.run(
+        'CREATE INDEX idx_google_play_reviews_last_modified ON google_play_reviews(last_modified_at)'
+      );
+      await db.run(
+        'CREATE INDEX idx_google_play_reviews_star_rating ON google_play_reviews(star_rating)'
+      );
+      await db.run(
+        'CREATE INDEX idx_google_play_reviews_has_reply ON google_play_reviews(has_reply)'
+      );
+      await db.run(
+        'CREATE INDEX idx_google_play_reviews_created_at ON google_play_reviews(created_at)'
+      );
+
       // Full-text search index on review text
-      await db.run('CREATE INDEX idx_google_play_reviews_text_search ON google_play_reviews USING GIN (to_tsvector(\'english\', text))');
+      await db.run(
+        "CREATE INDEX idx_google_play_reviews_text_search ON google_play_reviews USING GIN (to_tsvector('english', text))"
+      );
     },
     down: async (db: DatabaseInterface) => {
       await db.run('DROP TABLE google_play_reviews');
@@ -195,11 +235,21 @@ export const postgresqlMigrations: Migration[] = [
       `);
 
       // Create indexes for common queries
-      await db.run('CREATE INDEX idx_matrix_messages_room_id ON matrix_messages(room_id)');
-      await db.run('CREATE INDEX idx_matrix_messages_sender_id ON matrix_messages(sender_id)');
-      await db.run('CREATE INDEX idx_matrix_messages_timestamp ON matrix_messages(timestamp)');
-      await db.run('CREATE INDEX idx_matrix_messages_is_bridge ON matrix_messages(is_bridge_message)');
-      await db.run('CREATE INDEX idx_matrix_messages_content_gin ON matrix_messages USING GIN (content)');
+      await db.run(
+        'CREATE INDEX idx_matrix_messages_room_id ON matrix_messages(room_id)'
+      );
+      await db.run(
+        'CREATE INDEX idx_matrix_messages_sender_id ON matrix_messages(sender_id)'
+      );
+      await db.run(
+        'CREATE INDEX idx_matrix_messages_timestamp ON matrix_messages(timestamp)'
+      );
+      await db.run(
+        'CREATE INDEX idx_matrix_messages_is_bridge ON matrix_messages(is_bridge_message)'
+      );
+      await db.run(
+        'CREATE INDEX idx_matrix_messages_content_gin ON matrix_messages USING GIN (content)'
+      );
     },
     down: async (db: DatabaseInterface) => {
       await db.run('DROP TABLE matrix_messages');
@@ -211,11 +261,21 @@ export const postgresqlMigrations: Migration[] = [
     description: 'Add composite indexes for performance optimization',
     up: async (db: DatabaseInterface) => {
       // Composite indexes for common query patterns
-      await db.run('CREATE INDEX idx_user_mappings_package_active ON user_mappings(package_name, last_active_at)');
-      await db.run('CREATE INDEX idx_room_mappings_package_primary ON room_mappings(package_name, is_primary, room_type)');
-      await db.run('CREATE INDEX idx_message_mappings_room_type ON message_mappings(matrix_room_id, message_type, created_at)');
-      await db.run('CREATE INDEX idx_google_play_reviews_package_modified ON google_play_reviews(package_name, last_modified_at)');
-      await db.run('CREATE INDEX idx_matrix_messages_room_timestamp ON matrix_messages(room_id, timestamp)');
+      await db.run(
+        'CREATE INDEX idx_user_mappings_package_active ON user_mappings(package_name, last_active_at)'
+      );
+      await db.run(
+        'CREATE INDEX idx_room_mappings_package_primary ON room_mappings(package_name, is_primary, room_type)'
+      );
+      await db.run(
+        'CREATE INDEX idx_message_mappings_room_type ON message_mappings(matrix_room_id, message_type, created_at)'
+      );
+      await db.run(
+        'CREATE INDEX idx_google_play_reviews_package_modified ON google_play_reviews(package_name, last_modified_at)'
+      );
+      await db.run(
+        'CREATE INDEX idx_matrix_messages_room_timestamp ON matrix_messages(room_id, timestamp)'
+      );
     },
     down: async (db: DatabaseInterface) => {
       await db.run('DROP INDEX idx_user_mappings_package_active');
@@ -272,9 +332,15 @@ export const postgresqlMigrations: Migration[] = [
       `);
     },
     down: async (db: DatabaseInterface) => {
-      await db.run('DROP TRIGGER update_room_mappings_updated_at ON room_mappings');
-      await db.run('DROP TRIGGER update_message_mappings_updated_at ON message_mappings');
-      await db.run('DROP TRIGGER update_user_mappings_last_active ON user_mappings');
+      await db.run(
+        'DROP TRIGGER update_room_mappings_updated_at ON room_mappings'
+      );
+      await db.run(
+        'DROP TRIGGER update_message_mappings_updated_at ON message_mappings'
+      );
+      await db.run(
+        'DROP TRIGGER update_user_mappings_last_active ON user_mappings'
+      );
       await db.run('DROP FUNCTION update_updated_at_column()');
       await db.run('DROP FUNCTION update_user_last_active()');
     },
@@ -349,8 +415,12 @@ export const postgresqlMigrations: Migration[] = [
         )
       `);
 
-      await db.run('CREATE INDEX idx_maintenance_log_executed_at ON maintenance_log(executed_at)');
-      await db.run('CREATE INDEX idx_maintenance_log_operation_type ON maintenance_log(operation_type)');
+      await db.run(
+        'CREATE INDEX idx_maintenance_log_executed_at ON maintenance_log(executed_at)'
+      );
+      await db.run(
+        'CREATE INDEX idx_maintenance_log_operation_type ON maintenance_log(operation_type)'
+      );
 
       // Create stored procedures for maintenance operations
       await db.run(`
@@ -411,7 +481,9 @@ export const postgresqlMigrations: Migration[] = [
       `);
     },
     down: async (db: DatabaseInterface) => {
-      await db.run('DROP FUNCTION IF EXISTS cleanup_old_matrix_messages(INTEGER)');
+      await db.run(
+        'DROP FUNCTION IF EXISTS cleanup_old_matrix_messages(INTEGER)'
+      );
       await db.run('DROP FUNCTION IF EXISTS cleanup_inactive_users(INTEGER)');
       await db.run('DROP FUNCTION IF EXISTS cleanup_orphaned_mappings()');
       await db.run('DROP TABLE maintenance_log');
@@ -448,8 +520,16 @@ export const postgresqlMigrations: Migration[] = [
 
       // Create initial partitions for the current and next month
       const currentDate = new Date();
-      const nextMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1);
-      const monthAfter = new Date(currentDate.getFullYear(), currentDate.getMonth() + 2, 1);
+      const nextMonth = new Date(
+        currentDate.getFullYear(),
+        currentDate.getMonth() + 1,
+        1
+      );
+      const monthAfter = new Date(
+        currentDate.getFullYear(),
+        currentDate.getMonth() + 2,
+        1
+      );
 
       await db.run(`
         CREATE TABLE matrix_messages_${currentDate.getFullYear()}_${(currentDate.getMonth() + 1).toString().padStart(2, '0')} 
@@ -487,14 +567,18 @@ export function getLatestPostgreSQLMigrationVersion(): number {
  * Validate PostgreSQL migration sequence
  */
 export function validatePostgreSQLMigrations(): void {
-  const versions = postgresqlMigrations.map(m => m.version).sort((a, b) => a - b);
-  
+  const versions = postgresqlMigrations
+    .map(m => m.version)
+    .sort((a, b) => a - b);
+
   for (let i = 0; i < versions.length; i++) {
     if (i === 0 && versions[i] !== 1) {
       throw new Error('First migration must be version 1');
     }
     if (i > 0 && versions[i] !== versions[i - 1]! + 1) {
-      throw new Error(`Migration version gap detected: expected ${versions[i - 1]! + 1}, got ${versions[i]}`);
+      throw new Error(
+        `Migration version gap detected: expected ${versions[i - 1]! + 1}, got ${versions[i]}`
+      );
     }
   }
 

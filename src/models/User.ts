@@ -134,7 +134,7 @@ export class UserManager {
     packageName: string
   ): Promise<UserMapping> {
     const mappingId = `${reviewId}_${matrixUserId}`;
-    
+
     const mapping: UserMapping = {
       id: mappingId,
       googlePlayReviewId: reviewId,
@@ -152,7 +152,9 @@ export class UserManager {
   /**
    * Get user mapping by review ID
    */
-  async getUserMappingByReviewId(reviewId: string): Promise<UserMapping | undefined> {
+  async getUserMappingByReviewId(
+    reviewId: string
+  ): Promise<UserMapping | undefined> {
     for (const [, mapping] of this.userMappings) {
       if (mapping.googlePlayReviewId === reviewId) {
         return mapping;
@@ -164,7 +166,9 @@ export class UserManager {
   /**
    * Get user mapping by Matrix user ID
    */
-  async getUserMappingByMatrixUserId(matrixUserId: string): Promise<UserMapping | undefined> {
+  async getUserMappingByMatrixUserId(
+    matrixUserId: string
+  ): Promise<UserMapping | undefined> {
     for (const [, mapping] of this.userMappings) {
       if (mapping.matrixUserId === matrixUserId) {
         return mapping;

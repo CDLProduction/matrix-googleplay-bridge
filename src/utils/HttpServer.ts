@@ -67,15 +67,18 @@ export class HttpServer {
     return new Promise<void>((resolve, reject) => {
       this.server = http.createServer(this.handleRequest.bind(this));
 
-      this.server.on('error', (error) => {
+      this.server.on('error', error => {
         this.logger.error('HTTP server error', error);
         reject(error);
       });
 
       this.server.listen(this.config.port, this.config.host, () => {
-        this.logger.info(`HTTP server listening on ${this.config.host}:${this.config.port}`, {
-          endpoints: this.getAvailableEndpoints(),
-        });
+        this.logger.info(
+          `HTTP server listening on ${this.config.host}:${this.config.port}`,
+          {
+            endpoints: this.getAvailableEndpoints(),
+          }
+        );
         resolve();
       });
     });
@@ -89,7 +92,7 @@ export class HttpServer {
       return;
     }
 
-    return new Promise<void>((resolve) => {
+    return new Promise<void>(resolve => {
       this.server!.close(() => {
         this.logger.info('HTTP server stopped');
         resolve();
@@ -100,17 +103,24 @@ export class HttpServer {
   /**
    * Record a metric value
    */
-  recordMetric(name: string, value: number, labels?: Record<string, string>, options?: {
-    help?: string;
-    type?: MetricValue['type'];
-  }): void {
-    const metricKey = labels ? `${name}{${this.serializeLabels(labels)}}` : name;
-    
+  recordMetric(
+    name: string,
+    value: number,
+    labels?: Record<string, string>,
+    options?: {
+      help?: string;
+      type?: MetricValue['type'];
+    }
+  ): void {
+    const metricKey = labels
+      ? `${name}{${this.serializeLabels(labels)}}`
+      : name;
+
     this.metrics.set(metricKey, {
       name,
       value,
       ...(labels && { labels }),
-      help: options?.help,
+      ...(options?.help && { help: options.help }),
       type: options?.type || 'gauge',
     });
   }
@@ -118,17 +128,28 @@ export class HttpServer {
   /**
    * Increment a counter metric
    */
-  incrementCounter(name: string, labels?: Record<string, string>, increment: number = 1): void {
-    const metricKey = labels ? `${name}{${this.serializeLabels(labels)}}` : name;
+  incrementCounter(
+    name: string,
+    labels?: Record<string, string>,
+    increment: number = 1
+  ): void {
+    const metricKey = labels
+      ? `${name}{${this.serializeLabels(labels)}}`
+      : name;
     const existing = this.metrics.get(metricKey);
-    
-    this.recordMetric(name, (existing?.value || 0) + increment, labels, { type: 'counter' });
+
+    this.recordMetric(name, (existing?.value || 0) + increment, labels, {
+      type: 'counter',
+    });
   }
 
   /**
    * Handle HTTP requests
    */
-  private async handleRequest(req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
+  private async handleRequest(
+    req: http.IncomingMessage,
+    res: http.ServerResponse
+  ): Promise<void> {
     const startTime = Date.now();
     this.requestCount++;
 
@@ -148,7 +169,10 @@ export class HttpServer {
     if (this.config.corsEnabled) {
       res.setHeader('Access-Control-Allow-Origin', '*');
       res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+      res.setHeader(
+        'Access-Control-Allow-Headers',
+        'Content-Type, Authorization'
+      );
     }
 
     // Handle preflight requests
@@ -168,7 +192,10 @@ export class HttpServer {
       } else if (pathname === '/health' && this.config.enableHealthCheck) {
         handled = true;
         await this.handleHealth(req, res);
-      } else if (pathname === '/health/ready' && this.config.enableHealthCheck) {
+      } else if (
+        pathname === '/health/ready' &&
+        this.config.enableHealthCheck
+      ) {
         handled = true;
         await this.handleReadiness(req, res);
       } else if (pathname === '/health/live' && this.config.enableHealthCheck) {
@@ -185,7 +212,6 @@ export class HttpServer {
       if (!handled) {
         this.send404(res);
       }
-
     } catch (error) {
       this.logger.error('Error handling HTTP request', error, {
         method: req.method,
@@ -213,9 +239,12 @@ export class HttpServer {
   /**
    * Handle root endpoint (documentation)
    */
-  private async handleRoot(_req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
+  private async handleRoot(
+    _req: http.IncomingMessage,
+    res: http.ServerResponse
+  ): Promise<void> {
     const endpoints = this.getAvailableEndpoints();
-    
+
     const html = `
 <!DOCTYPE html>
 <html>
@@ -270,7 +299,10 @@ export class HttpServer {
   /**
    * Handle health endpoint
    */
-  private async handleHealth(_req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
+  private async handleHealth(
+    _req: http.IncomingMessage,
+    res: http.ServerResponse
+  ): Promise<void> {
     if (!this.healthMonitor) {
       this.sendError(res, 503, 'Health monitor not configured');
       return;
@@ -278,13 +310,16 @@ export class HttpServer {
 
     try {
       const health = await this.healthMonitor.getSystemHealth();
-      const statusCode = health.status === HealthStatus.HEALTHY ? 200 : 
-                        health.status === HealthStatus.DEGRADED ? 200 : 503;
+      const statusCode =
+        health.status === HealthStatus.HEALTHY
+          ? 200
+          : health.status === HealthStatus.DEGRADED
+            ? 200
+            : 503;
 
       res.setHeader('Content-Type', 'application/json');
       res.writeHead(statusCode);
       res.end(JSON.stringify(health, null, 2));
-
     } catch (error) {
       this.logger.error('Error getting system health', error);
       this.sendError(res, 500, 'Health check failed');
@@ -294,7 +329,10 @@ export class HttpServer {
   /**
    * Handle readiness check (for Kubernetes)
    */
-  private async handleReadiness(_req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
+  private async handleReadiness(
+    _req: http.IncomingMessage,
+    res: http.ServerResponse
+  ): Promise<void> {
     if (!this.healthMonitor) {
       this.sendError(res, 503, 'Not ready - health monitor not configured');
       return;
@@ -306,15 +344,16 @@ export class HttpServer {
 
       res.setHeader('Content-Type', 'application/json');
       res.writeHead(isReady ? 200 : 503);
-      res.end(JSON.stringify({
-        status: isReady ? 'ready' : 'not ready',
-        checks: health.checks.map(c => ({
-          name: c.name,
-          status: c.status,
-          message: c.message,
-        })),
-      }));
-
+      res.end(
+        JSON.stringify({
+          status: isReady ? 'ready' : 'not ready',
+          checks: health.checks.map(c => ({
+            name: c.name,
+            status: c.status,
+            message: c.message,
+          })),
+        })
+      );
     } catch (error) {
       this.logger.error('Error in readiness check', error);
       this.sendError(res, 500, 'Readiness check failed');
@@ -324,21 +363,29 @@ export class HttpServer {
   /**
    * Handle liveness check (for Kubernetes)
    */
-  private async handleLiveness(_req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
+  private async handleLiveness(
+    _req: http.IncomingMessage,
+    res: http.ServerResponse
+  ): Promise<void> {
     // Simple liveness check - if we can respond, we're alive
     res.setHeader('Content-Type', 'application/json');
     res.writeHead(200);
-    res.end(JSON.stringify({
-      status: 'alive',
-      timestamp: new Date().toISOString(),
-      uptime: Date.now() - this.startTime.getTime(),
-    }));
+    res.end(
+      JSON.stringify({
+        status: 'alive',
+        timestamp: new Date().toISOString(),
+        uptime: Date.now() - this.startTime.getTime(),
+      })
+    );
   }
 
   /**
    * Handle metrics endpoint (Prometheus format)
    */
-  private async handleMetrics(_req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
+  private async handleMetrics(
+    _req: http.IncomingMessage,
+    res: http.ServerResponse
+  ): Promise<void> {
     try {
       // Update runtime metrics
       this.updateRuntimeMetrics();
@@ -349,7 +396,6 @@ export class HttpServer {
       res.setHeader('Content-Type', 'text/plain; version=0.0.4; charset=utf-8');
       res.writeHead(200);
       res.end(prometheus);
-
     } catch (error) {
       this.logger.error('Error generating metrics', error);
       this.sendError(res, 500, 'Metrics generation failed');
@@ -359,7 +405,10 @@ export class HttpServer {
   /**
    * Handle status endpoint
    */
-  private async handleStatus(_req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
+  private async handleStatus(
+    _req: http.IncomingMessage,
+    res: http.ServerResponse
+  ): Promise<void> {
     const status = {
       service: 'matrix-googleplay-bridge',
       version: this.healthMonitor?.getCachedHealth().version || 'Unknown',
@@ -367,10 +416,14 @@ export class HttpServer {
       timestamp: new Date().toISOString(),
       requests: {
         total: this.requestCount,
-        rate: this.requestCount / ((Date.now() - this.startTime.getTime()) / 1000 / 60), // per minute
+        rate:
+          this.requestCount /
+          ((Date.now() - this.startTime.getTime()) / 1000 / 60), // per minute
       },
       memory: process.memoryUsage(),
-      health: this.healthMonitor ? this.healthMonitor.getCachedHealth().status : 'unknown',
+      health: this.healthMonitor
+        ? this.healthMonitor.getCachedHealth().status
+        : 'unknown',
     };
 
     res.setHeader('Content-Type', 'application/json');
@@ -384,16 +437,51 @@ export class HttpServer {
   private updateRuntimeMetrics(): void {
     const memUsage = process.memoryUsage();
     const cpuUsage = process.cpuUsage();
-    
-    this.recordMetric('nodejs_memory_heap_used_bytes', memUsage.heapUsed, {}, { help: 'Heap memory used in bytes' });
-    this.recordMetric('nodejs_memory_heap_total_bytes', memUsage.heapTotal, {}, { help: 'Total heap memory in bytes' });
-    this.recordMetric('nodejs_memory_external_bytes', memUsage.external, {}, { help: 'External memory in bytes' });
-    this.recordMetric('nodejs_memory_rss_bytes', memUsage.rss, {}, { help: 'Resident set size in bytes' });
-    
-    this.recordMetric('process_cpu_user_seconds_total', cpuUsage.user / 1000000, {}, { help: 'User CPU time in seconds', type: 'counter' });
-    this.recordMetric('process_cpu_system_seconds_total', cpuUsage.system / 1000000, {}, { help: 'System CPU time in seconds', type: 'counter' });
-    
-    this.recordMetric('process_uptime_seconds', (Date.now() - this.startTime.getTime()) / 1000, {}, { help: 'Process uptime in seconds' });
+
+    this.recordMetric(
+      'nodejs_memory_heap_used_bytes',
+      memUsage.heapUsed,
+      {},
+      { help: 'Heap memory used in bytes' }
+    );
+    this.recordMetric(
+      'nodejs_memory_heap_total_bytes',
+      memUsage.heapTotal,
+      {},
+      { help: 'Total heap memory in bytes' }
+    );
+    this.recordMetric(
+      'nodejs_memory_external_bytes',
+      memUsage.external,
+      {},
+      { help: 'External memory in bytes' }
+    );
+    this.recordMetric(
+      'nodejs_memory_rss_bytes',
+      memUsage.rss,
+      {},
+      { help: 'Resident set size in bytes' }
+    );
+
+    this.recordMetric(
+      'process_cpu_user_seconds_total',
+      cpuUsage.user / 1000000,
+      {},
+      { help: 'User CPU time in seconds', type: 'counter' }
+    );
+    this.recordMetric(
+      'process_cpu_system_seconds_total',
+      cpuUsage.system / 1000000,
+      {},
+      { help: 'System CPU time in seconds', type: 'counter' }
+    );
+
+    this.recordMetric(
+      'process_uptime_seconds',
+      (Date.now() - this.startTime.getTime()) / 1000,
+      {},
+      { help: 'Process uptime in seconds' }
+    );
   }
 
   /**
@@ -417,7 +505,9 @@ export class HttpServer {
       }
 
       // Add metric value
-      const labelStr = metric.labels ? `{${this.serializeLabels(metric.labels)}}` : '';
+      const labelStr = metric.labels
+        ? `{${this.serializeLabels(metric.labels)}}`
+        : '';
       lines.push(`${metric.name}${labelStr} ${metric.value}`);
     }
 
@@ -436,7 +526,10 @@ export class HttpServer {
   /**
    * Get available endpoints
    */
-  private getAvailableEndpoints(): Array<{ path: string; description: string }> {
+  private getAvailableEndpoints(): Array<{
+    path: string;
+    description: string;
+  }> {
     const endpoints = [];
 
     if (this.config.enableDocs) {
@@ -445,7 +538,10 @@ export class HttpServer {
 
     if (this.config.enableHealthCheck) {
       endpoints.push(
-        { path: '/health', description: 'Complete health check with all tests' },
+        {
+          path: '/health',
+          description: 'Complete health check with all tests',
+        },
         { path: '/health/ready', description: 'Readiness probe (Kubernetes)' },
         { path: '/health/live', description: 'Liveness probe (Kubernetes)' }
       );
@@ -455,7 +551,10 @@ export class HttpServer {
       endpoints.push({ path: '/metrics', description: 'Prometheus metrics' });
     }
 
-    endpoints.push({ path: '/status', description: 'Service status and runtime information' });
+    endpoints.push({
+      path: '/status',
+      description: 'Service status and runtime information',
+    });
 
     return endpoints;
   }
@@ -466,23 +565,31 @@ export class HttpServer {
   private send404(res: http.ServerResponse): void {
     res.setHeader('Content-Type', 'application/json');
     res.writeHead(404);
-    res.end(JSON.stringify({
-      error: 'Not Found',
-      message: 'The requested endpoint was not found',
-      availableEndpoints: this.getAvailableEndpoints().map(ep => ep.path),
-    }));
+    res.end(
+      JSON.stringify({
+        error: 'Not Found',
+        message: 'The requested endpoint was not found',
+        availableEndpoints: this.getAvailableEndpoints().map(ep => ep.path),
+      })
+    );
   }
 
   /**
    * Send error response
    */
-  private sendError(res: http.ServerResponse, statusCode: number, message: string): void {
+  private sendError(
+    res: http.ServerResponse,
+    statusCode: number,
+    message: string
+  ): void {
     res.setHeader('Content-Type', 'application/json');
     res.writeHead(statusCode);
-    res.end(JSON.stringify({
-      error: http.STATUS_CODES[statusCode] || 'Unknown Error',
-      message,
-      timestamp: new Date().toISOString(),
-    }));
+    res.end(
+      JSON.stringify({
+        error: http.STATUS_CODES[statusCode] || 'Unknown Error',
+        message,
+        timestamp: new Date().toISOString(),
+      })
+    );
   }
 }

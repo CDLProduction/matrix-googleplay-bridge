@@ -1,11 +1,11 @@
 import { Pool, PoolClient, PoolConfig } from 'pg';
-import { 
-  BaseDatabase, 
-  DatabaseTransaction, 
-  RoomMappingRow, 
-  MessageMappingRow, 
-  GooglePlayReviewRow, 
-  MatrixMessageRow 
+import {
+  BaseDatabase,
+  DatabaseTransaction,
+  RoomMappingRow,
+  MessageMappingRow,
+  GooglePlayReviewRow,
+  MatrixMessageRow,
 } from './Database';
 
 /**
@@ -29,7 +29,10 @@ class PostgreSQLTransaction implements DatabaseTransaction {
     return result.rows;
   }
 
-  async run(sql: string, params?: any[]): Promise<{ changes: number; lastID?: number }> {
+  async run(
+    sql: string,
+    params?: any[]
+  ): Promise<{ changes: number; lastID?: number }> {
     const result = await this.transactionClient.query(sql, params);
     return {
       changes: result.rowCount || 0,
@@ -58,7 +61,9 @@ export class PostgreSQLDatabase extends BaseDatabase {
 
   async initialize(): Promise<void> {
     try {
-      this.logger.info(`Initializing PostgreSQL database connection to ${this.config.host}:${this.config.port}`);
+      this.logger.info(
+        `Initializing PostgreSQL database connection to ${this.config.host}:${this.config.port}`
+      );
 
       this.pgPool = new Pool(this.config);
 
@@ -68,7 +73,7 @@ export class PostgreSQLDatabase extends BaseDatabase {
       client.release();
 
       // Set up connection pool event handlers
-      this.pgPool.on('error', (err) => {
+      this.pgPool.on('error', err => {
         this.logger.error(`PostgreSQL pool error: ${err.message}`);
       });
 
@@ -83,7 +88,9 @@ export class PostgreSQLDatabase extends BaseDatabase {
       this.isInitialized = true;
       this.logger.info('PostgreSQL database initialized successfully');
     } catch (error) {
-      this.logger.error(`Failed to initialize PostgreSQL database: ${error instanceof Error ? error.message : error}`);
+      this.logger.error(
+        `Failed to initialize PostgreSQL database: ${error instanceof Error ? error.message : error}`
+      );
       throw error;
     }
   }
@@ -110,7 +117,10 @@ export class PostgreSQLDatabase extends BaseDatabase {
     return result.rows;
   }
 
-  async run(sql: string, params?: any[]): Promise<{ changes: number; lastID?: number }> {
+  async run(
+    sql: string,
+    params?: any[]
+  ): Promise<{ changes: number; lastID?: number }> {
     this.ensurePool();
     const result = await this.pgPool!.query(sql, params);
     return {
@@ -122,7 +132,9 @@ export class PostgreSQLDatabase extends BaseDatabase {
   // Override schema version methods for PostgreSQL-specific SQL
   override async getSchemaVersion(): Promise<number> {
     try {
-      const result = await this.query<{ version: number }>('SELECT version FROM schema_version ORDER BY id DESC LIMIT 1');
+      const result = await this.query<{ version: number }>(
+        'SELECT version FROM schema_version ORDER BY id DESC LIMIT 1'
+      );
       return result.length > 0 ? result[0]!.version : 0;
     } catch (error) {
       // Table doesn't exist yet, return 0
@@ -139,7 +151,9 @@ export class PostgreSQLDatabase extends BaseDatabase {
   }
 
   // Room mapping operations
-  async createRoomMapping(mapping: Omit<RoomMappingRow, 'id'>): Promise<RoomMappingRow> {
+  async createRoomMapping(
+    mapping: Omit<RoomMappingRow, 'id'>
+  ): Promise<RoomMappingRow> {
     this.ensureInitialized();
     const result = await this.query<{ id: number }>(
       `INSERT INTO room_mappings (package_name, matrix_room_id, app_name, room_type, is_primary, config, created_at, updated_at) 
@@ -160,14 +174,16 @@ export class PostgreSQLDatabase extends BaseDatabase {
     if (id === undefined) {
       throw new Error('Failed to create room mapping: no ID returned');
     }
-    
+
     return {
       id,
       ...mapping,
     };
   }
 
-  async getRoomMappingByRoomId(matrixRoomId: string): Promise<RoomMappingRow | null> {
+  async getRoomMappingByRoomId(
+    matrixRoomId: string
+  ): Promise<RoomMappingRow | null> {
     this.ensureInitialized();
     const results = await this.query<any>(
       'SELECT * FROM room_mappings WHERE matrix_room_id = $1',
@@ -179,7 +195,9 @@ export class PostgreSQLDatabase extends BaseDatabase {
     return this.mapRoomMappingRow(results[0]);
   }
 
-  async getRoomMappingsForPackage(packageName: string): Promise<RoomMappingRow[]> {
+  async getRoomMappingsForPackage(
+    packageName: string
+  ): Promise<RoomMappingRow[]> {
     this.ensureInitialized();
     const results = await this.query<any>(
       'SELECT * FROM room_mappings WHERE package_name = $1 ORDER BY is_primary DESC, created_at ASC',
@@ -189,7 +207,10 @@ export class PostgreSQLDatabase extends BaseDatabase {
     return results.map(row => this.mapRoomMappingRow(row));
   }
 
-  async updateRoomMapping(id: number, updates: Partial<RoomMappingRow>): Promise<void> {
+  async updateRoomMapping(
+    id: number,
+    updates: Partial<RoomMappingRow>
+  ): Promise<void> {
     this.ensureInitialized();
     const setClause: string[] = [];
     const params: any[] = [];
@@ -232,12 +253,16 @@ export class PostgreSQLDatabase extends BaseDatabase {
 
   async getAllRoomMappings(): Promise<RoomMappingRow[]> {
     this.ensureInitialized();
-    const results = await this.query<any>('SELECT * FROM room_mappings ORDER BY package_name, is_primary DESC');
+    const results = await this.query<any>(
+      'SELECT * FROM room_mappings ORDER BY package_name, is_primary DESC'
+    );
     return results.map(row => this.mapRoomMappingRow(row));
   }
 
   // Message mapping operations
-  async createMessageMapping(mapping: Omit<MessageMappingRow, 'id'>): Promise<MessageMappingRow> {
+  async createMessageMapping(
+    mapping: Omit<MessageMappingRow, 'id'>
+  ): Promise<MessageMappingRow> {
     this.ensureInitialized();
     const result = await this.query<{ id: number }>(
       `INSERT INTO message_mappings (google_play_review_id, matrix_event_id, matrix_room_id, message_type, package_name, created_at, updated_at) 
@@ -257,14 +282,16 @@ export class PostgreSQLDatabase extends BaseDatabase {
     if (id === undefined) {
       throw new Error('Failed to create message mapping: no ID returned');
     }
-    
+
     return {
       id,
       ...mapping,
     };
   }
 
-  async getMessageMappingByEventId(matrixEventId: string): Promise<MessageMappingRow | null> {
+  async getMessageMappingByEventId(
+    matrixEventId: string
+  ): Promise<MessageMappingRow | null> {
     this.ensureInitialized();
     const results = await this.query<any>(
       'SELECT * FROM message_mappings WHERE matrix_event_id = $1',
@@ -276,7 +303,9 @@ export class PostgreSQLDatabase extends BaseDatabase {
     return this.mapMessageMappingRow(results[0]);
   }
 
-  async getMessageMappingsByReviewId(reviewId: string): Promise<MessageMappingRow[]> {
+  async getMessageMappingsByReviewId(
+    reviewId: string
+  ): Promise<MessageMappingRow[]> {
     this.ensureInitialized();
     const results = await this.query<any>(
       'SELECT * FROM message_mappings WHERE google_play_review_id = $1 ORDER BY created_at ASC',
@@ -293,7 +322,9 @@ export class PostgreSQLDatabase extends BaseDatabase {
 
   async getAllMessageMappings(): Promise<MessageMappingRow[]> {
     this.ensureInitialized();
-    const results = await this.query<any>('SELECT * FROM message_mappings ORDER BY created_at DESC');
+    const results = await this.query<any>(
+      'SELECT * FROM message_mappings ORDER BY created_at DESC'
+    );
     return results.map(row => this.mapMessageMappingRow(row));
   }
 
@@ -344,7 +375,9 @@ export class PostgreSQLDatabase extends BaseDatabase {
     );
   }
 
-  async getGooglePlayReview(reviewId: string): Promise<GooglePlayReviewRow | null> {
+  async getGooglePlayReview(
+    reviewId: string
+  ): Promise<GooglePlayReviewRow | null> {
     this.ensureInitialized();
     const results = await this.query<any>(
       'SELECT * FROM google_play_reviews WHERE review_id = $1',
@@ -356,7 +389,10 @@ export class PostgreSQLDatabase extends BaseDatabase {
     return this.mapGooglePlayReviewRow(results[0]);
   }
 
-  async updateGooglePlayReview(reviewId: string, updates: Partial<GooglePlayReviewRow>): Promise<void> {
+  async updateGooglePlayReview(
+    reviewId: string,
+    updates: Partial<GooglePlayReviewRow>
+  ): Promise<void> {
     this.ensureInitialized();
     const setClause: string[] = [];
     const params: any[] = [];
@@ -366,7 +402,7 @@ export class PostgreSQLDatabase extends BaseDatabase {
       if (value !== undefined && key !== 'reviewId') {
         const columnName = this.camelToSnakeCase(key);
         setClause.push(`${columnName} = $${paramIndex++}`);
-        
+
         if (value instanceof Date) {
           params.push(value.toISOString());
         } else {
@@ -384,25 +420,33 @@ export class PostgreSQLDatabase extends BaseDatabase {
     );
   }
 
-  async getReviewsForPackage(packageName: string, limit?: number): Promise<GooglePlayReviewRow[]> {
+  async getReviewsForPackage(
+    packageName: string,
+    limit?: number
+  ): Promise<GooglePlayReviewRow[]> {
     this.ensureInitialized();
-    const sql = limit 
+    const sql = limit
       ? 'SELECT * FROM google_play_reviews WHERE package_name = $1 ORDER BY last_modified_at DESC LIMIT $2'
       : 'SELECT * FROM google_play_reviews WHERE package_name = $1 ORDER BY last_modified_at DESC';
-    
+
     const params = limit ? [packageName, limit] : [packageName];
     const results = await this.query<any>(sql, params);
 
     return results.map(row => this.mapGooglePlayReviewRow(row));
   }
 
-  async getReviewsModifiedSince(since: Date, packageName?: string): Promise<GooglePlayReviewRow[]> {
+  async getReviewsModifiedSince(
+    since: Date,
+    packageName?: string
+  ): Promise<GooglePlayReviewRow[]> {
     this.ensureInitialized();
     const sql = packageName
       ? 'SELECT * FROM google_play_reviews WHERE last_modified_at >= $1 AND package_name = $2 ORDER BY last_modified_at DESC'
       : 'SELECT * FROM google_play_reviews WHERE last_modified_at >= $1 ORDER BY last_modified_at DESC';
-    
-    const params = packageName ? [since.toISOString(), packageName] : [since.toISOString()];
+
+    const params = packageName
+      ? [since.toISOString(), packageName]
+      : [since.toISOString()];
     const results = await this.query<any>(sql, params);
 
     return results.map(row => this.mapGooglePlayReviewRow(row));
@@ -410,7 +454,9 @@ export class PostgreSQLDatabase extends BaseDatabase {
 
   async deleteGooglePlayReview(reviewId: string): Promise<void> {
     this.ensureInitialized();
-    await this.run('DELETE FROM google_play_reviews WHERE review_id = $1', [reviewId]);
+    await this.run('DELETE FROM google_play_reviews WHERE review_id = $1', [
+      reviewId,
+    ]);
   }
 
   // Matrix message operations
@@ -448,12 +494,15 @@ export class PostgreSQLDatabase extends BaseDatabase {
     return this.mapMatrixMessageRow(results[0]);
   }
 
-  async getMatrixMessagesForRoom(roomId: string, limit?: number): Promise<MatrixMessageRow[]> {
+  async getMatrixMessagesForRoom(
+    roomId: string,
+    limit?: number
+  ): Promise<MatrixMessageRow[]> {
     this.ensureInitialized();
     const sql = limit
       ? 'SELECT * FROM matrix_messages WHERE room_id = $1 ORDER BY timestamp DESC LIMIT $2'
       : 'SELECT * FROM matrix_messages WHERE room_id = $1 ORDER BY timestamp DESC';
-    
+
     const params = limit ? [roomId, limit] : [roomId];
     const results = await this.query<any>(sql, params);
 
@@ -462,7 +511,9 @@ export class PostgreSQLDatabase extends BaseDatabase {
 
   async deleteMatrixMessage(eventId: string): Promise<void> {
     this.ensureInitialized();
-    await this.run('DELETE FROM matrix_messages WHERE event_id = $1', [eventId]);
+    await this.run('DELETE FROM matrix_messages WHERE event_id = $1', [
+      eventId,
+    ]);
   }
 
   // Statistics and maintenance
@@ -472,24 +523,41 @@ export class PostgreSQLDatabase extends BaseDatabase {
     messageMappings: number;
     googlePlayReviews: number;
     matrixMessages: number;
+    appConfigs: number;
     databaseSize?: number;
   }> {
     this.ensureInitialized();
-    
+
     const [
       userMappings,
       roomMappings,
       messageMappings,
       googlePlayReviews,
       matrixMessages,
-      dbSize
+      appConfigs,
+      dbSize,
     ] = await Promise.all([
-      this.query<{ count: string }>('SELECT COUNT(*) as count FROM user_mappings'),
-      this.query<{ count: string }>('SELECT COUNT(*) as count FROM room_mappings'),
-      this.query<{ count: string }>('SELECT COUNT(*) as count FROM message_mappings'),
-      this.query<{ count: string }>('SELECT COUNT(*) as count FROM google_play_reviews'),
-      this.query<{ count: string }>('SELECT COUNT(*) as count FROM matrix_messages'),
-      this.query<{ size: string }>('SELECT pg_database_size(current_database()) as size'),
+      this.query<{ count: string }>(
+        'SELECT COUNT(*) as count FROM user_mappings'
+      ),
+      this.query<{ count: string }>(
+        'SELECT COUNT(*) as count FROM room_mappings'
+      ),
+      this.query<{ count: string }>(
+        'SELECT COUNT(*) as count FROM message_mappings'
+      ),
+      this.query<{ count: string }>(
+        'SELECT COUNT(*) as count FROM google_play_reviews'
+      ),
+      this.query<{ count: string }>(
+        'SELECT COUNT(*) as count FROM matrix_messages'
+      ),
+      this.query<{ count: string }>(
+        'SELECT COUNT(*) as count FROM app_configs'
+      ),
+      this.query<{ size: string }>(
+        'SELECT pg_database_size(current_database()) as size'
+      ),
     ]);
 
     return {
@@ -498,8 +566,63 @@ export class PostgreSQLDatabase extends BaseDatabase {
       messageMappings: parseInt(messageMappings[0]?.count || '0'),
       googlePlayReviews: parseInt(googlePlayReviews[0]?.count || '0'),
       matrixMessages: parseInt(matrixMessages[0]?.count || '0'),
+      appConfigs: parseInt(appConfigs[0]?.count || '0'),
       databaseSize: parseInt(dbSize[0]?.size || '0'),
     };
+  }
+
+  // App configuration operations
+  async saveAppConfig(packageName: string, config: import('../models/Config').GooglePlayApp): Promise<void> {
+    this.ensureInitialized();
+    
+    const configJson = JSON.stringify(config);
+    await this.run(`
+      INSERT INTO app_configs (package_name, config_json, updated_at) 
+      VALUES ($1, $2, $3)
+      ON CONFLICT (package_name) 
+      DO UPDATE SET config_json = $2, updated_at = $3
+    `, [packageName, configJson, new Date().toISOString()]);
+  }
+
+  async getAppConfig(packageName: string): Promise<import('../models/Config').GooglePlayApp | null> {
+    this.ensureInitialized();
+    
+    const results = await this.query<any>(
+      'SELECT * FROM app_configs WHERE package_name = $1',
+      [packageName]
+    );
+
+    if (results.length === 0) return null;
+
+    try {
+      return JSON.parse(results[0].config_json);
+    } catch (error) {
+      this.logger.error(`Failed to parse app config for ${packageName}:`, error);
+      return null;
+    }
+  }
+
+  async getAllAppConfigs(): Promise<Map<string, import('../models/Config').GooglePlayApp>> {
+    this.ensureInitialized();
+    
+    const results = await this.query<any>('SELECT * FROM app_configs');
+    const configs = new Map<string, import('../models/Config').GooglePlayApp>();
+
+    for (const row of results) {
+      try {
+        const config = JSON.parse(row.config_json);
+        configs.set(row.package_name, config);
+      } catch (error) {
+        this.logger.error(`Failed to parse app config for ${row.package_name}:`, error);
+      }
+    }
+
+    return configs;
+  }
+
+  async deleteAppConfig(packageName: string): Promise<void> {
+    this.ensureInitialized();
+    await this.run('DELETE FROM app_configs WHERE package_name = $1', [packageName]);
   }
 
   async vacuum(): Promise<void> {
@@ -555,12 +678,19 @@ export class PostgreSQLDatabase extends BaseDatabase {
     if (row.text) result.text = row.text;
     if (row.language_code) result.languageCode = row.language_code;
     if (row.device) result.device = row.device;
-    if (row.android_os_version) result.androidOsVersion = row.android_os_version;
-    if (row.app_version_code !== null) result.appVersionCode = row.app_version_code;
+    if (row.android_os_version)
+      result.androidOsVersion = row.android_os_version;
+    if (row.app_version_code !== null)
+      result.appVersionCode = row.app_version_code;
     if (row.app_version_name) result.appVersionName = row.app_version_name;
-    if (row.developer_reply_text) result.developerReplyText = row.developer_reply_text;
-    if (row.developer_reply_created_at) result.developerReplyCreatedAt = new Date(row.developer_reply_created_at);
-    if (row.developer_reply_last_modified_at) result.developerReplyLastModifiedAt = new Date(row.developer_reply_last_modified_at);
+    if (row.developer_reply_text)
+      result.developerReplyText = row.developer_reply_text;
+    if (row.developer_reply_created_at)
+      result.developerReplyCreatedAt = new Date(row.developer_reply_created_at);
+    if (row.developer_reply_last_modified_at)
+      result.developerReplyLastModifiedAt = new Date(
+        row.developer_reply_last_modified_at
+      );
 
     return result;
   }

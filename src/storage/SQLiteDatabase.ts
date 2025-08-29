@@ -2,20 +2,22 @@ import * as sqlite3 from 'sqlite3';
 import { open, Database as SQLiteDB } from 'sqlite';
 import * as path from 'path';
 import * as fs from 'fs';
-import { 
-  BaseDatabase, 
-  DatabaseTransaction, 
-  RoomMappingRow, 
-  MessageMappingRow, 
-  GooglePlayReviewRow, 
-  MatrixMessageRow 
+import {
+  BaseDatabase,
+  DatabaseTransaction,
+  RoomMappingRow,
+  MessageMappingRow,
+  GooglePlayReviewRow,
+  MatrixMessageRow,
 } from './Database';
 
 /**
  * SQLite-specific transaction implementation
  */
 class SQLiteTransaction implements DatabaseTransaction {
-  constructor(private transactionDb: SQLiteDB<sqlite3.Database, sqlite3.Statement>) {}
+  constructor(
+    private transactionDb: SQLiteDB<sqlite3.Database, sqlite3.Statement>
+  ) {}
 
   async commit(): Promise<void> {
     await this.transactionDb.run('COMMIT');
@@ -29,7 +31,10 @@ class SQLiteTransaction implements DatabaseTransaction {
     return await this.transactionDb.all<T[]>(sql, params);
   }
 
-  async run(sql: string, params?: any[]): Promise<{ changes: number; lastID?: number }> {
+  async run(
+    sql: string,
+    params?: any[]
+  ): Promise<{ changes: number; lastID?: number }> {
     const result = await this.transactionDb.run(sql, params);
     return {
       changes: result.changes || 0,
@@ -76,7 +81,9 @@ export class SQLiteDatabase extends BaseDatabase {
       this.isInitialized = true;
       this.logger.info('SQLite database initialized successfully');
     } catch (error) {
-      this.logger.error(`Failed to initialize SQLite database: ${error instanceof Error ? error.message : error}`);
+      this.logger.error(
+        `Failed to initialize SQLite database: ${error instanceof Error ? error.message : error}`
+      );
       throw error;
     }
   }
@@ -101,22 +108,27 @@ export class SQLiteDatabase extends BaseDatabase {
     return await this.sqliteDb!.all<T[]>(sql, params);
   }
 
-  async run(sql: string, params?: any[]): Promise<{ changes: number; lastID?: number }> {
+  async run(
+    sql: string,
+    params?: any[]
+  ): Promise<{ changes: number; lastID?: number }> {
     this.ensureDB();
     const result = await this.sqliteDb!.run(sql, params);
     const returnValue: { changes: number; lastID?: number } = {
       changes: result.changes || 0,
     };
-    
+
     if (result.lastID !== undefined) {
       returnValue.lastID = result.lastID;
     }
-    
+
     return returnValue;
   }
 
   // Room mapping operations
-  async createRoomMapping(mapping: Omit<RoomMappingRow, 'id'>): Promise<RoomMappingRow> {
+  async createRoomMapping(
+    mapping: Omit<RoomMappingRow, 'id'>
+  ): Promise<RoomMappingRow> {
     this.ensureInitialized();
     const result = await this.run(
       `INSERT INTO room_mappings (package_name, matrix_room_id, app_name, room_type, is_primary, config, created_at, updated_at) 
@@ -136,14 +148,16 @@ export class SQLiteDatabase extends BaseDatabase {
     if (result.lastID === undefined) {
       throw new Error('Failed to create room mapping: no ID returned');
     }
-    
+
     return {
       id: result.lastID,
       ...mapping,
     };
   }
 
-  async getRoomMappingByRoomId(matrixRoomId: string): Promise<RoomMappingRow | null> {
+  async getRoomMappingByRoomId(
+    matrixRoomId: string
+  ): Promise<RoomMappingRow | null> {
     this.ensureInitialized();
     const results = await this.query<any>(
       'SELECT * FROM room_mappings WHERE matrix_room_id = ?',
@@ -155,7 +169,9 @@ export class SQLiteDatabase extends BaseDatabase {
     return this.mapRoomMappingRow(results[0]);
   }
 
-  async getRoomMappingsForPackage(packageName: string): Promise<RoomMappingRow[]> {
+  async getRoomMappingsForPackage(
+    packageName: string
+  ): Promise<RoomMappingRow[]> {
     this.ensureInitialized();
     const results = await this.query<any>(
       'SELECT * FROM room_mappings WHERE package_name = ? ORDER BY is_primary DESC, created_at ASC',
@@ -165,7 +181,10 @@ export class SQLiteDatabase extends BaseDatabase {
     return results.map(row => this.mapRoomMappingRow(row));
   }
 
-  async updateRoomMapping(id: number, updates: Partial<RoomMappingRow>): Promise<void> {
+  async updateRoomMapping(
+    id: number,
+    updates: Partial<RoomMappingRow>
+  ): Promise<void> {
     this.ensureInitialized();
     const setClause: string[] = [];
     const params: any[] = [];
@@ -207,12 +226,16 @@ export class SQLiteDatabase extends BaseDatabase {
 
   async getAllRoomMappings(): Promise<RoomMappingRow[]> {
     this.ensureInitialized();
-    const results = await this.query<any>('SELECT * FROM room_mappings ORDER BY package_name, is_primary DESC');
+    const results = await this.query<any>(
+      'SELECT * FROM room_mappings ORDER BY package_name, is_primary DESC'
+    );
     return results.map(row => this.mapRoomMappingRow(row));
   }
 
   // Message mapping operations
-  async createMessageMapping(mapping: Omit<MessageMappingRow, 'id'>): Promise<MessageMappingRow> {
+  async createMessageMapping(
+    mapping: Omit<MessageMappingRow, 'id'>
+  ): Promise<MessageMappingRow> {
     this.ensureInitialized();
     const result = await this.run(
       `INSERT INTO message_mappings (google_play_review_id, matrix_event_id, matrix_room_id, message_type, package_name, created_at, updated_at) 
@@ -231,14 +254,16 @@ export class SQLiteDatabase extends BaseDatabase {
     if (result.lastID === undefined) {
       throw new Error('Failed to create message mapping: no ID returned');
     }
-    
+
     return {
       id: result.lastID,
       ...mapping,
     };
   }
 
-  async getMessageMappingByEventId(matrixEventId: string): Promise<MessageMappingRow | null> {
+  async getMessageMappingByEventId(
+    matrixEventId: string
+  ): Promise<MessageMappingRow | null> {
     this.ensureInitialized();
     const results = await this.query<any>(
       'SELECT * FROM message_mappings WHERE matrix_event_id = ?',
@@ -250,7 +275,9 @@ export class SQLiteDatabase extends BaseDatabase {
     return this.mapMessageMappingRow(results[0]);
   }
 
-  async getMessageMappingsByReviewId(reviewId: string): Promise<MessageMappingRow[]> {
+  async getMessageMappingsByReviewId(
+    reviewId: string
+  ): Promise<MessageMappingRow[]> {
     this.ensureInitialized();
     const results = await this.query<any>(
       'SELECT * FROM message_mappings WHERE google_play_review_id = ? ORDER BY created_at ASC',
@@ -267,7 +294,9 @@ export class SQLiteDatabase extends BaseDatabase {
 
   async getAllMessageMappings(): Promise<MessageMappingRow[]> {
     this.ensureInitialized();
-    const results = await this.query<any>('SELECT * FROM message_mappings ORDER BY created_at DESC');
+    const results = await this.query<any>(
+      'SELECT * FROM message_mappings ORDER BY created_at DESC'
+    );
     return results.map(row => this.mapMessageMappingRow(row));
   }
 
@@ -302,7 +331,9 @@ export class SQLiteDatabase extends BaseDatabase {
     );
   }
 
-  async getGooglePlayReview(reviewId: string): Promise<GooglePlayReviewRow | null> {
+  async getGooglePlayReview(
+    reviewId: string
+  ): Promise<GooglePlayReviewRow | null> {
     this.ensureInitialized();
     const results = await this.query<any>(
       'SELECT * FROM google_play_reviews WHERE review_id = ?',
@@ -314,7 +345,10 @@ export class SQLiteDatabase extends BaseDatabase {
     return this.mapGooglePlayReviewRow(results[0]);
   }
 
-  async updateGooglePlayReview(reviewId: string, updates: Partial<GooglePlayReviewRow>): Promise<void> {
+  async updateGooglePlayReview(
+    reviewId: string,
+    updates: Partial<GooglePlayReviewRow>
+  ): Promise<void> {
     this.ensureInitialized();
     const setClause: string[] = [];
     const params: any[] = [];
@@ -323,7 +357,7 @@ export class SQLiteDatabase extends BaseDatabase {
       if (value !== undefined && key !== 'reviewId') {
         const columnName = this.camelToSnakeCase(key);
         setClause.push(`${columnName} = ?`);
-        
+
         if (value instanceof Date) {
           params.push(value.toISOString());
         } else if (typeof value === 'boolean') {
@@ -343,25 +377,33 @@ export class SQLiteDatabase extends BaseDatabase {
     );
   }
 
-  async getReviewsForPackage(packageName: string, limit?: number): Promise<GooglePlayReviewRow[]> {
+  async getReviewsForPackage(
+    packageName: string,
+    limit?: number
+  ): Promise<GooglePlayReviewRow[]> {
     this.ensureInitialized();
-    const sql = limit 
+    const sql = limit
       ? 'SELECT * FROM google_play_reviews WHERE package_name = ? ORDER BY last_modified_at DESC LIMIT ?'
       : 'SELECT * FROM google_play_reviews WHERE package_name = ? ORDER BY last_modified_at DESC';
-    
+
     const params = limit ? [packageName, limit] : [packageName];
     const results = await this.query<any>(sql, params);
 
     return results.map(row => this.mapGooglePlayReviewRow(row));
   }
 
-  async getReviewsModifiedSince(since: Date, packageName?: string): Promise<GooglePlayReviewRow[]> {
+  async getReviewsModifiedSince(
+    since: Date,
+    packageName?: string
+  ): Promise<GooglePlayReviewRow[]> {
     this.ensureInitialized();
     const sql = packageName
       ? 'SELECT * FROM google_play_reviews WHERE last_modified_at >= ? AND package_name = ? ORDER BY last_modified_at DESC'
       : 'SELECT * FROM google_play_reviews WHERE last_modified_at >= ? ORDER BY last_modified_at DESC';
-    
-    const params = packageName ? [since.toISOString(), packageName] : [since.toISOString()];
+
+    const params = packageName
+      ? [since.toISOString(), packageName]
+      : [since.toISOString()];
     const results = await this.query<any>(sql, params);
 
     return results.map(row => this.mapGooglePlayReviewRow(row));
@@ -369,7 +411,9 @@ export class SQLiteDatabase extends BaseDatabase {
 
   async deleteGooglePlayReview(reviewId: string): Promise<void> {
     this.ensureInitialized();
-    await this.run('DELETE FROM google_play_reviews WHERE review_id = ?', [reviewId]);
+    await this.run('DELETE FROM google_play_reviews WHERE review_id = ?', [
+      reviewId,
+    ]);
   }
 
   // Matrix message operations
@@ -401,12 +445,15 @@ export class SQLiteDatabase extends BaseDatabase {
     return this.mapMatrixMessageRow(results[0]);
   }
 
-  async getMatrixMessagesForRoom(roomId: string, limit?: number): Promise<MatrixMessageRow[]> {
+  async getMatrixMessagesForRoom(
+    roomId: string,
+    limit?: number
+  ): Promise<MatrixMessageRow[]> {
     this.ensureInitialized();
     const sql = limit
       ? 'SELECT * FROM matrix_messages WHERE room_id = ? ORDER BY timestamp DESC LIMIT ?'
       : 'SELECT * FROM matrix_messages WHERE room_id = ? ORDER BY timestamp DESC';
-    
+
     const params = limit ? [roomId, limit] : [roomId];
     const results = await this.query<any>(sql, params);
 
@@ -425,24 +472,41 @@ export class SQLiteDatabase extends BaseDatabase {
     messageMappings: number;
     googlePlayReviews: number;
     matrixMessages: number;
+    appConfigs: number;
     databaseSize?: number;
   }> {
     this.ensureInitialized();
-    
+
     const [
       userMappings,
       roomMappings,
       messageMappings,
       googlePlayReviews,
       matrixMessages,
-      dbSize
+      appConfigs,
+      dbSize,
     ] = await Promise.all([
-      this.query<{ count: number }>('SELECT COUNT(*) as count FROM user_mappings'),
-      this.query<{ count: number }>('SELECT COUNT(*) as count FROM room_mappings'),
-      this.query<{ count: number }>('SELECT COUNT(*) as count FROM message_mappings'),
-      this.query<{ count: number }>('SELECT COUNT(*) as count FROM google_play_reviews'),
-      this.query<{ count: number }>('SELECT COUNT(*) as count FROM matrix_messages'),
-      this.query<{ page_size: number; page_count: number }>('PRAGMA page_size; PRAGMA page_count;'),
+      this.query<{ count: number }>(
+        'SELECT COUNT(*) as count FROM user_mappings'
+      ),
+      this.query<{ count: number }>(
+        'SELECT COUNT(*) as count FROM room_mappings'
+      ),
+      this.query<{ count: number }>(
+        'SELECT COUNT(*) as count FROM message_mappings'
+      ),
+      this.query<{ count: number }>(
+        'SELECT COUNT(*) as count FROM google_play_reviews'
+      ),
+      this.query<{ count: number }>(
+        'SELECT COUNT(*) as count FROM matrix_messages'
+      ),
+      this.query<{ count: number }>(
+        'SELECT COUNT(*) as count FROM app_configs'
+      ),
+      this.query<{ page_size: number; page_count: number }>(
+        'PRAGMA page_size; PRAGMA page_count;'
+      ),
     ]);
 
     // Calculate database size if possible
@@ -457,6 +521,7 @@ export class SQLiteDatabase extends BaseDatabase {
       messageMappings: number;
       googlePlayReviews: number;
       matrixMessages: number;
+      appConfigs: number;
       databaseSize?: number;
     } = {
       userMappings: userMappings[0]?.count || 0,
@@ -464,6 +529,7 @@ export class SQLiteDatabase extends BaseDatabase {
       messageMappings: messageMappings[0]?.count || 0,
       googlePlayReviews: googlePlayReviews[0]?.count || 0,
       matrixMessages: matrixMessages[0]?.count || 0,
+      appConfigs: appConfigs[0]?.count || 0,
     };
 
     if (databaseSize !== undefined) {
@@ -471,6 +537,58 @@ export class SQLiteDatabase extends BaseDatabase {
     }
 
     return result;
+  }
+
+  // App configuration operations
+  async saveAppConfig(packageName: string, config: import('../models/Config').GooglePlayApp): Promise<void> {
+    this.ensureInitialized();
+    
+    const configJson = JSON.stringify(config);
+    await this.run(`
+      INSERT OR REPLACE INTO app_configs (package_name, config_json, updated_at) 
+      VALUES (?, ?, ?)
+    `, [packageName, configJson, new Date().toISOString()]);
+  }
+
+  async getAppConfig(packageName: string): Promise<import('../models/Config').GooglePlayApp | null> {
+    this.ensureInitialized();
+    
+    const results = await this.query<any>(
+      'SELECT * FROM app_configs WHERE package_name = ?',
+      [packageName]
+    );
+
+    if (results.length === 0) return null;
+
+    try {
+      return JSON.parse(results[0].config_json);
+    } catch (error) {
+      this.logger.error(`Failed to parse app config for ${packageName}:`, error);
+      return null;
+    }
+  }
+
+  async getAllAppConfigs(): Promise<Map<string, import('../models/Config').GooglePlayApp>> {
+    this.ensureInitialized();
+    
+    const results = await this.query<any>('SELECT * FROM app_configs');
+    const configs = new Map<string, import('../models/Config').GooglePlayApp>();
+
+    for (const row of results) {
+      try {
+        const config = JSON.parse(row.config_json);
+        configs.set(row.package_name, config);
+      } catch (error) {
+        this.logger.error(`Failed to parse app config for ${row.package_name}:`, error);
+      }
+    }
+
+    return configs;
+  }
+
+  async deleteAppConfig(packageName: string): Promise<void> {
+    this.ensureInitialized();
+    await this.run('DELETE FROM app_configs WHERE package_name = ?', [packageName]);
   }
 
   async vacuum(): Promise<void> {
@@ -526,12 +644,19 @@ export class SQLiteDatabase extends BaseDatabase {
     if (row.text) result.text = row.text;
     if (row.language_code) result.languageCode = row.language_code;
     if (row.device) result.device = row.device;
-    if (row.android_os_version) result.androidOsVersion = row.android_os_version;
-    if (row.app_version_code !== null) result.appVersionCode = row.app_version_code;
+    if (row.android_os_version)
+      result.androidOsVersion = row.android_os_version;
+    if (row.app_version_code !== null)
+      result.appVersionCode = row.app_version_code;
     if (row.app_version_name) result.appVersionName = row.app_version_name;
-    if (row.developer_reply_text) result.developerReplyText = row.developer_reply_text;
-    if (row.developer_reply_created_at) result.developerReplyCreatedAt = new Date(row.developer_reply_created_at);
-    if (row.developer_reply_last_modified_at) result.developerReplyLastModifiedAt = new Date(row.developer_reply_last_modified_at);
+    if (row.developer_reply_text)
+      result.developerReplyText = row.developer_reply_text;
+    if (row.developer_reply_created_at)
+      result.developerReplyCreatedAt = new Date(row.developer_reply_created_at);
+    if (row.developer_reply_last_modified_at)
+      result.developerReplyLastModifiedAt = new Date(
+        row.developer_reply_last_modified_at
+      );
 
     return result;
   }

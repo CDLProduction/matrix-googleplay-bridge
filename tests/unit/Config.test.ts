@@ -82,7 +82,7 @@ describe('Config', () => {
     expect(config.appservice.token).toBe('test_token');
     expect(config.googleplay.applications).toHaveLength(1);
     expect(config.database.type).toBe('sqlite');
-    expect(config.logging.level).toBe('info');
+    expect(config.logging?.level).toBe('info');
   });
 
   it('should return singleton instance', () => {
@@ -148,7 +148,7 @@ logging:
 
     expect(configWithEnv.homeserver.url).toBe('https://override.example.com');
     expect(configWithEnv.appservice.port).toBe(9001);
-    expect(configWithEnv.logging.level).toBe('debug');
+    expect(configWithEnv.logging?.level).toBe('debug');
 
     // Clean up environment variables
     delete process.env.HOMESERVER_URL;

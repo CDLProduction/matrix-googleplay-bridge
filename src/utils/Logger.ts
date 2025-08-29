@@ -43,12 +43,12 @@ export class Logger {
   private component: string = 'Bridge';
 
   private readonly colors = {
-    ERROR: '\x1b[31m',   // Red
-    WARN: '\x1b[33m',    // Yellow
-    INFO: '\x1b[32m',    // Green
-    HTTP: '\x1b[36m',    // Cyan
-    DEBUG: '\x1b[37m',   // White
-    RESET: '\x1b[0m',    // Reset
+    ERROR: '\x1b[31m', // Red
+    WARN: '\x1b[33m', // Yellow
+    INFO: '\x1b[32m', // Green
+    HTTP: '\x1b[36m', // Cyan
+    DEBUG: '\x1b[37m', // White
+    RESET: '\x1b[0m', // Reset
   };
 
   private constructor(config?: Partial<LoggerConfig>) {
@@ -80,12 +80,12 @@ export class Logger {
    */
   configure(config: Partial<LoggerConfig>): void {
     this.config = { ...this.config, ...config };
-    
+
     if (this.config.enableFile && this.config.filePath && !this.logStream) {
       this.initializeFileLogging();
     } else if (!this.config.enableFile && this.logStream) {
       this.logStream.end();
-      this.logStream = undefined;
+      delete this.logStream;
     }
   }
 
@@ -108,7 +108,12 @@ export class Logger {
   /**
    * Create a child logger with additional context
    */
-  child(context: { component?: string; requestId?: string; userId?: string; packageName?: string }): Logger {
+  child(context: {
+    component?: string;
+    requestId?: string;
+    userId?: string;
+    packageName?: string;
+  }): Logger {
     const childLogger = Object.create(this);
     if (context.component) childLogger.component = context.component;
     if (context.requestId) childLogger.requestId = context.requestId;
@@ -155,7 +160,12 @@ export class Logger {
   /**
    * Log a performance metric
    */
-  metric(name: string, value: number, unit: string = 'ms', metadata?: any): void {
+  metric(
+    name: string,
+    value: number,
+    unit: string = 'ms',
+    metadata?: any
+  ): void {
     this.log(LogLevel.INFO, `METRIC: ${name}`, {
       metricName: name,
       value,
@@ -174,7 +184,7 @@ export class Logger {
 
     const levelName = LogLevel[level];
     const timestamp = new Date().toISOString();
-    
+
     const logEntry: LogEntry = {
       timestamp,
       level: levelName,
@@ -185,7 +195,8 @@ export class Logger {
     // Add contextual information
     if (this.requestId) logEntry.requestId = this.requestId;
     if ((this as any).userId) logEntry.userId = (this as any).userId;
-    if ((this as any).packageName) logEntry.packageName = (this as any).packageName;
+    if ((this as any).packageName)
+      logEntry.packageName = (this as any).packageName;
     if (metadata) logEntry.metadata = metadata;
 
     // Console logging
@@ -207,17 +218,19 @@ export class Logger {
       const output = JSON.stringify(entry);
       console.log(output);
     } else {
-      const color = this.config.enableColors ? this.colors[entry.level as keyof typeof this.colors] : '';
+      const color = this.config.enableColors
+        ? this.colors[entry.level as keyof typeof this.colors]
+        : '';
       const reset = this.config.enableColors ? this.colors.RESET : '';
-      
+
       let logLine = `${color}[${entry.level}] ${entry.timestamp} [${entry.component}] ${entry.message}${reset}`;
-      
+
       if (entry.requestId) {
         logLine += ` [req:${entry.requestId}]`;
       }
-      
+
       console.log(logLine);
-      
+
       if (entry.metadata) {
         console.log('  Metadata:', entry.metadata);
       }
@@ -229,10 +242,10 @@ export class Logger {
    */
   private logToFile(entry: LogEntry): void {
     if (!this.logStream) return;
-    
+
     const logLine = JSON.stringify(entry) + '\n';
     this.logStream.write(logLine);
-    
+
     // Check file size and rotate if necessary
     this.checkFileRotation();
   }
@@ -242,20 +255,21 @@ export class Logger {
    */
   private initializeFileLogging(): void {
     if (!this.config.filePath) return;
-    
+
     try {
       const logDir = path.dirname(this.config.filePath);
       if (!fs.existsSync(logDir)) {
         fs.mkdirSync(logDir, { recursive: true });
       }
-      
+
       this.currentLogFile = this.config.filePath;
-      this.logStream = fs.createWriteStream(this.currentLogFile, { flags: 'a' });
-      
-      this.logStream.on('error', (error) => {
+      this.logStream = fs.createWriteStream(this.currentLogFile, {
+        flags: 'a',
+      });
+
+      this.logStream.on('error', error => {
         console.error('Logger: Failed to write to log file:', error);
       });
-      
     } catch (error) {
       console.error('Logger: Failed to initialize file logging:', error);
     }
@@ -266,11 +280,11 @@ export class Logger {
    */
   private checkFileRotation(): void {
     if (!this.currentLogFile || !this.config.filePath) return;
-    
+
     try {
       const stats = fs.statSync(this.currentLogFile);
       const fileSizeMB = stats.size / (1024 * 1024);
-      
+
       if (fileSizeMB > (this.config.maxFileSize || 10)) {
         this.rotateLogFile();
       }
@@ -284,21 +298,21 @@ export class Logger {
    */
   private rotateLogFile(): void {
     if (!this.currentLogFile || !this.config.filePath) return;
-    
+
     try {
       // Close current stream
       if (this.logStream) {
         this.logStream.end();
       }
-      
+
       const baseName = this.config.filePath.replace(/\.log$/, '');
       const maxFiles = this.config.maxFiles || 5;
-      
+
       // Rotate existing files
       for (let i = maxFiles - 1; i > 0; i--) {
         const oldFile = `${baseName}.${i}.log`;
         const newFile = `${baseName}.${i + 1}.log`;
-        
+
         if (fs.existsSync(oldFile)) {
           if (i === maxFiles - 1) {
             fs.unlinkSync(oldFile); // Delete oldest file
@@ -307,15 +321,14 @@ export class Logger {
           }
         }
       }
-      
+
       // Move current log to .1
       if (fs.existsSync(this.config.filePath)) {
         fs.renameSync(this.config.filePath, `${baseName}.1.log`);
       }
-      
+
       // Create new log stream
       this.initializeFileLogging();
-      
     } catch (error) {
       console.error('Logger: Failed to rotate log file:', error);
     }
@@ -326,7 +339,7 @@ export class Logger {
    */
   async close(): Promise<void> {
     if (this.logStream) {
-      return new Promise<void>((resolve) => {
+      return new Promise<void>(resolve => {
         this.logStream!.end(() => {
           resolve();
         });

@@ -96,9 +96,9 @@ export class GooglePlayClient {
 
   constructor(config: GooglePlayClientConfig) {
     this.logger = Logger.getInstance();
-    
+
     const authOptions: any = {};
-    
+
     if (config.keyFile) {
       authOptions.keyFile = config.keyFile;
     } else if (config.keyFileContent) {
@@ -109,13 +109,15 @@ export class GooglePlayClient {
         private_key: config.privateKey.replace(/\\n/g, '\n'),
       };
     }
-    
+
     if (config.projectId) {
       authOptions.projectId = config.projectId;
     }
-    
-    authOptions.scopes = config.scopes || ['https://www.googleapis.com/auth/androidpublisher'];
-    
+
+    authOptions.scopes = config.scopes || [
+      'https://www.googleapis.com/auth/androidpublisher',
+    ];
+
     this.auth = new GoogleAuth(authOptions);
 
     this.androidPublisher = google.androidpublisher({
@@ -130,7 +132,7 @@ export class GooglePlayClient {
   async initialize(): Promise<void> {
     try {
       this.logger.info('Initializing Google Play API client...');
-      
+
       // Test authentication by getting client info
       const authClient = await this.auth.getClient();
       if (!authClient) {
@@ -139,7 +141,7 @@ export class GooglePlayClient {
 
       // Verify we can make a request (using a minimal API call)
       await this.auth.getAccessToken();
-      
+
       this.isAuthenticated = true;
       this.logger.info('Google Play API client initialized successfully');
     } catch (error) {
@@ -164,7 +166,9 @@ export class GooglePlayClient {
   /**
    * Get reviews for a specific app package
    */
-  async getReviews(options: ReviewListOptions): Promise<GooglePlayReviewsResponse> {
+  async getReviews(
+    options: ReviewListOptions
+  ): Promise<GooglePlayReviewsResponse> {
     this.ensureAuthenticated();
     await this.enforceRateLimit();
 
@@ -176,11 +180,11 @@ export class GooglePlayClient {
         maxResults: options.maxResults || 100,
         startIndex: options.startIndex || 0,
       };
-      
+
       if (options.token) {
         requestParams.token = options.token;
       }
-      
+
       if (options.translationLanguage) {
         requestParams.translationLanguage = options.translationLanguage;
       }
@@ -191,70 +195,86 @@ export class GooglePlayClient {
         return { reviews: [] };
       }
 
-      const reviews: GooglePlayReviewData[] = (response.data.reviews || []).map((review: any) => {
-        const comment = review.comments?.[0];
-        const userComment = comment?.userComment;
-        const developerComment = comment?.developerComment;
+      const reviews: GooglePlayReviewData[] = (response.data.reviews || []).map(
+        (review: any) => {
+          const comment = review.comments?.[0];
+          const userComment = comment?.userComment;
+          const developerComment = comment?.developerComment;
 
-        const reviewResult: GooglePlayReviewData = {
-          reviewId: review.reviewId || '',
-          packageName: options.packageName,
-          authorName: review.authorName || 'Anonymous',
-          starRating: userComment?.starRating || 0,
-          createdAt: new Date((parseInt(userComment?.lastModified?.seconds as string) || 0) * 1000),
-          lastModifiedAt: new Date((parseInt(userComment?.lastModified?.seconds as string) || 0) * 1000),
-          hasReply: !!developerComment,
-        };
-
-        // Add optional metadata if available
-        if (userComment?.reviewerLanguage) {
-          reviewResult.languageCode = userComment.reviewerLanguage;
-        }
-
-        if (userComment?.device) {
-          reviewResult.device = userComment.device;
-        }
-
-        if (userComment?.androidOsVersion) {
-          reviewResult.androidOsVersion = String(userComment.androidOsVersion);
-        }
-
-        if (userComment?.appVersionCode) {
-          reviewResult.appVersionCode = typeof userComment.appVersionCode === 'string' 
-            ? parseInt(userComment.appVersionCode) 
-            : userComment.appVersionCode;
-        }
-
-        if (userComment?.appVersionName) {
-          reviewResult.appVersionName = userComment.appVersionName;
-        }
-        
-        if (userComment?.text) {
-          reviewResult.text = userComment.text;
-        }
-        
-        if (developerComment?.text) {
-          reviewResult.developerComment = {
-            text: developerComment.text,
-            lastModified: new Date((parseInt(developerComment.lastModified?.seconds as string) || 0) * 1000),
+          const reviewResult: GooglePlayReviewData = {
+            reviewId: review.reviewId || '',
+            packageName: options.packageName,
+            authorName: review.authorName || 'Anonymous',
+            starRating: userComment?.starRating || 0,
+            createdAt: new Date(
+              (parseInt(userComment?.lastModified?.seconds as string) || 0) *
+                1000
+            ),
+            lastModifiedAt: new Date(
+              (parseInt(userComment?.lastModified?.seconds as string) || 0) *
+                1000
+            ),
+            hasReply: !!developerComment,
           };
-        }
-        
-        return reviewResult;
-      });
 
-      this.logger.debug(`Retrieved ${reviews.length} reviews for ${options.packageName}`);
+          // Add optional metadata if available
+          if (userComment?.reviewerLanguage) {
+            reviewResult.languageCode = userComment.reviewerLanguage;
+          }
+
+          if (userComment?.device) {
+            reviewResult.device = userComment.device;
+          }
+
+          if (userComment?.androidOsVersion) {
+            reviewResult.androidOsVersion = String(
+              userComment.androidOsVersion
+            );
+          }
+
+          if (userComment?.appVersionCode) {
+            reviewResult.appVersionCode =
+              typeof userComment.appVersionCode === 'string'
+                ? parseInt(userComment.appVersionCode)
+                : userComment.appVersionCode;
+          }
+
+          if (userComment?.appVersionName) {
+            reviewResult.appVersionName = userComment.appVersionName;
+          }
+
+          if (userComment?.text) {
+            reviewResult.text = userComment.text;
+          }
+
+          if (developerComment?.text) {
+            reviewResult.developerComment = {
+              text: developerComment.text,
+              lastModified: new Date(
+                (parseInt(developerComment.lastModified?.seconds as string) ||
+                  0) * 1000
+              ),
+            };
+          }
+
+          return reviewResult;
+        }
+      );
+
+      this.logger.debug(
+        `Retrieved ${reviews.length} reviews for ${options.packageName}`
+      );
 
       const result: GooglePlayReviewsResponse = {
         reviews,
       };
-      
+
       if (response.data.tokenPagination?.nextPageToken) {
         result.tokenPagination = {
           nextPageToken: response.data.tokenPagination.nextPageToken,
         };
       }
-      
+
       return result;
     } catch (error) {
       throw this.handleAPIError(error, 'getReviews');
@@ -269,7 +289,9 @@ export class GooglePlayClient {
     await this.enforceRateLimit();
 
     try {
-      this.logger.debug(`Replying to review ${options.reviewId} for package: ${options.packageName}`);
+      this.logger.debug(
+        `Replying to review ${options.reviewId} for package: ${options.packageName}`
+      );
 
       await this.androidPublisher.reviews.reply({
         packageName: options.packageName,
@@ -288,12 +310,17 @@ export class GooglePlayClient {
   /**
    * Get a specific review by ID
    */
-  async getReview(packageName: string, reviewId: string): Promise<GooglePlayReviewData | null> {
+  async getReview(
+    packageName: string,
+    reviewId: string
+  ): Promise<GooglePlayReviewData | null> {
     this.ensureAuthenticated();
     await this.enforceRateLimit();
 
     try {
-      this.logger.debug(`Fetching review ${reviewId} for package: ${packageName}`);
+      this.logger.debug(
+        `Fetching review ${reviewId} for package: ${packageName}`
+      );
 
       const response = await this.androidPublisher.reviews.get({
         packageName,
@@ -315,8 +342,12 @@ export class GooglePlayClient {
         packageName,
         authorName: review.authorName || 'Anonymous',
         starRating: userComment?.starRating || 0,
-        createdAt: new Date((parseInt(userComment?.lastModified?.seconds as string) || 0) * 1000),
-        lastModifiedAt: new Date((parseInt(userComment?.lastModified?.seconds as string) || 0) * 1000),
+        createdAt: new Date(
+          (parseInt(userComment?.lastModified?.seconds as string) || 0) * 1000
+        ),
+        lastModifiedAt: new Date(
+          (parseInt(userComment?.lastModified?.seconds as string) || 0) * 1000
+        ),
         hasReply: !!developerComment,
       };
 
@@ -330,34 +361,42 @@ export class GooglePlayClient {
       }
 
       if (userComment?.androidOsVersion) {
-        singleReviewResult.androidOsVersion = String(userComment.androidOsVersion);
+        singleReviewResult.androidOsVersion = String(
+          userComment.androidOsVersion
+        );
       }
 
       if (userComment?.appVersionCode) {
-        singleReviewResult.appVersionCode = typeof userComment.appVersionCode === 'string' 
-          ? parseInt(userComment.appVersionCode) 
-          : userComment.appVersionCode;
+        singleReviewResult.appVersionCode =
+          typeof userComment.appVersionCode === 'string'
+            ? parseInt(userComment.appVersionCode)
+            : userComment.appVersionCode;
       }
 
       if (userComment?.appVersionName) {
         singleReviewResult.appVersionName = userComment.appVersionName;
       }
-      
+
       if (userComment?.text) {
         singleReviewResult.text = userComment.text;
       }
-      
+
       if (developerComment?.text) {
         singleReviewResult.developerComment = {
           text: developerComment.text,
-          lastModified: new Date((parseInt(developerComment.lastModified?.seconds as string) || 0) * 1000),
+          lastModified: new Date(
+            (parseInt(developerComment.lastModified?.seconds as string) || 0) *
+              1000
+          ),
         };
       }
-      
+
       return singleReviewResult;
     } catch (error) {
       if (this.isNotFoundError(error)) {
-        this.logger.debug(`Review ${reviewId} not found for package ${packageName}`);
+        this.logger.debug(
+          `Review ${reviewId} not found for package ${packageName}`
+        );
         return null;
       }
       throw this.handleAPIError(error, 'getReview');
@@ -368,11 +407,13 @@ export class GooglePlayClient {
    * Get reviews modified since a specific date (for polling)
    */
   async getRecentReviews(
-    packageName: string, 
+    packageName: string,
     since: Date,
     maxResults: number = 100
   ): Promise<GooglePlayReviewData[]> {
-    this.logger.debug(`Fetching reviews modified since ${since.toISOString()} for ${packageName}`);
+    this.logger.debug(
+      `Fetching reviews modified since ${since.toISOString()} for ${packageName}`
+    );
 
     const allReviews: GooglePlayReviewData[] = [];
     let token: string | undefined;
@@ -383,7 +424,7 @@ export class GooglePlayClient {
         packageName,
         maxResults: Math.min(100, maxResults - allReviews.length),
       };
-      
+
       if (token) {
         requestOptions.token = token;
       }
@@ -406,7 +447,9 @@ export class GooglePlayClient {
       }
     }
 
-    this.logger.debug(`Found ${allReviews.length} recent reviews for ${packageName}`);
+    this.logger.debug(
+      `Found ${allReviews.length} recent reviews for ${packageName}`
+    );
     return allReviews;
   }
 
@@ -416,17 +459,21 @@ export class GooglePlayClient {
   async testConnection(packageName: string): Promise<boolean> {
     try {
       this.logger.debug(`Testing connection for package: ${packageName}`);
-      
+
       // Try to get just one review to test connectivity
       await this.getReviews({
         packageName,
         maxResults: 1,
       });
-      
-      this.logger.info(`Connection test successful for package: ${packageName}`);
+
+      this.logger.info(
+        `Connection test successful for package: ${packageName}`
+      );
       return true;
     } catch (error) {
-      this.logger.error(`Connection test failed for package ${packageName}: ${error instanceof Error ? error.message : error}`);
+      this.logger.error(
+        `Connection test failed for package ${packageName}: ${error instanceof Error ? error.message : error}`
+      );
       return false;
     }
   }
@@ -444,7 +491,9 @@ export class GooglePlayClient {
    */
   private ensureAuthenticated(): void {
     if (!this.isAuthenticated) {
-      throw new GooglePlayAuthError('Google Play API client is not authenticated. Call initialize() first.');
+      throw new GooglePlayAuthError(
+        'Google Play API client is not authenticated. Call initialize() first.'
+      );
     }
   }
 
@@ -454,12 +503,12 @@ export class GooglePlayClient {
   private async enforceRateLimit(): Promise<void> {
     const now = Date.now();
     const timeSinceLastRequest = now - this.lastRequestTime;
-    
+
     if (timeSinceLastRequest < this.minRequestInterval) {
       const waitTime = this.minRequestInterval - timeSinceLastRequest;
       await new Promise(resolve => setTimeout(resolve, waitTime));
     }
-    
+
     this.lastRequestTime = Date.now();
   }
 
@@ -480,13 +529,13 @@ export class GooglePlayClient {
             `Authentication failed: ${statusText}`,
             { status, data }
           );
-        
+
         case 403:
           return new GooglePlayAuthError(
             `Access forbidden: ${statusText}. Check API permissions and app access.`,
             { status, data }
           );
-        
+
         case 429:
           const retryAfter = error.response.headers?.['retry-after'];
           return new GooglePlayRateLimitError(
@@ -494,7 +543,7 @@ export class GooglePlayClient {
             retryAfter ? parseInt(retryAfter) * 1000 : 60000,
             { status, data }
           );
-        
+
         case 404:
           return new GooglePlayAPIError(
             `Resource not found: ${statusText}`,
@@ -502,7 +551,7 @@ export class GooglePlayClient {
             'NOT_FOUND',
             { status, data }
           );
-        
+
         default:
           return new GooglePlayAPIError(
             `API error: ${statusText}`,

@@ -118,9 +118,9 @@ logging:
     expect(config.database.ssl).toBe(true);
 
     // Verify logging config
-    expect(config.logging.level).toBe('debug');
-    expect(config.logging.file).toBe('/var/log/integration-bridge.log');
-    expect(config.logging.console).toBe(false);
+    expect(config.logging?.level).toBe('debug');
+    expect((config.logging as any)?.file).toBe('/var/log/integration-bridge.log');
+    expect((config.logging as any)?.console).toBe(false);
   });
 
   it('should apply environment variable overrides correctly', async () => {
@@ -154,8 +154,8 @@ logging:
       expect(config.appservice.botUsername).toBe('envbot');
       expect(config.googleplay.pollIntervalMs).toBe(900000);
       expect(config.database.host).toBe('env-db-host');
-      expect(config.logging.level).toBe('error');
-      expect(config.logging.console).toBe(true);
+      expect(config.logging?.level).toBe('error');
+      expect((config.logging as any)?.console).toBe(true);
 
       // Verify non-overridden values remain from config file
       expect(config.homeserver.domain).toBe('integration-test.com');

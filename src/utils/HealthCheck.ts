@@ -33,7 +33,9 @@ export interface SystemHealth {
   };
 }
 
-export type HealthCheckFunction = () => Promise<Omit<HealthCheckResult, 'duration' | 'timestamp'>>;
+export type HealthCheckFunction = () => Promise<
+  Omit<HealthCheckResult, 'duration' | 'timestamp'>
+>;
 
 /**
  * Health monitoring system with customizable checks and alerting
@@ -46,6 +48,7 @@ export class HealthMonitor {
   private startTime: Date;
   private version: string;
   private checkTimeout: number = 5000; // 5 seconds
+  private maintenanceMode: boolean = false;
 
   constructor(version: string = '1.0.0') {
     this.logger = Logger.getInstance().setComponent('HealthMonitor');
@@ -87,7 +90,10 @@ export class HealthMonitor {
       // Run check with timeout
       const checkPromise = checkFn();
       const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error('Health check timeout')), this.checkTimeout);
+        setTimeout(
+          () => reject(new Error('Health check timeout')),
+          this.checkTimeout
+        );
       });
 
       const checkResult = await Promise.race([checkPromise, timeoutPromise]);
@@ -98,7 +104,6 @@ export class HealthMonitor {
         duration: Date.now() - startTime,
         timestamp: new Date(),
       };
-
     } catch (error) {
       result = {
         name,
@@ -125,7 +130,9 @@ export class HealthMonitor {
       checkNames.map(name => this.runCheck(name))
     );
 
-    return results.filter((result): result is HealthCheckResult => result !== null);
+    return results.filter(
+      (result): result is HealthCheckResult => result !== null
+    );
   }
 
   /**
@@ -133,11 +140,15 @@ export class HealthMonitor {
    */
   async getSystemHealth(): Promise<SystemHealth> {
     const checks = await this.runAllChecks();
-    
+
     // Determine overall status
     let status = HealthStatus.HEALTHY;
-    const unhealthyCount = checks.filter(c => c.status === HealthStatus.UNHEALTHY).length;
-    const degradedCount = checks.filter(c => c.status === HealthStatus.DEGRADED).length;
+    const unhealthyCount = checks.filter(
+      c => c.status === HealthStatus.UNHEALTHY
+    ).length;
+    const degradedCount = checks.filter(
+      c => c.status === HealthStatus.DEGRADED
+    ).length;
 
     if (unhealthyCount > 0) {
       status = HealthStatus.UNHEALTHY;
@@ -170,10 +181,14 @@ export class HealthMonitor {
    */
   getCachedHealth(): SystemHealth {
     const checks = Array.from(this.lastResults.values());
-    
+
     let status = HealthStatus.HEALTHY;
-    const unhealthyCount = checks.filter(c => c.status === HealthStatus.UNHEALTHY).length;
-    const degradedCount = checks.filter(c => c.status === HealthStatus.DEGRADED).length;
+    const unhealthyCount = checks.filter(
+      c => c.status === HealthStatus.UNHEALTHY
+    ).length;
+    const degradedCount = checks.filter(
+      c => c.status === HealthStatus.DEGRADED
+    ).length;
 
     if (unhealthyCount > 0) {
       status = HealthStatus.UNHEALTHY;
@@ -211,12 +226,16 @@ export class HealthMonitor {
     this.monitoringInterval = setInterval(async () => {
       try {
         const health = await this.getSystemHealth();
-        
+
         // Log health status changes
         if (health.status !== HealthStatus.HEALTHY) {
           this.logger.warn(`System health: ${health.status}`, {
-            unhealthyChecks: health.checks.filter(c => c.status === HealthStatus.UNHEALTHY).map(c => c.name),
-            degradedChecks: health.checks.filter(c => c.status === HealthStatus.DEGRADED).map(c => c.name),
+            unhealthyChecks: health.checks
+              .filter(c => c.status === HealthStatus.UNHEALTHY)
+              .map(c => c.name),
+            degradedChecks: health.checks
+              .filter(c => c.status === HealthStatus.DEGRADED)
+              .map(c => c.name),
           });
         } else {
           this.logger.debug('System health: healthy');
@@ -224,7 +243,6 @@ export class HealthMonitor {
 
         // Log performance metrics
         this.logSystemMetrics(health.metadata);
-
       } catch (error) {
         this.logger.error('Error during health monitoring', error);
       }
@@ -237,7 +255,7 @@ export class HealthMonitor {
   stopMonitoring(): void {
     if (this.monitoringInterval) {
       clearInterval(this.monitoringInterval);
-      this.monitoringInterval = undefined;
+      delete this.monitoringInterval;
       this.logger.info('Stopped health monitoring');
     }
   }
@@ -261,15 +279,49 @@ export class HealthMonitor {
    */
   private logSystemMetrics(metadata: SystemHealth['metadata']): void {
     const { memoryUsage, cpuUsage } = metadata;
-    
+
     // Memory metrics
-    this.logger.metric('memory.used', Math.round(memoryUsage.heapUsed / 1024 / 1024), 'MB');
-    this.logger.metric('memory.total', Math.round(memoryUsage.heapTotal / 1024 / 1024), 'MB');
-    this.logger.metric('memory.external', Math.round(memoryUsage.external / 1024 / 1024), 'MB');
-    
+    this.logger.metric(
+      'memory.used',
+      Math.round(memoryUsage.heapUsed / 1024 / 1024),
+      'MB'
+    );
+    this.logger.metric(
+      'memory.total',
+      Math.round(memoryUsage.heapTotal / 1024 / 1024),
+      'MB'
+    );
+    this.logger.metric(
+      'memory.external',
+      Math.round(memoryUsage.external / 1024 / 1024),
+      'MB'
+    );
+
     // CPU metrics
     this.logger.metric('cpu.user', cpuUsage.user, 'microseconds');
     this.logger.metric('cpu.system', cpuUsage.system, 'microseconds');
+  }
+
+  /**
+   * Set maintenance mode
+   */
+  setMaintenanceMode(enabled: boolean): void {
+    this.maintenanceMode = enabled;
+    this.logger.info(`Maintenance mode: ${enabled ? 'enabled' : 'disabled'}`);
+  }
+
+  /**
+   * Get version
+   */
+  getVersion(): string {
+    return this.version;
+  }
+
+  /**
+   * Check if in maintenance mode
+   */
+  isInMaintenanceMode(): boolean {
+    return this.maintenanceMode;
   }
 
   /**
@@ -287,7 +339,6 @@ export class HealthMonitor {
  * Standard health check implementations
  */
 export class StandardHealthChecks {
-  
   /**
    * Memory usage health check
    */
@@ -295,10 +346,10 @@ export class StandardHealthChecks {
     return async () => {
       const memUsage = process.memoryUsage();
       const heapUsedMB = memUsage.heapUsed / 1024 / 1024;
-      
+
       let status = HealthStatus.HEALTHY;
       let message = `Memory usage: ${Math.round(heapUsedMB)}MB`;
-      
+
       if (heapUsedMB > maxHeapUsedMB * 0.9) {
         status = HealthStatus.UNHEALTHY;
         message += ` (exceeds ${maxHeapUsedMB}MB limit)`;
@@ -306,7 +357,7 @@ export class StandardHealthChecks {
         status = HealthStatus.DEGRADED;
         message += ` (high usage)`;
       }
-      
+
       return {
         name: 'memory-usage',
         status,
@@ -323,11 +374,13 @@ export class StandardHealthChecks {
     return async () => {
       try {
         const isConnected = await connectionTest();
-        
+
         return {
           name: 'database',
           status: isConnected ? HealthStatus.HEALTHY : HealthStatus.UNHEALTHY,
-          message: isConnected ? 'Database connection OK' : 'Database connection failed',
+          message: isConnected
+            ? 'Database connection OK'
+            : 'Database connection failed',
         };
       } catch (error) {
         return {
@@ -343,24 +396,31 @@ export class StandardHealthChecks {
   /**
    * HTTP endpoint health check
    */
-  static httpEndpoint(url: string, timeout: number = 5000): HealthCheckFunction {
+  static httpEndpoint(
+    url: string,
+    timeout: number = 5000
+  ): HealthCheckFunction {
     return async () => {
       try {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), timeout);
-        
-        const response = await fetch(url, { 
+
+        const response = await fetch(url, {
           signal: controller.signal,
           method: 'GET',
         });
-        
+
         clearTimeout(timeoutId);
-        
+
         return {
           name: 'http-endpoint',
           status: response.ok ? HealthStatus.HEALTHY : HealthStatus.DEGRADED,
           message: `HTTP ${response.status} ${response.statusText}`,
-          metadata: { url, status: response.status, statusText: response.statusText },
+          metadata: {
+            url,
+            status: response.status,
+            statusText: response.statusText,
+          },
         };
       } catch (error) {
         return {
@@ -376,19 +436,22 @@ export class StandardHealthChecks {
   /**
    * Disk space health check
    */
-  static diskSpace(path: string, minFreeMB: number = 1000): HealthCheckFunction {
+  static diskSpace(
+    path: string,
+    minFreeMB: number = 1000
+  ): HealthCheckFunction {
     return async () => {
       try {
         const { promisify } = require('util');
         const { statvfs } = require('fs');
         const statvfsAsync = promisify(statvfs);
-        
+
         const stats = await statvfsAsync(path);
         const freeMB = (stats.f_bavail * stats.f_frsize) / 1024 / 1024;
-        
+
         let status = HealthStatus.HEALTHY;
         let message = `Free disk space: ${Math.round(freeMB)}MB`;
-        
+
         if (freeMB < minFreeMB) {
           status = HealthStatus.UNHEALTHY;
           message += ` (below ${minFreeMB}MB minimum)`;
@@ -396,7 +459,7 @@ export class StandardHealthChecks {
           status = HealthStatus.DEGRADED;
           message += ` (low disk space)`;
         }
-        
+
         return {
           name: 'disk-space',
           status,
@@ -409,7 +472,9 @@ export class StandardHealthChecks {
           name: 'disk-space',
           status: HealthStatus.HEALTHY,
           message: 'Disk space check not available on this platform',
-          metadata: { error: error instanceof Error ? error.message : 'Unknown error' },
+          metadata: {
+            error: error instanceof Error ? error.message : 'Unknown error',
+          },
         };
       }
     };

@@ -159,7 +159,7 @@ export class RoomManager {
     isPrimary: boolean = true
   ): Promise<GooglePlayAppRoom> {
     const mappingId = `${packageName}_${matrixRoomId}`;
-    
+
     let appRoom = this.appRooms.get(mappingId);
     if (appRoom) {
       // Update existing mapping
@@ -235,7 +235,9 @@ export class RoomManager {
   /**
    * Get room mapping by Matrix room ID
    */
-  async getRoomMappingByRoomId(matrixRoomId: string): Promise<RoomMapping | undefined> {
+  async getRoomMappingByRoomId(
+    matrixRoomId: string
+  ): Promise<RoomMapping | undefined> {
     for (const [, mapping] of this.roomMappings) {
       if (mapping.matrixRoomId === matrixRoomId) {
         return mapping;
@@ -247,7 +249,9 @@ export class RoomManager {
   /**
    * Get the primary room for an app
    */
-  async getPrimaryRoomForApp(packageName: string): Promise<GooglePlayAppRoom | undefined> {
+  async getPrimaryRoomForApp(
+    packageName: string
+  ): Promise<GooglePlayAppRoom | undefined> {
     for (const [, appRoom] of this.appRooms) {
       if (appRoom.packageName === packageName && appRoom.isPrimary) {
         return appRoom;
@@ -356,7 +360,7 @@ export class RoomManager {
     }
 
     this.roomMappings.delete(mapping.id);
-    
+
     // Also remove from app rooms
     const appRoomKey = `${mapping.packageName}_${matrixRoomId}`;
     this.appRooms.delete(appRoomKey);

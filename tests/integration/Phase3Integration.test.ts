@@ -2,14 +2,45 @@
  * Integration tests for Phase 3.1 and 3.2 - Complete bidirectional flow
  */
 
+// Mock dependencies first before imports
+jest.mock('../../src/utils/Logger', () => ({
+  Logger: {
+    getInstance: jest.fn().mockReturnValue({
+      setComponent: jest.fn().mockReturnThis(),
+      info: jest.fn(),
+      warn: jest.fn(),
+      error: jest.fn(),
+      debug: jest.fn(),
+      close: jest.fn(),
+      metric: jest.fn()
+    })
+  },
+  LogLevel: {
+    ERROR: 0,
+    WARN: 1,
+    INFO: 2,
+    HTTP: 3,
+    DEBUG: 4
+  }
+}));
+jest.mock('../../src/api/GooglePlayClient');
+jest.mock('../../src/api/ReviewManager');
+jest.mock('matrix-appservice-bridge', () => ({
+  Bridge: jest.fn().mockImplementation(() => ({
+    getIntent: jest.fn(),
+    run: jest.fn(),
+    close: jest.fn(),
+    opts: {}
+  })),
+  AppServiceRegistration: {
+    fromObject: jest.fn()
+  },
+  BridgeController: jest.fn()
+}));
+
 import { GooglePlayBridge } from '../../src/bridge/GooglePlayBridge';
 import { Config } from '../../src/utils/Config';
 import { BridgeConfig } from '../../src/models/Config';
-
-// Mock dependencies
-jest.mock('../../src/api/GooglePlayClient');
-jest.mock('../../src/api/ReviewManager');
-jest.mock('matrix-appservice-bridge');
 
 describe('Phase 3 Integration Tests', () => {
   let mockConfig: BridgeConfig;

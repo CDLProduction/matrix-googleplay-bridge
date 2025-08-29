@@ -22,20 +22,37 @@ export interface GooglePlayApp {
   pollIntervalMs?: number;
   maxReviewsPerPoll?: number;
   lookbackDays?: number;
+  enabled?: boolean;
+  autoCreateRoom?: boolean;
+  roomAlias?: string;
+  roomName?: string;
+  roomTopic?: string;
+  roomAvatar?: string;
+  admins?: string[];
+  moderators?: string[];
+  notificationSettings?: {
+    mentionAdmins?: boolean;
+    mentionModerators?: boolean;
+    priorityThreshold?: number;
+  };
+  customMetadata?: Record<string, any>;
+  forwardTo?: string[];
+  replyTemplate?: string;
+  welcomeMessage?: string;
 }
 
 export interface GooglePlayAuthConfig {
   // Option 1: Service Account Key File
   keyFile?: string;
-  
+
   // Option 2: Service Account Key Content (JSON string)
   keyFileContent?: string;
-  
+
   // Option 3: Individual credentials
   clientEmail?: string;
   privateKey?: string;
   projectId?: string;
-  
+
   // OAuth2 scopes (optional)
   scopes?: string[];
 }
@@ -100,6 +117,24 @@ export interface RateLimitingConfig {
   };
 }
 
+export interface AppManagementConfig {
+  allowDynamicApps?: boolean;
+  requireAdminApproval?: boolean;
+  maxAppsPerInstance?: number;
+  appDefaults?: Partial<GooglePlayApp>;
+}
+
+export interface BridgeAdminConfig {
+  admins?: string[]; // List of authorized admin user IDs
+  appManagement?: AppManagementConfig;
+  features?: {
+    categorization?: boolean;
+    responseSuggestions?: boolean;
+    messageTemplates?: boolean;
+    messageThreading?: boolean;
+  };
+}
+
 export interface BridgeConfig {
   homeserver: HomeserverConfig;
   appservice: AppserviceConfig;
@@ -107,6 +142,7 @@ export interface BridgeConfig {
   database: DatabaseConfig;
   logging?: LoggingConfig;
   monitoring?: MonitoringConfig;
+  bridge?: BridgeAdminConfig;
   circuitBreakers?: {
     googlePlayApi?: CircuitBreakerConfig;
     matrixApi?: CircuitBreakerConfig;

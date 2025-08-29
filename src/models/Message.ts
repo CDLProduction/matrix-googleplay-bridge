@@ -112,13 +112,16 @@ export interface MessageMapping {
 export interface MessageFormatter {
   /** Format a review for Matrix display */
   formatReviewForMatrix(review: GooglePlayReview): MatrixMessageContent;
-  
+
   /** Format a reply confirmation for Matrix display */
-  formatReplyConfirmation(success: boolean, error?: string): MatrixMessageContent;
-  
+  formatReplyConfirmation(
+    success: boolean,
+    error?: string
+  ): MatrixMessageContent;
+
   /** Format an error message for Matrix display */
   formatErrorMessage(error: string): MatrixMessageContent;
-  
+
   /** Format a notification message for Matrix display */
   formatNotification(message: string): MatrixMessageContent;
 }
@@ -128,10 +131,13 @@ export interface MessageFormatter {
  */
 export class DefaultMessageFormatter implements MessageFormatter {
   formatReviewForMatrix(review: GooglePlayReview): MatrixMessageContent {
-    const rating = '⭐'.repeat(review.starRating) + '☆'.repeat(5 - review.starRating);
+    const rating =
+      '⭐'.repeat(review.starRating) + '☆'.repeat(5 - review.starRating);
     const device = review.device ? ` (${review.device})` : '';
-    const appVersion = review.appVersionName ? ` - v${review.appVersionName}` : '';
-    
+    const appVersion = review.appVersionName
+      ? ` - v${review.appVersionName}`
+      : '';
+
     const plainBody = `📱 New Google Play Review for ${review.packageName}
 
 ${rating} by ${review.authorName}${device}${appVersion}
@@ -156,12 +162,16 @@ ${review.text || 'No review text provided.'}
     };
   }
 
-  formatReplyConfirmation(success: boolean, error?: string): MatrixMessageContent {
+  formatReplyConfirmation(
+    success: boolean,
+    error?: string
+  ): MatrixMessageContent {
     if (success) {
       return {
         msgtype: 'm.notice',
         body: '✅ Reply sent successfully to Google Play!',
-        formatted_body: '<p>✅ <strong>Reply sent successfully to Google Play!</strong></p>',
+        formatted_body:
+          '<p>✅ <strong>Reply sent successfully to Google Play!</strong></p>',
         format: 'org.matrix.custom.html',
       };
     } else {
@@ -270,7 +280,9 @@ export class MessageManager {
   /**
    * Get message mapping by Matrix event ID
    */
-  async getMessageMappingByEventId(matrixEventId: string): Promise<MessageMapping | undefined> {
+  async getMessageMappingByEventId(
+    matrixEventId: string
+  ): Promise<MessageMapping | undefined> {
     for (const [, mapping] of this.messageMappings) {
       if (mapping.matrixEventId === matrixEventId) {
         return mapping;
@@ -282,7 +294,9 @@ export class MessageManager {
   /**
    * Get message mapping by Matrix event ID (synchronous version for compatibility)
    */
-  getMessageMappingByMatrixEventId(matrixEventId: string): MessageMapping | undefined {
+  getMessageMappingByMatrixEventId(
+    matrixEventId: string
+  ): MessageMapping | undefined {
     for (const [, mapping] of this.messageMappings) {
       if (mapping.matrixEventId === matrixEventId) {
         return mapping;
@@ -303,7 +317,9 @@ export class MessageManager {
   /**
    * Get message mapping by Google Play review ID
    */
-  async getMessageMappingByReviewId(reviewId: string): Promise<MessageMapping | undefined> {
+  async getMessageMappingByReviewId(
+    reviewId: string
+  ): Promise<MessageMapping | undefined> {
     for (const [, mapping] of this.messageMappings) {
       if (mapping.googlePlayReviewId === reviewId) {
         return mapping;
@@ -322,7 +338,10 @@ export class MessageManager {
   /**
    * Format a reply confirmation for Matrix
    */
-  formatReplyConfirmation(success: boolean, error?: string): MatrixMessageContent {
+  formatReplyConfirmation(
+    success: boolean,
+    error?: string
+  ): MatrixMessageContent {
     return this.formatter.formatReplyConfirmation(success, error);
   }
 
@@ -394,9 +413,9 @@ export class MessageManager {
     const totalReviews = this.googlePlayReviews.size;
     const totalMatrixMessages = this.matrixMessages.size;
     const totalMappings = this.messageMappings.size;
-    const reviewsWithReplies = Array.from(this.googlePlayReviews.values()).filter(
-      review => review.hasReply
-    ).length;
+    const reviewsWithReplies = Array.from(
+      this.googlePlayReviews.values()
+    ).filter(review => review.hasReply).length;
 
     return {
       totalReviews,
