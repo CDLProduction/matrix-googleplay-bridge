@@ -231,10 +231,8 @@ describe('Phase 3.1: Google Play to Matrix Flow', () => {
 
       // Test that bridge initializes without errors
       expect(() => bridge).not.toThrow();
-      expect(MockedGooglePlayClient).toHaveBeenCalledWith({
-        keyFile: '/path/to/key.json',
-        scopes: ['https://www.googleapis.com/auth/androidpublisher']
-      });
+      // GooglePlayClient is only created when the bridge starts, not during construction
+      expect(MockedGooglePlayClient).not.toHaveBeenCalled();
     });
 
     test('should start polling for configured applications', async () => {

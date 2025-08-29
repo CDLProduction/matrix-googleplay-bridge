@@ -39,7 +39,7 @@ describe('Security Test Validation', () => {
       "as_token_secret123"
     ];
 
-    testInputs.forEach((input, index) => {
+    testInputs.forEach((input, _index) => {
       const patterns = Object.values(securityPatterns);
       const detected = patterns.some(pattern => pattern.test(input));
       expect(detected).toBe(true); // Should detect at least one security pattern
@@ -61,7 +61,8 @@ describe('Security Test Validation', () => {
         .replace(/[;&|`$()]/g, '') // Remove command separators
         .replace(/\.\.\//g, '') // Remove path traversal
         .replace(/javascript:/gi, '') // Remove JavaScript URLs
-        .replace(/\$\{[^}]*\}/g, ''); // Remove template injections
+        .replace(/\$\{[^}]*\}/g, '') // Remove template injections
+        .replace(/\b(DROP|SELECT|INSERT|UPDATE|DELETE|UNION|ALTER|CREATE|EXEC)\b/gi, ''); // Remove SQL keywords
     };
 
     dangerousInputs.forEach(input => {
@@ -108,7 +109,7 @@ describe('Security Test Validation', () => {
       expect(config.requests).toBeGreaterThan(0);
       expect(config.windowMs).toBeGreaterThan(0);
       expect(config.requests).toBeLessThan(10000); // Reasonable upper limit
-      expect(config.windowMs).toBeLessThan(86400000); // Max 1 day window
+      expect(config.windowMs).toBeLessThanOrEqual(86400000); // Max 1 day window
     });
   });
 

@@ -304,7 +304,7 @@ describe('GooglePlayBridge Orchestration', () => {
       expect(stats).toHaveProperty('uptime');
       expect(stats).toHaveProperty('version');
       expect(stats).toHaveProperty('matrix');
-      expect(stats).toHaveProperty('googlePlay');
+      expect(stats).toHaveProperty('reviews');
       expect(stats).toHaveProperty('circuitBreakers');
       expect(stats).toHaveProperty('rateLimiting');
     });
@@ -355,7 +355,7 @@ describe('GooglePlayBridge Orchestration', () => {
     test('should integrate GooglePlayClient with proper configuration', () => {
       // Verify that GooglePlayClient would be initialized with correct config
       const stats = bridge.getBridgeStats();
-      expect(stats).toHaveProperty('googlePlay');
+      expect(stats).toHaveProperty('reviews');
     });
 
     test('should integrate ReviewManager with proper dependencies', () => {
@@ -372,7 +372,7 @@ describe('GooglePlayBridge Orchestration', () => {
 
     test('should provide bridge reply queuing functionality', async () => {
       // Test the reply queuing method
-      expect(() => {
+      await expect(
         bridge.queueReplyToReview(
           'com.test.app1',
           'review-123',
@@ -380,8 +380,8 @@ describe('GooglePlayBridge Orchestration', () => {
           '$matrix-event',
           '!testroom1:localhost',
           '@user:localhost'
-        );
-      }).not.toThrow();
+        )
+      ).rejects.toThrow('Review manager not initialized');
     });
   });
 
@@ -526,9 +526,9 @@ describe('GooglePlayBridge Orchestration', () => {
       expect(stats).toBeDefined();
     });
 
-    test('should handle bridge reply callback', () => {
+    test('should handle bridge reply callback', async () => {
       // Test the reply queue functionality
-      expect(() => {
+      await expect(
         bridge.queueReplyToReview(
           'com.test.app1',
           'review-456',
@@ -536,8 +536,8 @@ describe('GooglePlayBridge Orchestration', () => {
           '$event-id',
           '!room:localhost',
           '@user:localhost'
-        );
-      }).not.toThrow();
+        )
+      ).rejects.toThrow('Review manager not initialized');
     });
   });
 

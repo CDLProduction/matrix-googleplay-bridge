@@ -3,7 +3,6 @@
  */
 
 import { BridgeCommands, CommandContext } from '../../src/bridge/BridgeCommands';
-import { AppManager } from '../../src/managers/AppManager';
 import { Config } from '../../src/utils/Config';
 import { AuditLogger } from '../../src/utils/AuditLogger';
 
@@ -110,7 +109,7 @@ describe('Phase 4.3 Bridge Commands', () => {
         googleplay: { applications: [] },
       };
 
-      jest.spyOn(mockConfig, 'all', 'get').mockReturnValue(newConfig);
+      mockConfig.all = newConfig;
       MockedConfig.reload = jest.fn().mockResolvedValueOnce(mockConfig);
 
       await bridgeCommands.handleMessage(
@@ -139,8 +138,10 @@ describe('Phase 4.3 Bridge Commands', () => {
         database: { type: 'postgresql' },
       };
 
-      jest.spyOn(mockConfig, 'all', 'get').mockReturnValueOnce(oldConfig);
-      MockedConfig.getInstance = jest.fn().mockReturnValueOnce({ all: oldConfig } as any);
+      // First call returns the old config, second call returns new config
+      MockedConfig.getInstance = jest.fn()
+        .mockReturnValueOnce({ all: oldConfig } as any)
+        .mockReturnValue({ all: newConfig } as any);
       MockedConfig.reload = jest.fn().mockResolvedValueOnce({ all: newConfig } as any);
 
       await bridgeCommands.handleMessage(
@@ -194,7 +195,7 @@ describe('Phase 4.3 Bridge Commands', () => {
       expect(intent.sendMessage).toHaveBeenCalledWith(
         nonAdminContext.roomId,
         expect.objectContaining({
-          body: expect.stringContaining('permission'),
+          body: expect.stringContaining('administrator privileges'),
         })
       );
     });
