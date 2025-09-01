@@ -8,7 +8,7 @@ import {
   HomeserverConfig,
   LoggingConfig,
   MonitoringConfig,
-} from '../models/Config';
+} from '../models/ConfigTypes';
 import { Validator } from './Validator';
 
 /**
@@ -90,7 +90,7 @@ export class Config {
       } else {
         Config.instance = new Config(config);
       }
-      
+
       return Config.instance;
     } catch (error) {
       if (error instanceof Error) {
@@ -386,7 +386,7 @@ export class Config {
     return this.config.monitoring;
   }
 
-  get bridge(): import('../models/Config').BridgeAdminConfig | undefined {
+  get bridge(): import('../models/ConfigTypes').BridgeAdminConfig | undefined {
     return this.config.bridge;
   }
 

@@ -53,13 +53,15 @@ export class AuditLogger {
    */
   async initialize(database: DatabaseInterface): Promise<void> {
     this.database = database;
-    
+
     try {
       // Create audit log table if it doesn't exist
       await this.createAuditTable();
       this.logger.info('Audit logger initialized with database');
     } catch (error) {
-      this.logger.error('Failed to initialize audit logger with database', { error });
+      this.logger.error('Failed to initialize audit logger with database', {
+        error,
+      });
       this.logger.warn('Audit logging will use in-memory storage only');
     }
   }
@@ -71,7 +73,7 @@ export class AuditLogger {
     const auditEntry: AuditEntry = {
       ...entry,
       timestamp: new Date(),
-      id: this.generateId()
+      id: this.generateId(),
     };
 
     // Log to structured logger
@@ -85,7 +87,7 @@ export class AuditLogger {
       result: entry.result,
       duration: entry.duration,
       details: entry.details,
-      errorMessage: entry.errorMessage
+      errorMessage: entry.errorMessage,
     };
 
     switch (logLevel) {
@@ -105,7 +107,10 @@ export class AuditLogger {
       try {
         await this.storeEntry(auditEntry);
       } catch (error) {
-        this.logger.error('Failed to store audit entry in database', { error, entry: auditEntry });
+        this.logger.error('Failed to store audit entry in database', {
+          error,
+          entry: auditEntry,
+        });
         // Fallback to in-memory storage
         this.storeInMemory(auditEntry);
       }
@@ -123,7 +128,9 @@ export class AuditLogger {
       try {
         return await this.searchDatabase(options);
       } catch (error) {
-        this.logger.error('Failed to search audit entries in database', { error });
+        this.logger.error('Failed to search audit entries in database', {
+          error,
+        });
         // Fallback to in-memory search
         return this.searchInMemory(options);
       }
@@ -136,32 +143,41 @@ export class AuditLogger {
    * Get recent audit entries (convenience method)
    */
   async getRecent(limit: number = 50): Promise<AuditEntry[]> {
-    return this.search({ 
+    return this.search({
       limit,
       endTime: new Date(),
-      startTime: new Date(Date.now() - 24 * 60 * 60 * 1000) // Last 24 hours
+      startTime: new Date(Date.now() - 24 * 60 * 60 * 1000), // Last 24 hours
     });
   }
 
   // Convenience methods for common audit actions
-  async logConfigReload(userId: string, success: boolean, details?: any, error?: string): Promise<void> {
+  async logConfigReload(
+    userId: string,
+    success: boolean,
+    details?: any,
+    error?: string
+  ): Promise<void> {
     await this.log({
       level: success ? 'info' : 'error',
       action: 'config.reload',
       userId,
       result: success ? 'success' : 'failure',
       details,
-      ...(error && { errorMessage: error })
+      ...(error && { errorMessage: error }),
     });
   }
 
-  async logMaintenanceMode(userId: string, enabled: boolean, reason?: string): Promise<void> {
+  async logMaintenanceMode(
+    userId: string,
+    enabled: boolean,
+    reason?: string
+  ): Promise<void> {
     await this.log({
       level: 'warn',
       action: enabled ? 'maintenance.enable' : 'maintenance.disable',
       userId,
       result: 'success',
-      details: { enabled, reason }
+      details: { enabled, reason },
     });
   }
 
@@ -180,7 +196,7 @@ export class AuditLogger {
       packageName,
       result: success ? 'success' : 'failure',
       details,
-      ...(error && { errorMessage: error })
+      ...(error && { errorMessage: error }),
     });
   }
 
@@ -201,7 +217,7 @@ export class AuditLogger {
       result: success ? 'success' : 'failure',
       ...(duration !== undefined && { duration }),
       details,
-      ...(error && { errorMessage: error })
+      ...(error && { errorMessage: error }),
     });
   }
 
@@ -219,7 +235,7 @@ export class AuditLogger {
       packageName,
       result: success ? 'success' : 'failure',
       details: { ...details, reviewId },
-      ...(error && { errorMessage: error })
+      ...(error && { errorMessage: error }),
     });
   }
 
@@ -238,7 +254,7 @@ export class AuditLogger {
       roomId,
       result: success ? 'success' : 'failure',
       details,
-      ...(error && { errorMessage: error })
+      ...(error && { errorMessage: error }),
     });
   }
 
@@ -270,7 +286,7 @@ export class AuditLogger {
       'CREATE INDEX IF NOT EXISTS idx_audit_action ON audit_log(action)',
       'CREATE INDEX IF NOT EXISTS idx_audit_user_id ON audit_log(user_id)',
       'CREATE INDEX IF NOT EXISTS idx_audit_package_name ON audit_log(package_name)',
-      'CREATE INDEX IF NOT EXISTS idx_audit_result ON audit_log(result)'
+      'CREATE INDEX IF NOT EXISTS idx_audit_result ON audit_log(result)',
     ];
 
     for (const indexQuery of indexes) {
@@ -297,7 +313,7 @@ export class AuditLogger {
       entry.details ? JSON.stringify(entry.details) : null,
       entry.result,
       entry.errorMessage,
-      entry.duration
+      entry.duration,
     ];
 
     await this.database.query(query, params);
@@ -305,14 +321,16 @@ export class AuditLogger {
 
   private storeInMemory(entry: AuditEntry): void {
     this.entries.push(entry);
-    
+
     // Keep only recent entries in memory (limit to 1000)
     if (this.entries.length > 1000) {
       this.entries = this.entries.slice(-1000);
     }
   }
 
-  private async searchDatabase(options: AuditSearchOptions): Promise<AuditEntry[]> {
+  private async searchDatabase(
+    options: AuditSearchOptions
+  ): Promise<AuditEntry[]> {
     if (!this.database) return [];
 
     let query = 'SELECT * FROM audit_log WHERE 1=1';
@@ -435,7 +453,7 @@ export class AuditLogger {
       details: row.details ? JSON.parse(row.details) : undefined,
       result: row.result,
       errorMessage: row.error_message,
-      duration: row.duration
+      duration: row.duration,
     };
   }
 

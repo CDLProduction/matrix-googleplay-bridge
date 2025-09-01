@@ -14,7 +14,15 @@ export interface TemplateVariable {
 
 export interface TemplateCondition {
   field: string;
-  operator: 'equals' | 'not_equals' | 'contains' | 'not_contains' | 'greater_than' | 'less_than' | 'in' | 'not_in';
+  operator:
+    | 'equals'
+    | 'not_equals'
+    | 'contains'
+    | 'not_contains'
+    | 'greater_than'
+    | 'less_than'
+    | 'in'
+    | 'not_in';
   value: any;
 }
 
@@ -83,66 +91,66 @@ export class MessageTemplates extends EventEmitter {
       description: 'Name of the reviewer (or fallback)',
       required: false,
       defaultValue: 'there',
-      formatter: this.formatReviewerName.bind(this)
+      formatter: this.formatReviewerName.bind(this),
     },
     {
       name: 'app_name',
       description: 'Name of the application',
       required: false,
-      defaultValue: 'the app'
+      defaultValue: 'the app',
     },
     {
       name: 'app_version',
       description: 'Version of the application',
       required: false,
-      defaultValue: 'latest version'
+      defaultValue: 'latest version',
     },
     {
       name: 'support_email',
       description: 'Support contact email',
       required: false,
       defaultValue: 'support@company.com',
-      validator: (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
+      validator: (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value),
     },
     {
       name: 'company_name',
       description: 'Company or team name',
       required: false,
-      defaultValue: 'our team'
+      defaultValue: 'our team',
     },
     {
       name: 'rating',
       description: 'Star rating from review',
       required: false,
       defaultValue: '0',
-      validator: (value: string) => /^[1-5]$/.test(value)
+      validator: (value: string) => /^[1-5]$/.test(value),
     },
     {
       name: 'device',
       description: 'Device model from review',
       required: false,
-      defaultValue: 'your device'
+      defaultValue: 'your device',
     },
     {
       name: 'android_version',
       description: 'Android OS version',
       required: false,
-      defaultValue: 'your Android version'
+      defaultValue: 'your Android version',
     },
     {
       name: 'timestamp',
       description: 'Current timestamp',
       required: false,
       defaultValue: new Date().toISOString(),
-      formatter: (value: string) => new Date(value).toLocaleDateString()
+      formatter: (value: string) => new Date(value).toLocaleDateString(),
     },
     {
       name: 'date',
       description: 'Current date',
       required: false,
       defaultValue: new Date().toISOString(),
-      formatter: (value: string) => new Date(value).toLocaleDateString()
-    }
+      formatter: (value: string) => new Date(value).toLocaleDateString(),
+    },
   ];
 
   constructor(private readonly config: TemplatesConfig) {
@@ -154,18 +162,23 @@ export class MessageTemplates extends EventEmitter {
   /**
    * Add or update a template
    */
-  public async addTemplate(template: Omit<AdvancedTemplate, 'createdAt' | 'updatedAt' | 'usageCount' | 'version'>): Promise<void> {
+  public async addTemplate(
+    template: Omit<
+      AdvancedTemplate,
+      'createdAt' | 'updatedAt' | 'usageCount' | 'version'
+    >
+  ): Promise<void> {
     const now = new Date();
     const existingTemplate = this.templates.get(template.id);
-    
+
     const fullTemplate: AdvancedTemplate = {
       ...template,
       version: existingTemplate ? existingTemplate.version + 1 : 1,
       createdAt: existingTemplate?.createdAt || now,
       updatedAt: now,
-      usageCount: existingTemplate?.usageCount || 0
+      usageCount: existingTemplate?.usageCount || 0,
     };
-    
+
     if (existingTemplate?.lastUsed) {
       fullTemplate.lastUsed = existingTemplate.lastUsed;
     }
@@ -175,7 +188,9 @@ export class MessageTemplates extends EventEmitter {
 
     // Check category limits
     if (!this.canAddToCategory(fullTemplate.category, fullTemplate.id)) {
-      throw new Error(`Maximum templates reached for category: ${fullTemplate.category}`);
+      throw new Error(
+        `Maximum templates reached for category: ${fullTemplate.category}`
+      );
     }
 
     // Store template
@@ -183,8 +198,14 @@ export class MessageTemplates extends EventEmitter {
     this.updateCategoryIndex(fullTemplate);
     this.updateTagIndex(fullTemplate);
 
-    this.logger.info(`Template ${existingTemplate ? 'updated' : 'added'}: ${fullTemplate.name} (${fullTemplate.id})`);
-    this.emit('template:changed', fullTemplate, existingTemplate ? 'updated' : 'added');
+    this.logger.info(
+      `Template ${existingTemplate ? 'updated' : 'added'}: ${fullTemplate.name} (${fullTemplate.id})`
+    );
+    this.emit(
+      'template:changed',
+      fullTemplate,
+      existingTemplate ? 'updated' : 'added'
+    );
   }
 
   /**
@@ -215,8 +236,9 @@ export class MessageTemplates extends EventEmitter {
    * Get all templates
    */
   public getAllTemplates(): AdvancedTemplate[] {
-    return Array.from(this.templates.values())
-      .sort((a, b) => b.priority - a.priority);
+    return Array.from(this.templates.values()).sort(
+      (a, b) => b.priority - a.priority
+    );
   }
 
   /**
@@ -247,10 +269,11 @@ export class MessageTemplates extends EventEmitter {
   public searchTemplates(query: string): AdvancedTemplate[] {
     const lowerQuery = query.toLowerCase();
     return Array.from(this.templates.values())
-      .filter(template => 
-        template.name.toLowerCase().includes(lowerQuery) ||
-        template.description?.toLowerCase().includes(lowerQuery) ||
-        template.tags.some(tag => tag.toLowerCase().includes(lowerQuery))
+      .filter(
+        template =>
+          template.name.toLowerCase().includes(lowerQuery) ||
+          template.description?.toLowerCase().includes(lowerQuery) ||
+          template.tags.some(tag => tag.toLowerCase().includes(lowerQuery))
       )
       .sort((a, b) => b.priority - a.priority);
   }
@@ -258,22 +281,30 @@ export class MessageTemplates extends EventEmitter {
   /**
    * Find matching templates for given context
    */
-  public findMatchingTemplates(context: TemplateRenderContext): AdvancedTemplate[] {
+  public findMatchingTemplates(
+    context: TemplateRenderContext
+  ): AdvancedTemplate[] {
     return Array.from(this.templates.values())
-      .filter(template => template.active && this.evaluateConditions(template, context))
+      .filter(
+        template =>
+          template.active && this.evaluateConditions(template, context)
+      )
       .sort((a, b) => b.priority - a.priority);
   }
 
   /**
    * Render a template with given context
    */
-  public async renderTemplate(templateId: string, context: TemplateRenderContext): Promise<TemplateRenderResult> {
+  public async renderTemplate(
+    templateId: string,
+    context: TemplateRenderContext
+  ): Promise<TemplateRenderResult> {
     const template = this.templates.get(templateId);
     if (!template) {
       return {
         success: false,
         error: `Template not found: ${templateId}`,
-        template: {} as AdvancedTemplate
+        template: {} as AdvancedTemplate,
       };
     }
 
@@ -281,7 +312,7 @@ export class MessageTemplates extends EventEmitter {
       return {
         success: false,
         error: `Template is inactive: ${templateId}`,
-        template
+        template,
       };
     }
 
@@ -291,20 +322,23 @@ export class MessageTemplates extends EventEmitter {
         return {
           success: false,
           error: 'Template conditions not met',
-          template
+          template,
         };
       }
 
       // Prepare variables
       const variables = this.prepareVariables(template, context);
-      const missingRequired = this.findMissingRequiredVariables(template, variables);
+      const missingRequired = this.findMissingRequiredVariables(
+        template,
+        variables
+      );
 
       if (missingRequired.length > 0) {
         return {
           success: false,
           error: 'Missing required variables',
           missingVariables: missingRequired,
-          template
+          template,
         };
       }
 
@@ -320,14 +354,14 @@ export class MessageTemplates extends EventEmitter {
       return {
         success: true,
         rendered,
-        template
+        template,
       };
     } catch (error) {
       this.logger.error(`Error rendering template ${templateId}:`, error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
-        template
+        template,
       };
     }
   }
@@ -344,7 +378,7 @@ export class MessageTemplates extends EventEmitter {
    */
   public exportTemplates(category?: string): string {
     let templates: AdvancedTemplate[];
-    
+
     if (category) {
       templates = this.getTemplatesByCategory(category);
     } else {
@@ -357,9 +391,12 @@ export class MessageTemplates extends EventEmitter {
   /**
    * Import templates from JSON
    */
-  public async importTemplates(jsonData: string, overwrite: boolean = false): Promise<number> {
+  public async importTemplates(
+    jsonData: string,
+    overwrite: boolean = false
+  ): Promise<number> {
     let templates: AdvancedTemplate[];
-    
+
     try {
       templates = JSON.parse(jsonData);
       if (!Array.isArray(templates)) {
@@ -373,7 +410,11 @@ export class MessageTemplates extends EventEmitter {
 
     for (const template of templates) {
       try {
-        if (this.templates.has(template.id) && !overwrite && !this.config.allowTemplateOverrides) {
+        if (
+          this.templates.has(template.id) &&
+          !overwrite &&
+          !this.config.allowTemplateOverrides
+        ) {
           this.logger.warn(`Skipping existing template: ${template.id}`);
           continue;
         }
@@ -400,13 +441,13 @@ export class MessageTemplates extends EventEmitter {
     recentlyUsed: Array<{ id: string; name: string; lastUsed: Date }>;
   } {
     const templates = Array.from(this.templates.values());
-    
+
     const byCategory: Record<string, number> = {};
     const byTag: Record<string, number> = {};
-    
+
     for (const template of templates) {
       byCategory[template.category] = (byCategory[template.category] || 0) + 1;
-      
+
       for (const tag of template.tags) {
         byTag[tag] = (byTag[tag] || 0) + 1;
       }
@@ -420,7 +461,9 @@ export class MessageTemplates extends EventEmitter {
 
     const recentlyUsed = templates
       .filter(t => t.lastUsed)
-      .sort((a, b) => (b.lastUsed?.getTime() || 0) - (a.lastUsed?.getTime() || 0))
+      .sort(
+        (a, b) => (b.lastUsed?.getTime() || 0) - (a.lastUsed?.getTime() || 0)
+      )
       .slice(0, 10)
       .map(t => ({ id: t.id, name: t.name, lastUsed: t.lastUsed! }));
 
@@ -429,93 +472,122 @@ export class MessageTemplates extends EventEmitter {
       byCategory,
       byTag,
       mostUsed,
-      recentlyUsed
+      recentlyUsed,
     };
   }
 
   private initializeDefaultTemplates(): void {
     // Convert ResponseSuggestion templates to AdvancedTemplates
-    const defaultTemplates: Omit<AdvancedTemplate, 'createdAt' | 'updatedAt' | 'usageCount' | 'version'>[] = [
+    const defaultTemplates: Omit<
+      AdvancedTemplate,
+      'createdAt' | 'updatedAt' | 'usageCount' | 'version'
+    >[] = [
       {
         id: 'system_welcome',
         name: 'Room Welcome Message',
         description: 'Welcome message for new app review rooms',
         category: 'system',
-        template: 'Welcome to the {{app_name}} review room! 🎉\n\nThis room bridges Google Play reviews with Matrix. Reviews will appear here automatically, and you can reply directly to customers.\n\nUse !help for available commands.',
+        template:
+          'Welcome to the {{app_name}} review room! 🎉\n\nThis room bridges Google Play reviews with Matrix. Reviews will appear here automatically, and you can reply directly to customers.\n\nUse !help for available commands.',
         variables: [
-          { name: 'app_name', description: 'Application name', required: true }
+          { name: 'app_name', description: 'Application name', required: true },
         ],
         conditions: [],
         tags: ['welcome', 'system', 'onboarding'],
         priority: 50,
         active: true,
-        author: 'system'
+        author: 'system',
       },
       {
         id: 'notification_new_review',
         name: 'New Review Notification',
         description: 'Notification template for new reviews',
         category: 'notification',
-        template: '📱 New {{rating}}-star review for {{app_name}}\n👤 Reviewer: {{reviewer_name}}\n📱 Device: {{device}}\n🔗 Reply with: reply [your message]',
+        template:
+          '📱 New {{rating}}-star review for {{app_name}}\n👤 Reviewer: {{reviewer_name}}\n📱 Device: {{device}}\n🔗 Reply with: reply [your message]',
         variables: [
           { name: 'rating', description: 'Star rating', required: true },
           { name: 'app_name', description: 'Application name', required: true },
-          { name: 'reviewer_name', description: 'Reviewer name', required: true },
-          { name: 'device', description: 'Device info', required: false, defaultValue: 'Unknown device' }
+          {
+            name: 'reviewer_name',
+            description: 'Reviewer name',
+            required: true,
+          },
+          {
+            name: 'device',
+            description: 'Device info',
+            required: false,
+            defaultValue: 'Unknown device',
+          },
         ],
         conditions: [],
         tags: ['notification', 'new-review'],
         priority: 75,
         active: true,
-        author: 'system'
+        author: 'system',
       },
       {
         id: 'response_thank_you',
         name: 'Generic Thank You',
         description: 'Generic thank you response for positive reviews',
         category: 'response',
-        template: 'Hi {{reviewer_name}}, thank you so much for your {{rating}}-star review! 😊 We\'re thrilled that you\'re enjoying {{app_name}}. Your feedback motivates our team to keep improving. If you have any suggestions, we\'d love to hear them!',
+        template:
+          "Hi {{reviewer_name}}, thank you so much for your {{rating}}-star review! 😊 We're thrilled that you're enjoying {{app_name}}. Your feedback motivates our team to keep improving. If you have any suggestions, we'd love to hear them!",
         variables: [
-          { name: 'reviewer_name', description: 'Reviewer name', required: true },
+          {
+            name: 'reviewer_name',
+            description: 'Reviewer name',
+            required: true,
+          },
           { name: 'rating', description: 'Star rating', required: true },
-          { name: 'app_name', description: 'Application name', required: true }
+          { name: 'app_name', description: 'Application name', required: true },
         ],
-        conditions: [
-          { field: 'rating', operator: 'greater_than', value: 3 }
-        ],
+        conditions: [{ field: 'rating', operator: 'greater_than', value: 3 }],
         tags: ['response', 'positive', 'thank-you'],
         priority: 60,
         active: true,
-        author: 'system'
+        author: 'system',
       },
       {
         id: 'response_apology',
         name: 'Generic Apology',
         description: 'Generic apology for negative reviews',
         category: 'response',
-        template: 'Hi {{reviewer_name}}, we\'re sorry to hear about your experience with {{app_name}}. Your feedback is valuable to us and we\'d like to make things right. Please contact us at {{support_email}} so we can help resolve any issues. Thank you for giving us the opportunity to improve.',
+        template:
+          "Hi {{reviewer_name}}, we're sorry to hear about your experience with {{app_name}}. Your feedback is valuable to us and we'd like to make things right. Please contact us at {{support_email}} so we can help resolve any issues. Thank you for giving us the opportunity to improve.",
         variables: [
-          { name: 'reviewer_name', description: 'Reviewer name', required: true },
+          {
+            name: 'reviewer_name',
+            description: 'Reviewer name',
+            required: true,
+          },
           { name: 'app_name', description: 'Application name', required: true },
-          { name: 'support_email', description: 'Support email', required: true }
+          {
+            name: 'support_email',
+            description: 'Support email',
+            required: true,
+          },
         ],
-        conditions: [
-          { field: 'rating', operator: 'less_than', value: 4 }
-        ],
+        conditions: [{ field: 'rating', operator: 'less_than', value: 4 }],
         tags: ['response', 'negative', 'apology'],
         priority: 65,
         active: true,
-        author: 'system'
-      }
+        author: 'system',
+      },
     ];
 
     for (const template of defaultTemplates) {
       this.addTemplate(template).catch(error => {
-        this.logger.error(`Failed to add default template ${template.id}:`, error);
+        this.logger.error(
+          `Failed to add default template ${template.id}:`,
+          error
+        );
       });
     }
 
-    this.logger.info(`Initialized with ${defaultTemplates.length} default templates`);
+    this.logger.info(
+      `Initialized with ${defaultTemplates.length} default templates`
+    );
   }
 
   private validateTemplate(template: AdvancedTemplate): void {
@@ -543,7 +615,11 @@ export class MessageTemplates extends EventEmitter {
 
     // Validate conditions
     for (const condition of template.conditions) {
-      if (!condition.field || !condition.operator || condition.value === undefined) {
+      if (
+        !condition.field ||
+        !condition.operator ||
+        condition.value === undefined
+      ) {
         throw new Error('Condition must have field, operator, and value');
       }
     }
@@ -595,7 +671,10 @@ export class MessageTemplates extends EventEmitter {
     }
   }
 
-  private evaluateConditions(template: AdvancedTemplate, context: TemplateRenderContext): boolean {
+  private evaluateConditions(
+    template: AdvancedTemplate,
+    context: TemplateRenderContext
+  ): boolean {
     for (const condition of template.conditions) {
       if (!this.evaluateCondition(condition, context)) {
         return false;
@@ -604,9 +683,12 @@ export class MessageTemplates extends EventEmitter {
     return true;
   }
 
-  private evaluateCondition(condition: TemplateCondition, context: TemplateRenderContext): boolean {
+  private evaluateCondition(
+    condition: TemplateCondition,
+    context: TemplateRenderContext
+  ): boolean {
     const value = this.getContextValue(condition.field, context);
-    
+
     switch (condition.operator) {
       case 'equals':
         return value === condition.value;
@@ -621,9 +703,13 @@ export class MessageTemplates extends EventEmitter {
       case 'less_than':
         return Number(value) < Number(condition.value);
       case 'in':
-        return Array.isArray(condition.value) && condition.value.includes(value);
+        return (
+          Array.isArray(condition.value) && condition.value.includes(value)
+        );
       case 'not_in':
-        return Array.isArray(condition.value) && !condition.value.includes(value);
+        return (
+          Array.isArray(condition.value) && !condition.value.includes(value)
+        );
       default:
         return false;
     }
@@ -644,16 +730,24 @@ export class MessageTemplates extends EventEmitter {
       case 'device':
         return context.review?.device;
       default:
-        return context.userVariables?.[field] || context.systemVariables?.[field];
+        return (
+          context.userVariables?.[field] || context.systemVariables?.[field]
+        );
     }
   }
 
-  private prepareVariables(_template: AdvancedTemplate, context: TemplateRenderContext): Record<string, string> {
+  private prepareVariables(
+    _template: AdvancedTemplate,
+    context: TemplateRenderContext
+  ): Record<string, string> {
     const variables: Record<string, string> = {};
 
     // Add system variables
     for (const sysVar of this.systemVariables) {
-      let value = this.getSystemVariableValue(sysVar.name, context) || sysVar.defaultValue || '';
+      let value =
+        this.getSystemVariableValue(sysVar.name, context) ||
+        sysVar.defaultValue ||
+        '';
       if (sysVar.formatter) {
         value = sysVar.formatter(value);
       }
@@ -671,7 +765,10 @@ export class MessageTemplates extends EventEmitter {
     return variables;
   }
 
-  private getSystemVariableValue(name: string, context: TemplateRenderContext): string | undefined {
+  private getSystemVariableValue(
+    name: string,
+    context: TemplateRenderContext
+  ): string | undefined {
     switch (name) {
       case 'reviewer_name':
         return context.review?.authorName;
@@ -697,19 +794,31 @@ export class MessageTemplates extends EventEmitter {
     }
   }
 
-  private findMissingRequiredVariables(template: AdvancedTemplate, variables: Record<string, string>): string[] {
+  private findMissingRequiredVariables(
+    template: AdvancedTemplate,
+    variables: Record<string, string>
+  ): string[] {
     return template.variables
-      .filter(v => v.required && (!variables[v.name] || variables[v.name]?.trim() === ''))
+      .filter(
+        v =>
+          v.required && (!variables[v.name] || variables[v.name]?.trim() === '')
+      )
       .map(v => v.name);
   }
 
-  private renderTemplateString(templateStr: string, variables: Record<string, string>): string {
+  private renderTemplateString(
+    templateStr: string,
+    variables: Record<string, string>
+  ): string {
     let rendered = templateStr;
 
     // Replace all template variables
     for (const [key, value] of Object.entries(variables)) {
       const placeholder = `{{${key}}}`;
-      rendered = rendered.replace(new RegExp(placeholder.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), value);
+      rendered = rendered.replace(
+        new RegExp(placeholder.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'),
+        value
+      );
     }
 
     // Remove any unreplaced variables (fallback)
@@ -719,7 +828,11 @@ export class MessageTemplates extends EventEmitter {
   }
 
   private formatReviewerName(name: string): string {
-    if (!name || name === 'A Google User' || name.toLowerCase().includes('anonymous')) {
+    if (
+      !name ||
+      name === 'A Google User' ||
+      name.toLowerCase().includes('anonymous')
+    ) {
       return 'there';
     }
     const firstName = name.split(' ')[0];

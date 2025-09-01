@@ -63,20 +63,22 @@ export class ResponseSuggestions {
       sentiment: 'negative',
       ratingRange: { min: 1, max: 2 },
       urgencyLevels: ['critical', 'high'],
-      template: 'Hi {{reviewer_name}}, thank you for bringing this crash issue to our attention. We sincerely apologize for the inconvenience. Our development team is actively working on resolving this issue. Could you please share more details about when the crash occurs ({{app_name}} version {{app_version}})? You can also contact us directly at {{support_email}} for faster assistance.',
+      template:
+        'Hi {{reviewer_name}}, thank you for bringing this crash issue to our attention. We sincerely apologize for the inconvenience. Our development team is actively working on resolving this issue. Could you please share more details about when the crash occurs ({{app_name}} version {{app_version}})? You can also contact us directly at {{support_email}} for faster assistance.',
       variables: ['reviewer_name', 'app_name', 'app_version', 'support_email'],
       tone: 'apologetic',
-      priority: 95
+      priority: 95,
     },
     {
       id: 'crash_investigation',
       name: 'Crash Investigation Request',
       categoryIds: ['crash', 'bug'],
       sentiment: 'negative',
-      template: 'Thank you for reporting this issue, {{reviewer_name}}. We take crashes very seriously and would like to investigate further. Could you please let us know: 1) What device you\'re using, 2) When the crash typically happens, 3) Any error messages you see? This information will help us fix the issue faster.',
+      template:
+        "Thank you for reporting this issue, {{reviewer_name}}. We take crashes very seriously and would like to investigate further. Could you please let us know: 1) What device you're using, 2) When the crash typically happens, 3) Any error messages you see? This information will help us fix the issue faster.",
       variables: ['reviewer_name'],
       tone: 'helpful',
-      priority: 90
+      priority: 90,
     },
 
     // Bug Reports
@@ -85,21 +87,23 @@ export class ResponseSuggestions {
       name: 'Bug Acknowledgment',
       categoryIds: ['bug', 'performance'],
       sentiment: 'negative',
-      template: 'Hi {{reviewer_name}}, thank you for the detailed feedback about this bug. We\'ve noted the issue you described and our team is investigating. We aim to resolve bugs quickly and will include a fix in our next update. We appreciate your patience!',
+      template:
+        "Hi {{reviewer_name}}, thank you for the detailed feedback about this bug. We've noted the issue you described and our team is investigating. We aim to resolve bugs quickly and will include a fix in our next update. We appreciate your patience!",
       variables: ['reviewer_name'],
       tone: 'apologetic',
-      priority: 85
+      priority: 85,
     },
 
-    // Performance Issues  
+    // Performance Issues
     {
       id: 'performance_optimization',
       name: 'Performance Optimization',
       categoryIds: ['performance'],
-      template: 'Thanks for letting us know about the performance issues, {{reviewer_name}}. We\'re constantly working on optimizing {{app_name}} for better speed and responsiveness. Try clearing the app cache or restarting the app as a temporary fix. We have performance improvements coming in the next update!',
+      template:
+        "Thanks for letting us know about the performance issues, {{reviewer_name}}. We're constantly working on optimizing {{app_name}} for better speed and responsiveness. Try clearing the app cache or restarting the app as a temporary fix. We have performance improvements coming in the next update!",
       variables: ['reviewer_name', 'app_name'],
       tone: 'helpful',
-      priority: 80
+      priority: 80,
     },
 
     // Feature Requests
@@ -109,10 +113,11 @@ export class ResponseSuggestions {
       categoryIds: ['feature_request'],
       sentiment: 'neutral',
       ratingRange: { min: 3, max: 5 },
-      template: 'Hi {{reviewer_name}}, thank you for the great suggestion! We really value user feedback like yours. While we can\'t implement every requested feature immediately, we\'ve noted your idea and will consider it for future updates. Keep the feedback coming!',
+      template:
+        "Hi {{reviewer_name}}, thank you for the great suggestion! We really value user feedback like yours. While we can't implement every requested feature immediately, we've noted your idea and will consider it for future updates. Keep the feedback coming!",
       variables: ['reviewer_name'],
       tone: 'grateful',
-      priority: 70
+      priority: 70,
     },
 
     // Login/Authentication Issues
@@ -120,10 +125,11 @@ export class ResponseSuggestions {
       id: 'login_help',
       name: 'Login Assistance',
       categoryIds: ['login_auth'],
-      template: 'Hi {{reviewer_name}}, sorry you\'re having trouble logging in! Here are a few things to try: 1) Make sure you\'re using the correct email/password, 2) Try the "Forgot Password" option, 3) Check your internet connection. If you\'re still having trouble, please contact us at {{support_email}} with your account email.',
+      template:
+        "Hi {{reviewer_name}}, sorry you're having trouble logging in! Here are a few things to try: 1) Make sure you're using the correct email/password, 2) Try the \"Forgot Password\" option, 3) Check your internet connection. If you're still having trouble, please contact us at {{support_email}} with your account email.",
       variables: ['reviewer_name', 'support_email'],
       tone: 'helpful',
-      priority: 90
+      priority: 90,
     },
 
     // Billing Issues
@@ -133,10 +139,11 @@ export class ResponseSuggestions {
       categoryIds: ['billing'],
       sentiment: 'negative',
       urgencyLevels: ['critical', 'high'],
-      template: 'Hi {{reviewer_name}}, we apologize for any billing confusion! Payment issues are our top priority. Please contact our support team immediately at {{support_email}} with your order details, and we\'ll resolve this as quickly as possible. Thank you for your patience.',
+      template:
+        "Hi {{reviewer_name}}, we apologize for any billing confusion! Payment issues are our top priority. Please contact our support team immediately at {{support_email}} with your order details, and we'll resolve this as quickly as possible. Thank you for your patience.",
       variables: ['reviewer_name', 'support_email'],
       tone: 'apologetic',
-      priority: 100
+      priority: 100,
     },
 
     // Positive Feedback
@@ -146,10 +153,11 @@ export class ResponseSuggestions {
       categoryIds: ['positive_feedback'],
       sentiment: 'positive',
       ratingRange: { min: 4, max: 5 },
-      template: 'Thank you so much for the kind words, {{reviewer_name}}! ⭐ Reviews like yours motivate our team to keep improving {{app_name}}. We\'re thrilled you\'re enjoying the app. If you have any suggestions for making it even better, we\'d love to hear them!',
+      template:
+        "Thank you so much for the kind words, {{reviewer_name}}! ⭐ Reviews like yours motivate our team to keep improving {{app_name}}. We're thrilled you're enjoying the app. If you have any suggestions for making it even better, we'd love to hear them!",
       variables: ['reviewer_name', 'app_name'],
       tone: 'grateful',
-      priority: 75
+      priority: 75,
     },
 
     // Device Compatibility
@@ -157,10 +165,11 @@ export class ResponseSuggestions {
       id: 'device_compatibility',
       name: 'Device Compatibility Help',
       categoryIds: ['compatibility'],
-      template: 'Hi {{reviewer_name}}, thanks for reporting this compatibility issue. We strive to support as many devices as possible. Could you please let us know your specific device model and Android version? This helps us prioritize compatibility fixes. You can reach us at {{support_email}} for device-specific support.',
+      template:
+        'Hi {{reviewer_name}}, thanks for reporting this compatibility issue. We strive to support as many devices as possible. Could you please let us know your specific device model and Android version? This helps us prioritize compatibility fixes. You can reach us at {{support_email}} for device-specific support.',
       variables: ['reviewer_name', 'support_email'],
       tone: 'helpful',
-      priority: 80
+      priority: 80,
     },
 
     // Update Issues
@@ -169,10 +178,11 @@ export class ResponseSuggestions {
       name: 'Update Issue Apology',
       categoryIds: ['update_issues'],
       sentiment: 'negative',
-      template: 'Hi {{reviewer_name}}, we\'re sorry the latest update caused issues for you. Sometimes new features can have unexpected side effects. We\'re working on a hotfix and will release it soon. In the meantime, you might try clearing the app cache or restarting your device.',
+      template:
+        "Hi {{reviewer_name}}, we're sorry the latest update caused issues for you. Sometimes new features can have unexpected side effects. We're working on a hotfix and will release it soon. In the meantime, you might try clearing the app cache or restarting your device.",
       variables: ['reviewer_name'],
       tone: 'apologetic',
-      priority: 85
+      priority: 85,
     },
 
     // Support Requests
@@ -180,10 +190,11 @@ export class ResponseSuggestions {
       id: 'support_assistance',
       name: 'General Support',
       categoryIds: ['support_request'],
-      template: 'Hi {{reviewer_name}}, we\'re here to help! For the fastest assistance with your question, please contact our support team at {{support_email}} or check out our help documentation. We typically respond within 24 hours and will make sure to get your issue resolved.',
+      template:
+        "Hi {{reviewer_name}}, we're here to help! For the fastest assistance with your question, please contact our support team at {{support_email}} or check out our help documentation. We typically respond within 24 hours and will make sure to get your issue resolved.",
       variables: ['reviewer_name', 'support_email'],
       tone: 'helpful',
-      priority: 85
+      priority: 85,
     },
 
     // Generic Negative Response
@@ -193,10 +204,11 @@ export class ResponseSuggestions {
       categoryIds: [], // Matches any category
       sentiment: 'negative',
       ratingRange: { min: 1, max: 3 },
-      template: 'Hi {{reviewer_name}}, thank you for your feedback. We\'re sorry {{app_name}} didn\'t meet your expectations. We take all user feedback seriously and are constantly working to improve. If you\'d like to share more specific details, please contact us at {{support_email}}.',
+      template:
+        "Hi {{reviewer_name}}, thank you for your feedback. We're sorry {{app_name}} didn't meet your expectations. We take all user feedback seriously and are constantly working to improve. If you'd like to share more specific details, please contact us at {{support_email}}.",
       variables: ['reviewer_name', 'app_name', 'support_email'],
       tone: 'apologetic',
-      priority: 50
+      priority: 50,
     },
 
     // Generic Positive Response
@@ -206,25 +218,32 @@ export class ResponseSuggestions {
       categoryIds: [], // Matches any category
       sentiment: 'positive',
       ratingRange: { min: 4, max: 5 },
-      template: 'Hi {{reviewer_name}}, thank you for the wonderful review! We\'re so happy you\'re enjoying {{app_name}}. Your support means the world to our team. If you have any suggestions for future improvements, we\'d love to hear them!',
+      template:
+        "Hi {{reviewer_name}}, thank you for the wonderful review! We're so happy you're enjoying {{app_name}}. Your support means the world to our team. If you have any suggestions for future improvements, we'd love to hear them!",
       variables: ['reviewer_name', 'app_name'],
       tone: 'grateful',
-      priority: 40
-    }
+      priority: 40,
+    },
   ];
 
   constructor(private readonly config: ResponseSuggestionsConfig) {
-    this.logger = Logger.getInstance().child({ component: 'ResponseSuggestions' });
+    this.logger = Logger.getInstance().child({
+      component: 'ResponseSuggestions',
+    });
     this.initializeTemplates();
   }
 
   /**
    * Generate response suggestions for a review based on categorization
    */
-  public async generateSuggestions(context: SuggestionContext): Promise<ResponseSuggestion[]> {
+  public async generateSuggestions(
+    context: SuggestionContext
+  ): Promise<ResponseSuggestion[]> {
     const { review } = context;
-    
-    this.logger.debug(`Generating response suggestions for review ${review.reviewId}`);
+
+    this.logger.debug(
+      `Generating response suggestions for review ${review.reviewId}`
+    );
 
     const suggestions: ResponseSuggestion[] = [];
     const processedTemplateIds = new Set<string>();
@@ -235,14 +254,18 @@ export class ResponseSuggestions {
 
       const match = this.scoreTemplateMatch(template, context);
       if (match.confidence >= this.config.minConfidence) {
-        const rendered = this.renderTemplate(template, context, match.variables);
-        
+        const rendered = this.renderTemplate(
+          template,
+          context,
+          match.variables
+        );
+
         suggestions.push({
           template,
           renderedText: rendered,
           confidence: match.confidence,
           reasoning: match.reasoning,
-          variables: match.variables
+          variables: match.variables,
         });
 
         processedTemplateIds.add(template.id);
@@ -261,7 +284,9 @@ export class ResponseSuggestions {
       })
       .slice(0, this.config.maxSuggestions);
 
-    this.logger.debug(`Generated ${sortedSuggestions.length} suggestions for review ${review.reviewId}`);
+    this.logger.debug(
+      `Generated ${sortedSuggestions.length} suggestions for review ${review.reviewId}`
+    );
 
     return sortedSuggestions;
   }
@@ -271,7 +296,9 @@ export class ResponseSuggestions {
    */
   public addTemplate(template: ResponseTemplate): void {
     this.templates.set(template.id, template);
-    this.logger.info(`Added response template: ${template.name} (${template.id})`);
+    this.logger.info(
+      `Added response template: ${template.name} (${template.id})`
+    );
   }
 
   /**
@@ -307,7 +334,11 @@ export class ResponseSuggestions {
   private scoreTemplateMatch(
     template: ResponseTemplate,
     context: SuggestionContext
-  ): { confidence: number; reasoning: string[]; variables: Record<string, string> } {
+  ): {
+    confidence: number;
+    reasoning: string[];
+    variables: Record<string, string>;
+  } {
     const { review, categorization } = context;
     let confidence = 0;
     const reasoning: string[] = [];
@@ -319,20 +350,26 @@ export class ResponseSuggestions {
       confidence += 0.3;
       reasoning.push('Generic template (matches any category)');
     } else {
-      const primaryMatch = template.categoryIds.includes(categorization.primaryCategory?.category.id || '');
-      const secondaryMatch = template.categoryIds.some(id => 
+      const primaryMatch = template.categoryIds.includes(
+        categorization.primaryCategory?.category.id || ''
+      );
+      const secondaryMatch = template.categoryIds.some(id =>
         categorization.secondaryCategories.some(cat => cat.category.id === id)
       );
 
       if (primaryMatch) {
         confidence += 0.6;
-        reasoning.push(`Primary category match: ${categorization.primaryCategory.category.name}`);
+        reasoning.push(
+          `Primary category match: ${categorization.primaryCategory.category.name}`
+        );
       } else if (secondaryMatch) {
         confidence += 0.4;
-        const matchedCategory = categorization.secondaryCategories.find(cat => 
+        const matchedCategory = categorization.secondaryCategories.find(cat =>
           template.categoryIds.includes(cat.category.id)
         );
-        reasoning.push(`Secondary category match: ${matchedCategory?.category.name}`);
+        reasoning.push(
+          `Secondary category match: ${matchedCategory?.category.name}`
+        );
       } else {
         return { confidence: 0, reasoning: ['No category match'], variables };
       }
@@ -345,7 +382,9 @@ export class ResponseSuggestions {
         reasoning.push(`Sentiment match: ${categorization.sentiment}`);
       } else {
         confidence -= 0.2;
-        reasoning.push(`Sentiment mismatch: expected ${template.sentiment}, got ${categorization.sentiment}`);
+        reasoning.push(
+          `Sentiment mismatch: expected ${template.sentiment}, got ${categorization.sentiment}`
+        );
       }
     }
 
@@ -354,10 +393,14 @@ export class ResponseSuggestions {
       const { min, max } = template.ratingRange;
       if (review.starRating >= min && review.starRating <= max) {
         confidence += 0.15;
-        reasoning.push(`Rating match: ${review.starRating} stars in range ${min}-${max}`);
+        reasoning.push(
+          `Rating match: ${review.starRating} stars in range ${min}-${max}`
+        );
       } else {
         confidence -= 0.1;
-        reasoning.push(`Rating outside range: ${review.starRating} stars, expected ${min}-${max}`);
+        reasoning.push(
+          `Rating outside range: ${review.starRating} stars, expected ${min}-${max}`
+        );
       }
     }
 
@@ -382,17 +425,27 @@ export class ResponseSuggestions {
   }
 
   private prepareVariables(context: SuggestionContext): Record<string, string> {
-    const { review, appName, appVersion, supportEmail, companyName, additionalContext } = context;
-    
+    const {
+      review,
+      appName,
+      appVersion,
+      supportEmail,
+      companyName,
+      additionalContext,
+    } = context;
+
     const variables: Record<string, string> = {
       reviewer_name: this.getReviewerName(review.authorName),
       app_name: appName || 'the app',
       app_version: appVersion || review.appVersionName || 'latest version',
-      support_email: supportEmail || this.config.companyInfo?.supportEmail || 'support@company.com',
+      support_email:
+        supportEmail ||
+        this.config.companyInfo?.supportEmail ||
+        'support@company.com',
       company_name: companyName || this.config.companyInfo?.name || 'our team',
       rating: review.starRating.toString(),
       device: review.device || 'your device',
-      android_version: review.androidOsVersion || 'your Android version'
+      android_version: review.androidOsVersion || 'your Android version',
     };
 
     // Add any additional context variables
@@ -405,10 +458,14 @@ export class ResponseSuggestions {
 
   private getReviewerName(authorName: string): string {
     // Google Play sometimes provides anonymized names or "A Google User"
-    if (!authorName || authorName === 'A Google User' || authorName.toLowerCase().includes('anonymous')) {
+    if (
+      !authorName ||
+      authorName === 'A Google User' ||
+      authorName.toLowerCase().includes('anonymous')
+    ) {
       return 'there'; // "Hi there" instead of "Hi A Google User"
     }
-    
+
     // Use first name only for friendlier tone
     const firstName = authorName.split(' ')[0];
     return firstName || 'there';
@@ -424,7 +481,10 @@ export class ResponseSuggestions {
     // Replace all template variables
     for (const [key, value] of Object.entries(variables)) {
       const placeholder = `{{${key}}}`;
-      rendered = rendered.replace(new RegExp(placeholder.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), value);
+      rendered = rendered.replace(
+        new RegExp(placeholder.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'),
+        value
+      );
     }
 
     // Remove any unreplaced variables (fallback)
@@ -438,21 +498,33 @@ export class ResponseSuggestions {
     return rendered.trim();
   }
 
-  private personalizeResponse(response: string, context: SuggestionContext): string {
+  private personalizeResponse(
+    response: string,
+    context: SuggestionContext
+  ): string {
     const { review, categorization } = context;
 
     // Add emoji for positive responses
     if (categorization.sentiment === 'positive' && review.starRating >= 4) {
-      if (!response.includes('⭐') && !response.includes('😊') && !response.includes('🙂')) {
+      if (
+        !response.includes('⭐') &&
+        !response.includes('😊') &&
+        !response.includes('🙂')
+      ) {
         // Add a subtle emoji
         response = response.replace(/Thank you/, 'Thank you 😊');
       }
     }
 
     // Adjust formality based on review content
-    const hasInformalLanguage = /\b(awesome|cool|love it|amazing)\b/i.test(review.text || '');
+    const hasInformalLanguage = /\b(awesome|cool|love it|amazing)\b/i.test(
+      review.text || ''
+    );
     if (hasInformalLanguage && response.includes('We sincerely apologize')) {
-      response = response.replace('We sincerely apologize', 'We\'re really sorry');
+      response = response.replace(
+        'We sincerely apologize',
+        "We're really sorry"
+      );
     }
 
     return response;

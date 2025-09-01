@@ -66,7 +66,7 @@ export class MessageThreading extends EventEmitter {
   ) {
     super();
     this.logger = Logger.getInstance().child({ component: 'MessageThreading' });
-    
+
     if (this.config.enableThreading) {
       this.setupAutoCleanup();
     }
@@ -82,7 +82,7 @@ export class MessageThreading extends EventEmitter {
     packageName: string
   ): Promise<ThreadInfo> {
     const threadId = this.generateThreadId(review.reviewId, packageName);
-    
+
     const threadInfo: ThreadInfo = {
       threadId,
       rootEventId,
@@ -93,11 +93,14 @@ export class MessageThreading extends EventEmitter {
       messageCount: 1,
       lastActivity: new Date(),
       status: 'active',
-      tags: this.generateThreadTags(review)
+      tags: this.generateThreadTags(review),
     };
 
     // Add initial participant (virtual reviewer user)
-    const reviewerUserId = this.getReviewerUserId(review.authorName, packageName);
+    const reviewerUserId = this.getReviewerUserId(
+      review.authorName,
+      packageName
+    );
     threadInfo.participants.add(reviewerUserId);
 
     // Store thread info
@@ -112,7 +115,9 @@ export class MessageThreading extends EventEmitter {
       await this.sendThreadNotification(threadInfo, 'created');
     }
 
-    this.logger.info(`Created thread ${threadId} for review ${review.reviewId}`);
+    this.logger.info(
+      `Created thread ${threadId} for review ${review.reviewId}`
+    );
     this.emit('thread:created', threadInfo);
 
     return threadInfo;
@@ -141,7 +146,7 @@ export class MessageThreading extends EventEmitter {
       content,
       timestamp: new Date(),
       messageType,
-      isFromBridge
+      isFromBridge,
     };
 
     // Update thread info
@@ -175,20 +180,22 @@ export class MessageThreading extends EventEmitter {
     }
 
     const intent = this.bridge.getIntent(fromUserId);
-    
+
     // Prepare threaded message content
     const content: any = {
       msgtype: 'm.text',
       body: replyText,
       'm.relates_to': {
         rel_type: 'm.thread',
-        event_id: thread.rootEventId
-      } as any
+        event_id: thread.rootEventId,
+      } as any,
     };
 
     // Add mentions if configured
     if (this.config.mentionOnReply && mentionUsers.length > 0) {
-      const mentions = mentionUsers.map(userId => `[${userId}](https://matrix.to/#/${userId})`).join(' ');
+      const mentions = mentionUsers
+        .map(userId => `[${userId}](https://matrix.to/#/${userId})`)
+        .join(' ');
       content.body = `${mentions} ${replyText}`;
       content.format = 'org.matrix.custom.html';
       content.formatted_body = `${mentionUsers.map(userId => `<a href="https://matrix.to/#/${userId}">${userId}</a>`).join(' ')} ${replyText}`;
@@ -196,7 +203,8 @@ export class MessageThreading extends EventEmitter {
 
     // Send the message
     const eventResult = await intent.sendMessage(thread.roomId, content);
-    const eventId = typeof eventResult === 'string' ? eventResult : eventResult.event_id;
+    const eventId =
+      typeof eventResult === 'string' ? eventResult : eventResult.event_id;
 
     // Add to thread
     await this.addMessageToThread(
@@ -269,7 +277,11 @@ export class MessageThreading extends EventEmitter {
   /**
    * Resolve a thread (mark as completed/resolved)
    */
-  public async resolveThread(threadId: string, resolvedBy: string, reason?: string): Promise<void> {
+  public async resolveThread(
+    threadId: string,
+    resolvedBy: string,
+    reason?: string
+  ): Promise<void> {
     const thread = this.threads.get(threadId);
     if (!thread) {
       throw new Error(`Thread not found: ${threadId}`);
@@ -285,8 +297,8 @@ export class MessageThreading extends EventEmitter {
       body: `Thread resolved${reason ? `: ${reason}` : ''} (by ${resolvedBy})`,
       'm.relates_to': {
         rel_type: 'm.thread',
-        event_id: thread.rootEventId
-      } as any
+        event_id: thread.rootEventId,
+      } as any,
     };
 
     await intent.sendMessage(thread.roomId, notificationContent);
@@ -296,11 +308,17 @@ export class MessageThreading extends EventEmitter {
 
     // Schedule archiving if configured
     if (this.config.archiveResolvedThreads) {
-      setTimeout(() => {
-        this.archiveThread(threadId).catch(error => {
-          this.logger.error(`Failed to archive resolved thread ${threadId}:`, error);
-        });
-      }, this.config.autoResolveAfterHours * 60 * 60 * 1000);
+      setTimeout(
+        () => {
+          this.archiveThread(threadId).catch(error => {
+            this.logger.error(
+              `Failed to archive resolved thread ${threadId}:`,
+              error
+            );
+          });
+        },
+        this.config.autoResolveAfterHours * 60 * 60 * 1000
+      );
     }
   }
 
@@ -331,7 +349,7 @@ export class MessageThreading extends EventEmitter {
 
     const duration = Date.now() - new Date(thread.lastActivity).getTime();
     const durationHours = Math.round(duration / (1000 * 60 * 60));
-    
+
     const summary = [
       `**Thread Summary: ${threadId}**`,
       `📱 Review ID: ${thread.reviewId}`,
@@ -340,7 +358,7 @@ export class MessageThreading extends EventEmitter {
       `💬 Messages: ${thread.messageCount}`,
       `⏱️ Duration: ${durationHours}h`,
       `🏷️ Status: ${thread.status}`,
-      `🏷️ Tags: ${thread.tags.join(', ')}`
+      `🏷️ Tags: ${thread.tags.join(', ')}`,
     ];
 
     return summary.join('\n');
@@ -356,14 +374,18 @@ export class MessageThreading extends EventEmitter {
     const archivedThreads = threads.filter(t => t.status === 'archived');
 
     const totalMessages = threads.reduce((sum, t) => sum + t.messageCount, 0);
-    const averageMessagesPerThread = threads.length > 0 ? totalMessages / threads.length : 0;
+    const averageMessagesPerThread =
+      threads.length > 0 ? totalMessages / threads.length : 0;
 
     // Calculate average thread lifetime
     const now = Date.now();
-    const lifetimes = threads.map(t => (now - t.lastActivity.getTime()) / (1000 * 60 * 60)); // in hours
-    const averageThreadLifetime = lifetimes.length > 0 
-      ? lifetimes.reduce((sum, l) => sum + l, 0) / lifetimes.length 
-      : 0;
+    const lifetimes = threads.map(
+      t => (now - t.lastActivity.getTime()) / (1000 * 60 * 60)
+    ); // in hours
+    const averageThreadLifetime =
+      lifetimes.length > 0
+        ? lifetimes.reduce((sum, l) => sum + l, 0) / lifetimes.length
+        : 0;
 
     // Count user participation
     const userParticipation = new Map<string, number>();
@@ -385,7 +407,7 @@ export class MessageThreading extends EventEmitter {
       archivedThreads: archivedThreads.length,
       averageMessagesPerThread,
       averageThreadLifetime,
-      topParticipants
+      topParticipants,
     };
   }
 
@@ -393,11 +415,15 @@ export class MessageThreading extends EventEmitter {
    * Clean up old threads
    */
   public async cleanupOldThreads(): Promise<number> {
-    const cutoffTime = Date.now() - (this.config.threadTimeoutHours * 60 * 60 * 1000);
+    const cutoffTime =
+      Date.now() - this.config.threadTimeoutHours * 60 * 60 * 1000;
     const threadsToCleanup: string[] = [];
 
     for (const [threadId, thread] of this.threads) {
-      if (thread.lastActivity.getTime() < cutoffTime && thread.status !== 'active') {
+      if (
+        thread.lastActivity.getTime() < cutoffTime &&
+        thread.status !== 'active'
+      ) {
         threadsToCleanup.push(threadId);
       }
     }
@@ -423,7 +449,7 @@ export class MessageThreading extends EventEmitter {
    */
   public exportThreads(roomId?: string): string {
     let threads: ThreadInfo[];
-    
+
     if (roomId) {
       threads = this.getRoomThreads(roomId);
     } else {
@@ -441,22 +467,22 @@ export class MessageThreading extends EventEmitter {
 
   private generateThreadTags(review: GooglePlayReview): string[] {
     const tags: string[] = [];
-    
+
     // Rating-based tags
     if (review.starRating <= 2) tags.push('negative');
     else if (review.starRating >= 4) tags.push('positive');
     else tags.push('neutral');
-    
+
     // Device-based tags
     if (review.device) {
       tags.push('device-info');
     }
-    
+
     // Version-based tags
     if (review.appVersionName) {
       tags.push(`version-${review.appVersionName.replace(/\./g, '_')}`);
     }
-    
+
     return tags;
   }
 
@@ -481,7 +507,10 @@ export class MessageThreading extends EventEmitter {
     this.roomThreads.get(roomId)!.add(threadId);
   }
 
-  private async sendThreadNotification(thread: ThreadInfo, action: 'created' | 'resolved'): Promise<void> {
+  private async sendThreadNotification(
+    thread: ThreadInfo,
+    action: 'created' | 'resolved'
+  ): Promise<void> {
     try {
       const intent = this.bridge.getIntent();
       const content = {
@@ -489,8 +518,8 @@ export class MessageThreading extends EventEmitter {
         body: `Thread ${action}: ${thread.threadId} for review ${thread.reviewId}`,
         'm.relates_to': {
           rel_type: 'm.thread',
-          event_id: thread.rootEventId
-        }
+          event_id: thread.rootEventId,
+        },
       };
 
       await intent.sendMessage(thread.roomId, content);
@@ -506,7 +535,7 @@ export class MessageThreading extends EventEmitter {
     // Remove from all indices
     this.threads.delete(threadId);
     this.reviewToThread.delete(thread.reviewId);
-    
+
     // Clean up user threads
     for (const userId of thread.participants) {
       const userThreadSet = this.userThreads.get(userId);
@@ -533,11 +562,14 @@ export class MessageThreading extends EventEmitter {
 
   private setupAutoCleanup(): void {
     // Run cleanup every hour
-    setInterval(() => {
-      this.cleanupOldThreads().catch(error => {
-        this.logger.error('Auto cleanup failed:', error);
-      });
-    }, 60 * 60 * 1000);
+    setInterval(
+      () => {
+        this.cleanupOldThreads().catch(error => {
+          this.logger.error('Auto cleanup failed:', error);
+        });
+      },
+      60 * 60 * 1000
+    );
 
     // Run initial cleanup after 1 minute
     setTimeout(() => {
@@ -552,7 +584,7 @@ export class MessageThreading extends EventEmitter {
     if (str.length === 0) return hash.toString();
     for (let i = 0; i < str.length; i++) {
       const char = str.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash; // Convert to 32-bit integer
     }
     return Math.abs(hash).toString(36);
@@ -578,9 +610,9 @@ export class ThreadingUtils {
    * Create threaded message content
    */
   static createThreadedContent(
-    body: string, 
-    rootEventId: string, 
-    format?: string, 
+    body: string,
+    rootEventId: string,
+    format?: string,
     formattedBody?: string
   ): any {
     const content: any = {
@@ -588,8 +620,8 @@ export class ThreadingUtils {
       body,
       'm.relates_to': {
         rel_type: 'm.thread',
-        event_id: rootEventId
-      }
+        event_id: rootEventId,
+      },
     };
 
     if (format && formattedBody) {

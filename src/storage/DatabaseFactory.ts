@@ -11,7 +11,7 @@ import {
   validatePostgreSQLMigrations,
   getLatestPostgreSQLMigrationVersion,
 } from './postgresqlMigrations';
-import { DatabaseConfig } from '../models/Config';
+import { DatabaseConfig } from '../models/ConfigTypes';
 import { Logger } from '../utils/Logger';
 
 export type DatabaseType = 'sqlite' | 'postgresql';

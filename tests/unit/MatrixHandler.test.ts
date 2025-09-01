@@ -237,6 +237,7 @@ describe('MatrixHandler', () => {
         type: 'm.room.create',
         sender: '@user:example.com',
         room_id: '!newroom:example.com',
+        content: {}, // Required by enhanced validation
       };
 
       await matrixHandler.handleEvent(createMockRequest(event));

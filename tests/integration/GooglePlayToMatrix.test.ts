@@ -36,7 +36,7 @@ import { GooglePlayBridge } from '../../src/bridge/GooglePlayBridge';
 import { GooglePlayClient } from '../../src/api/GooglePlayClient';
 import { ReviewManager } from '../../src/api/ReviewManager';
 import { Config } from '../../src/utils/Config';
-import { BridgeConfig } from '../../src/models/Config';
+import { BridgeConfig } from '../../src/models/ConfigTypes';
 
 // Mock dependencies
 jest.mock('../../src/api/GooglePlayClient');

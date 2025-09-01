@@ -1,0 +1,146 @@
+# Matrix Google Play Bridge - Docker Ignore File
+# Optimized for faster builds and smaller contexts
+
+# Git and version control
+.git
+.gitignore
+.gitattributes
+.github/
+
+# Documentation
+README.md
+docs/
+*.md
+!package*.json
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.npm
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+.pnp.*
+
+# Build outputs (except for what we need)
+dist/
+build/
+*.tsbuildinfo
+coverage/
+
+# Development and testing
+.env.local
+.env.development
+.env.test
+.env.production
+tests/
+test/
+spec/
+*.test.js
+*.test.ts
+*.spec.js
+*.spec.ts
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+.cache/
+
+# Logs
+*.log
+logs/
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Runtime and temporary files
+.nyc_output/
+.coverage/
+coverage/
+.vscode/
+.eslintcache
+.cache
+tmp/
+temp/
+*.tmp
+
+# Docker files (avoid recursive copying)
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# CI/CD and deployment
+.github/
+.gitlab-ci.yml
+.travis.yml
+.circleci/
+.jenkins/
+
+# Security and secrets
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+*.crt
+secrets/
+*.secret
+
+# Backup and temporary files
+*.backup
+*.bak
+*.old
+*.orig
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Package manager lock files (keep package-lock.json, exclude others)
+yarn.lock
+pnpm-lock.yaml
+
+# TypeScript
+*.tsbuildinfo
+.tscache/
+
+# ESLint
+.eslintcache
+
+# Optional dependencies
+.pnp
+.pnp.js
+
+# Monitoring and deployment configs (copy explicitly in Dockerfile if needed)
+monitoring/
+nginx/
+scripts/
+
+# Local development configs
+config/local.yaml
+config/development.yaml
+config/*.local.*
+
+# Database files
+*.sqlite
+*.sqlite3
+*.db
+
+# Certificates and keys
+*.p12
+*.p8
+service-account-key.json

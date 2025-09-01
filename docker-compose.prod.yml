@@ -1,0 +1,151 @@
+# Production Docker Compose Override
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.prod.yml up
+
+version: '3.8'
+
+services:
+  # =============================================================================
+  # Bridge Application - Production Overrides
+  # =============================================================================
+  bridge:
+    build:
+      target: production
+    environment:
+      NODE_ENV: production
+    command: ["node", "dist/app.js"]
+    
+    # Remove development volume mounts
+    volumes:
+      - ./config:/app/config:ro
+      - ./secrets:/app/secrets:ro
+      - bridge_data:/app/data
+      - bridge_logs:/var/log/googleplay-bridge
+    
+    # Production resource limits
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
+      restart_policy:
+        condition: on-failure
+        delay: 10s
+        max_attempts: 5
+        window: 120s
+    
+    # Production logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+        labels: "service=matrix-googleplay-bridge"
+
+  # =============================================================================
+  # Database - Production Hardening
+  # =============================================================================
+  postgres:
+    # Production resource allocations
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+    
+    # Production logging
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+  redis:
+    # Production configuration
+    command: >
+      redis-server
+      --appendonly yes
+      --requirepass ${REDIS_PASSWORD:-redis_secure_password}
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+      --timeout 300
+      --tcp-keepalive 60
+    
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.2'
+
+  # =============================================================================
+  # Production Reverse Proxy and SSL
+  # =============================================================================
+  nginx:
+    # Nginx is already defined in main compose file, this overrides for production
+    depends_on:
+      - bridge
+    # Remove profiles to ensure nginx runs in production
+    profiles: []
+
+  # =============================================================================
+  # Log Management - Production Only
+  # =============================================================================
+  fluentd:
+    image: fluent/fluentd:v1.16.2-1.0
+    container_name: ${COMPOSE_PROJECT_NAME:-googleplay-bridge}-fluentd
+    volumes:
+      - ./monitoring/fluentd/fluent.conf:/fluentd/etc/fluent.conf:ro
+      - bridge_logs:/var/log/googleplay-bridge:ro
+      - /var/log:/var/log/host:ro
+    depends_on:
+      - bridge
+    restart: unless-stopped
+    networks:
+      - bridge-network
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.2'
+    profiles:
+      - logging
+      - prod
+
+  # =============================================================================
+  # Backup Service - Production Only
+  # =============================================================================
+  backup:
+    image: postgres:15-alpine
+    container_name: ${COMPOSE_PROJECT_NAME:-googleplay-bridge}-backup
+    environment:
+      PGHOST: postgres
+      PGPORT: 5432
+      PGDATABASE: ${DB_NAME:-matrix_googleplay_bridge}
+      PGUSER: ${DB_USER:-bridge_user}
+      PGPASSWORD: ${DB_PASSWORD:-secure_password}
+    volumes:
+      - ./scripts/backup.sh:/backup.sh:ro
+      - backup_data:/backups
+    depends_on:
+      - postgres
+    restart: "no"
+    networks:
+      - bridge-network
+    profiles:
+      - backup
+      - prod
+    # Run backup via cron or external scheduler
+
+# =============================================================================
+# Production Volumes
+# =============================================================================
+volumes:
+  backup_data:
+    driver: local
+    labels:
+      description: "Database backups"

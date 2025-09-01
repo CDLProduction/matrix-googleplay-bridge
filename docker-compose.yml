@@ -1,0 +1,291 @@
+# Docker Compose for Matrix Google Play Bridge
+# Supports development and production environments
+# Usage: 
+#   Development: docker-compose up
+#   Production:  docker-compose -f docker-compose.yml -f docker-compose.prod.yml up
+
+version: '3.8'
+
+services:
+  # =============================================================================
+  # Database Services
+  # =============================================================================
+  
+  # PostgreSQL Database (Primary)
+  postgres:
+    image: postgres:15-alpine
+    container_name: ${COMPOSE_PROJECT_NAME:-googleplay-bridge}-postgres
+    environment:
+      POSTGRES_DB: ${DB_NAME:-matrix_googleplay_bridge}
+      POSTGRES_USER: ${DB_USER:-bridge_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-secure_password}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --lc-collate=C --lc-ctype=C"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/01-init-db.sql:ro
+      - ./scripts/init-tables.sql:/docker-entrypoint-initdb.d/02-init-tables.sql:ro
+    ports:
+      - "${DB_HOST_PORT:-5432}:5432"
+    restart: unless-stopped
+    networks:
+      - bridge-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-bridge_user} -d ${DB_NAME:-matrix_googleplay_bridge}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.25'
+        reservations:
+          memory: 128M
+          cpus: '0.1'
+
+  # Redis (Optional - for caching and future enhancements)
+  redis:
+    image: redis:7-alpine
+    container_name: ${COMPOSE_PROJECT_NAME:-googleplay-bridge}-redis
+    command: >
+      redis-server
+      --appendonly yes
+      --requirepass ${REDIS_PASSWORD:-redis_secure_password}
+      --maxmemory 128mb
+      --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    ports:
+      - "${REDIS_HOST_PORT:-6379}:6379"
+    restart: unless-stopped
+    networks:
+      - bridge-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: '0.1'
+
+  # =============================================================================
+  # Matrix Google Play Bridge Application
+  # =============================================================================
+  
+  bridge:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: ${BUILD_TARGET:-development}
+      args:
+        NODE_VERSION: ${NODE_VERSION:-18.20.4}
+        ALPINE_VERSION: ${ALPINE_VERSION:-3.19}
+    container_name: ${COMPOSE_PROJECT_NAME:-googleplay-bridge}-app
+    environment:
+      # Application Environment
+      NODE_ENV: ${NODE_ENV:-development}
+      CONFIG_PATH: ${CONFIG_PATH:-/app/config/config.yaml}
+      
+      # Database Configuration
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-matrix_googleplay_bridge}
+      DB_USER: ${DB_USER:-bridge_user}
+      DB_PASSWORD: ${DB_PASSWORD:-secure_password}
+      DB_SSL: ${DB_SSL:-false}
+      
+      # Redis Configuration (optional)
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-redis_secure_password}
+      
+      # Matrix Configuration
+      MATRIX_HOMESERVER_URL: ${MATRIX_HOMESERVER_URL:-https://matrix.example.com}
+      MATRIX_DOMAIN: ${MATRIX_DOMAIN:-example.com}
+      MATRIX_AS_TOKEN: ${MATRIX_AS_TOKEN:-your-as-token-here}
+      MATRIX_HS_TOKEN: ${MATRIX_HS_TOKEN:-your-hs-token-here}
+      
+      # Google Play Configuration
+      GOOGLE_APPLICATION_CREDENTIALS: ${GOOGLE_APPLICATION_CREDENTIALS:-/app/secrets/service-account-key.json}
+      GOOGLE_PLAY_PACKAGE_NAME: ${GOOGLE_PLAY_PACKAGE_NAME:-com.example.app}
+      
+      # Security and Monitoring
+      BRIDGE_ADMINS: ${BRIDGE_ADMINS:-@admin:example.com}
+      MONITORING_ENABLED: ${MONITORING_ENABLED:-true}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      
+      # Health Check Configuration
+      HEALTH_CHECK_INTERVAL: ${HEALTH_CHECK_INTERVAL:-30s}
+      HEALTH_CHECK_TIMEOUT: ${HEALTH_CHECK_TIMEOUT:-10s}
+      HEALTH_CHECK_RETRIES: ${HEALTH_CHECK_RETRIES:-3}
+      
+      # Basic metrics (lightweight, no external dependencies)
+      ENABLE_METRICS: ${ENABLE_METRICS:-true}
+      METRICS_PORT: 9090
+      
+    volumes:
+      # Configuration
+      - ./config:/app/config:ro
+      - ./secrets:/app/secrets:ro
+      
+      # Development volume mounts (only used in development)
+      - ./src:/app/src:ro
+      - ./package*.json:/app/package*.json:ro
+      
+      # Data and logs
+      - bridge_data:/app/data
+      - bridge_logs:/var/log/googleplay-bridge
+      
+    ports:
+      - "${BRIDGE_PORT:-8080}:8080"      # Application Service Port
+      - "${MONITORING_PORT:-9090}:9090"  # Health/Metrics Port
+      
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+        
+    restart: unless-stopped
+    networks:
+      - bridge-network
+      
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9090/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+      
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+          
+    # Override entrypoint to use our custom script
+    entrypoint: ["/app/docker-entrypoint.sh"]
+    
+    # Development command override (can be overridden in production compose)
+    command: ["npm", "run", "dev"]
+
+  # =============================================================================
+  # Reverse Proxy and Load Balancing
+  # =============================================================================
+  
+  # Nginx - Reverse Proxy and SSL Termination
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: ${COMPOSE_PROJECT_NAME:-googleplay-bridge}-nginx
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - ./nginx/html:/usr/share/nginx/html:ro
+    ports:
+      - "${HTTP_PORT:-80}:80"
+      - "${HTTPS_PORT:-443}:443"
+    depends_on:
+      - bridge
+    restart: unless-stopped
+    networks:
+      - bridge-network
+    healthcheck:
+      test: ["CMD", "nginx", "-t"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: '0.1'
+    profiles:
+      - nginx
+      - production
+
+  # =============================================================================
+  # Development Tools (only for development environment)
+  # =============================================================================
+  
+  # Adminer - Database Management (Development only)
+  adminer:
+    image: adminer:4.8.1
+    container_name: ${COMPOSE_PROJECT_NAME:-googleplay-bridge}-adminer
+    environment:
+      ADMINER_DEFAULT_SERVER: postgres
+      ADMINER_DESIGN: pepa-linha-dark
+    ports:
+      - "${ADMINER_PORT:-8081}:8080"
+    depends_on:
+      - postgres
+    restart: unless-stopped
+    networks:
+      - bridge-network
+    profiles:
+      - dev
+      - development
+
+  # Redis Commander - Redis Management (Development only)
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: ${COMPOSE_PROJECT_NAME:-googleplay-bridge}-redis-commander
+    environment:
+      REDIS_HOSTS: local:redis:6379:0:${REDIS_PASSWORD:-redis_secure_password}
+      HTTP_USER: ${REDIS_COMMANDER_USER:-admin}
+      HTTP_PASSWORD: ${REDIS_COMMANDER_PASSWORD:-admin}
+    ports:
+      - "${REDIS_COMMANDER_PORT:-8082}:8081"
+    depends_on:
+      - redis
+    restart: unless-stopped
+    networks:
+      - bridge-network
+    profiles:
+      - dev
+      - development
+
+# =============================================================================
+# Volume Definitions
+# =============================================================================
+volumes:
+  postgres_data:
+    driver: local
+    labels:
+      description: "PostgreSQL database data"
+      
+  redis_data:
+    driver: local
+    labels:
+      description: "Redis cache data"
+      
+  bridge_data:
+    driver: local
+    labels:
+      description: "Bridge application data"
+      
+  bridge_logs:
+    driver: local
+    labels:
+      description: "Bridge application logs"
+      
+
+# =============================================================================
+# Network Definitions  
+# =============================================================================
+networks:
+  bridge-network:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.20.0.0/16
+    labels:
+      description: "Matrix Google Play Bridge network"

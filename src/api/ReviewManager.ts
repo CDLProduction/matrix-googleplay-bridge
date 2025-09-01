@@ -524,38 +524,38 @@ export class ReviewManager {
   // Phase 4.3 methods for maintenance mode support
   async pauseProcessing(): Promise<void> {
     this.logger.info('Pausing review processing for maintenance mode');
-    
+
     // Stop all polling timers
     for (const timer of this.pollingIntervals.values()) {
       clearInterval(timer);
     }
     this.pollingIntervals.clear();
-    
+
     this.logger.info('Review processing paused');
   }
 
   async resumeProcessing(): Promise<void> {
     this.logger.info('Resuming review processing from maintenance mode');
-    
+
     // Restart polling for all active packages
     for (const [packageName] of this.processingStats) {
       this.logger.info(`Resuming polling for ${packageName}`);
       // Note: Would need access to the original config to restart properly
       // For now, just log that we would restart polling
     }
-    
+
     this.logger.info('Review processing resumed');
   }
 
   updateConfiguration(newGooglePlayConfig: any): void {
     this.logger.info('Updating ReviewManager configuration');
-    
+
     // Log configuration update
     this.logger.info('Review manager configuration updated', {
       pollInterval: newGooglePlayConfig.pollIntervalMs,
-      appCount: newGooglePlayConfig.applications?.length || 0
+      appCount: newGooglePlayConfig.applications?.length || 0,
     });
-    
+
     // Note: In a full implementation, this would update polling intervals
     // but requires restructuring to store app configurations
   }

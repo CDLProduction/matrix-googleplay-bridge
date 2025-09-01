@@ -45,7 +45,7 @@ export class ReviewCategorization {
   private readonly logger: Logger;
   private categories: Map<string, ReviewCategory> = new Map();
   private keywordMap: Map<string, string[]> = new Map();
-  
+
   // Predefined categories based on common Google Play review patterns
   private readonly defaultCategories: ReviewCategory[] = [
     {
@@ -53,193 +53,404 @@ export class ReviewCategorization {
       name: 'App Crashes',
       description: 'App stability and crash issues',
       priority: 'critical',
-      color: '#ff4444'
+      color: '#ff4444',
     },
     {
       id: 'bug',
       name: 'Bug Reports',
       description: 'General bugs and technical issues',
       priority: 'high',
-      color: '#ff8800'
+      color: '#ff8800',
     },
     {
       id: 'performance',
       name: 'Performance Issues',
       description: 'Slow, laggy, or unresponsive app behavior',
       priority: 'high',
-      color: '#ffaa00'
+      color: '#ffaa00',
     },
     {
       id: 'feature_request',
       name: 'Feature Requests',
       description: 'User requesting new features or improvements',
       priority: 'medium',
-      color: '#0088ff'
+      color: '#0088ff',
     },
     {
       id: 'ui_ux',
       name: 'UI/UX Issues',
       description: 'User interface and user experience problems',
       priority: 'medium',
-      color: '#8800ff'
+      color: '#8800ff',
     },
     {
       id: 'login_auth',
       name: 'Login/Authentication',
       description: 'Issues with signing in, accounts, passwords',
       priority: 'high',
-      color: '#ff0088'
+      color: '#ff0088',
     },
     {
       id: 'billing',
       name: 'Billing/Payments',
       description: 'In-app purchases, subscriptions, payment issues',
       priority: 'critical',
-      color: '#ff0000'
+      color: '#ff0000',
     },
     {
       id: 'data_sync',
       name: 'Data/Sync Issues',
       description: 'Problems with data syncing, cloud saves, backups',
       priority: 'high',
-      color: '#ff6600'
+      color: '#ff6600',
     },
     {
       id: 'compatibility',
       name: 'Device Compatibility',
       description: 'Issues specific to devices, OS versions, hardware',
       priority: 'medium',
-      color: '#6600ff'
+      color: '#6600ff',
     },
     {
       id: 'privacy_security',
       name: 'Privacy/Security',
       description: 'Privacy concerns, security issues, permissions',
       priority: 'high',
-      color: '#ff3366'
+      color: '#ff3366',
     },
     {
       id: 'positive_feedback',
       name: 'Positive Feedback',
       description: 'User satisfaction, praise, positive experiences',
       priority: 'low',
-      color: '#00bb00'
+      color: '#00bb00',
     },
     {
       id: 'update_issues',
       name: 'Update Problems',
       description: 'Issues after app updates, version-specific problems',
       priority: 'high',
-      color: '#ffcc00'
+      color: '#ffcc00',
     },
     {
       id: 'support_request',
       name: 'Support Request',
       description: 'User explicitly asking for help or support',
       priority: 'medium',
-      color: '#00aaff'
+      color: '#00aaff',
     },
     {
       id: 'spam_irrelevant',
       name: 'Spam/Irrelevant',
       description: 'Spam, off-topic, or irrelevant reviews',
       priority: 'low',
-      color: '#888888'
-    }
+      color: '#888888',
+    },
   ];
 
   // Keyword patterns for each category
   private readonly defaultKeywords: Record<string, string[]> = {
     crash: [
-      'crash', 'crashes', 'crashed', 'crashing', 'force close', 'force closes',
-      'shuts down', 'closes unexpectedly', 'app stops', 'keeps crashing',
-      'won\'t stay open', 'immediately closes', 'crashes on startup'
+      'crash',
+      'crashes',
+      'crashed',
+      'crashing',
+      'force close',
+      'force closes',
+      'shuts down',
+      'closes unexpectedly',
+      'app stops',
+      'keeps crashing',
+      "won't stay open",
+      'immediately closes',
+      'crashes on startup',
     ],
     bug: [
-      'bug', 'bugs', 'buggy', 'glitch', 'glitches', 'error', 'errors',
-      'broken', 'not working', 'doesn\'t work', 'malfunction', 'issue', 'issues',
-      'problem', 'problems', 'wrong', 'incorrect', 'messed up'
+      'bug',
+      'bugs',
+      'buggy',
+      'glitch',
+      'glitches',
+      'error',
+      'errors',
+      'broken',
+      'not working',
+      "doesn't work",
+      'malfunction',
+      'issue',
+      'issues',
+      'problem',
+      'problems',
+      'wrong',
+      'incorrect',
+      'messed up',
     ],
     performance: [
-      'slow', 'laggy', 'lag', 'sluggish', 'unresponsive', 'freezes', 'frozen',
-      'hangs', 'stuck', 'loading forever', 'takes forever', 'performance',
-      'speed', 'fast', 'responsive', 'smooth', 'choppy'
+      'slow',
+      'laggy',
+      'lag',
+      'sluggish',
+      'unresponsive',
+      'freezes',
+      'frozen',
+      'hangs',
+      'stuck',
+      'loading forever',
+      'takes forever',
+      'performance',
+      'speed',
+      'fast',
+      'responsive',
+      'smooth',
+      'choppy',
     ],
     feature_request: [
-      'please add', 'would like', 'wish', 'hope', 'feature request',
-      'suggestion', 'could you add', 'missing feature', 'needs', 'should have',
-      'would be nice', 'request', 'enhance', 'improvement', 'upgrade'
+      'please add',
+      'would like',
+      'wish',
+      'hope',
+      'feature request',
+      'suggestion',
+      'could you add',
+      'missing feature',
+      'needs',
+      'should have',
+      'would be nice',
+      'request',
+      'enhance',
+      'improvement',
+      'upgrade',
     ],
     ui_ux: [
-      'interface', 'design', 'layout', 'buttons', 'menu', 'navigation',
-      'confusing', 'hard to use', 'difficult', 'user friendly', 'intuitive',
-      'colors', 'theme', 'look', 'appearance', 'ugly', 'beautiful'
+      'interface',
+      'design',
+      'layout',
+      'buttons',
+      'menu',
+      'navigation',
+      'confusing',
+      'hard to use',
+      'difficult',
+      'user friendly',
+      'intuitive',
+      'colors',
+      'theme',
+      'look',
+      'appearance',
+      'ugly',
+      'beautiful',
     ],
     login_auth: [
-      'login', 'log in', 'sign in', 'password', 'account', 'authentication',
-      'can\'t login', 'won\'t login', 'forgot password', 'reset password',
-      'username', 'email', 'register', 'signup', 'sign up'
+      'login',
+      'log in',
+      'sign in',
+      'password',
+      'account',
+      'authentication',
+      "can't login",
+      "won't login",
+      'forgot password',
+      'reset password',
+      'username',
+      'email',
+      'register',
+      'signup',
+      'sign up',
     ],
     billing: [
-      'payment', 'billing', 'charged', 'money', 'refund', 'purchase',
-      'subscription', 'premium', 'paid', 'free', 'cost', 'price',
-      'in-app purchase', 'buy', 'bought', 'transaction', 'credit card'
+      'payment',
+      'billing',
+      'charged',
+      'money',
+      'refund',
+      'purchase',
+      'subscription',
+      'premium',
+      'paid',
+      'free',
+      'cost',
+      'price',
+      'in-app purchase',
+      'buy',
+      'bought',
+      'transaction',
+      'credit card',
     ],
     data_sync: [
-      'sync', 'backup', 'cloud', 'data', 'lost data', 'missing data',
-      'save', 'saved', 'progress', 'transfer', 'export', 'import',
-      'synchronize', 'synchronization', 'cloud save'
+      'sync',
+      'backup',
+      'cloud',
+      'data',
+      'lost data',
+      'missing data',
+      'save',
+      'saved',
+      'progress',
+      'transfer',
+      'export',
+      'import',
+      'synchronize',
+      'synchronization',
+      'cloud save',
     ],
     compatibility: [
-      'device', 'phone', 'tablet', 'android', 'version', 'os',
-      'doesn\'t support', 'not compatible', 'won\'t install', 'can\'t install',
-      'hardware', 'model', 'brand', 'samsung', 'pixel', 'lg', 'htc'
+      'device',
+      'phone',
+      'tablet',
+      'android',
+      'version',
+      'os',
+      "doesn't support",
+      'not compatible',
+      "won't install",
+      "can't install",
+      'hardware',
+      'model',
+      'brand',
+      'samsung',
+      'pixel',
+      'lg',
+      'htc',
     ],
     privacy_security: [
-      'privacy', 'security', 'permissions', 'permission', 'access',
-      'data collection', 'tracking', 'ads', 'advertisement', 'personal info',
-      'secure', 'safety', 'trust', 'suspicious'
+      'privacy',
+      'security',
+      'permissions',
+      'permission',
+      'access',
+      'data collection',
+      'tracking',
+      'ads',
+      'advertisement',
+      'personal info',
+      'secure',
+      'safety',
+      'trust',
+      'suspicious',
     ],
     positive_feedback: [
-      'great', 'awesome', 'amazing', 'excellent', 'perfect', 'love',
-      'fantastic', 'wonderful', 'brilliant', 'outstanding', 'superb',
-      'best', 'good', 'nice', 'useful', 'helpful', 'recommend'
+      'great',
+      'awesome',
+      'amazing',
+      'excellent',
+      'perfect',
+      'love',
+      'fantastic',
+      'wonderful',
+      'brilliant',
+      'outstanding',
+      'superb',
+      'best',
+      'good',
+      'nice',
+      'useful',
+      'helpful',
+      'recommend',
     ],
     update_issues: [
-      'update', 'updated', 'new version', 'latest version', 'after update',
-      'since update', 'broke after', 'stopped working after', 'version',
-      'upgrade', 'upgraded', 'changelog'
+      'update',
+      'updated',
+      'new version',
+      'latest version',
+      'after update',
+      'since update',
+      'broke after',
+      'stopped working after',
+      'version',
+      'upgrade',
+      'upgraded',
+      'changelog',
     ],
     support_request: [
-      'help', 'support', 'assistance', 'how to', 'how do i', 'can someone',
-      'need help', 'please help', 'customer service', 'contact',
-      'question', 'ask', 'tutorial', 'guide'
+      'help',
+      'support',
+      'assistance',
+      'how to',
+      'how do i',
+      'can someone',
+      'need help',
+      'please help',
+      'customer service',
+      'contact',
+      'question',
+      'ask',
+      'tutorial',
+      'guide',
     ],
     spam_irrelevant: [
-      'first', 'second', 'third', 'hi', 'hello', 'test', 'testing',
-      'random', 'spam', 'advertisement', 'promote', 'check out',
-      'visit my', 'download my', 'like my'
-    ]
+      'first',
+      'second',
+      'third',
+      'hi',
+      'hello',
+      'test',
+      'testing',
+      'random',
+      'spam',
+      'advertisement',
+      'promote',
+      'check out',
+      'visit my',
+      'download my',
+      'like my',
+    ],
   };
 
   // Sentiment keywords
   private readonly sentimentKeywords = {
     positive: [
-      'love', 'great', 'awesome', 'amazing', 'excellent', 'perfect',
-      'fantastic', 'wonderful', 'brilliant', 'outstanding', 'superb',
-      'best', 'good', 'nice', 'useful', 'helpful', 'recommend',
-      'satisfied', 'happy', 'pleased', 'impressed', 'enjoy'
+      'love',
+      'great',
+      'awesome',
+      'amazing',
+      'excellent',
+      'perfect',
+      'fantastic',
+      'wonderful',
+      'brilliant',
+      'outstanding',
+      'superb',
+      'best',
+      'good',
+      'nice',
+      'useful',
+      'helpful',
+      'recommend',
+      'satisfied',
+      'happy',
+      'pleased',
+      'impressed',
+      'enjoy',
     ],
     negative: [
-      'hate', 'terrible', 'awful', 'horrible', 'worst', 'bad',
-      'disappointing', 'frustrated', 'annoying', 'useless', 'waste',
-      'regret', 'angry', 'mad', 'disgusted', 'pathetic', 'garbage',
-      'trash', 'uninstall', 'delete', 'removed'
-    ]
+      'hate',
+      'terrible',
+      'awful',
+      'horrible',
+      'worst',
+      'bad',
+      'disappointing',
+      'frustrated',
+      'annoying',
+      'useless',
+      'waste',
+      'regret',
+      'angry',
+      'mad',
+      'disgusted',
+      'pathetic',
+      'garbage',
+      'trash',
+      'uninstall',
+      'delete',
+      'removed',
+    ],
   };
 
   constructor(private readonly config: CategorizationConfig) {
-    this.logger = Logger.getInstance().child({ component: 'ReviewCategorization' });
+    this.logger = Logger.getInstance().child({
+      component: 'ReviewCategorization',
+    });
     this.initializeCategories();
     this.initializeKeywords();
   }
@@ -247,26 +458,35 @@ export class ReviewCategorization {
   /**
    * Categorize a Google Play review with comprehensive analysis
    */
-  public async categorizeReview(review: GooglePlayReview): Promise<CategorizationResult> {
+  public async categorizeReview(
+    review: GooglePlayReview
+  ): Promise<CategorizationResult> {
     const text = review.text?.toLowerCase() || '';
     const rating = review.starRating;
-    
-    this.logger.debug(`Categorizing review ${review.reviewId} (${rating} stars): "${text.substring(0, 100)}..."`);
+
+    this.logger.debug(
+      `Categorizing review ${review.reviewId} (${rating} stars): "${text.substring(0, 100)}..."`
+    );
 
     // Find matching categories
     const categoryMatches = this.findCategoryMatches(text, rating);
-    
+
     // Determine sentiment
     const sentiment = this.analyzeSentiment(text, rating);
-    
+
     // Extract keywords
     const keywords = this.extractKeywords(text);
-    
+
     // Analyze device information
     const deviceInfo = this.analyzeDeviceInfo(review);
-    
+
     // Calculate urgency
-    const urgency = this.calculateUrgency(categoryMatches, sentiment, rating, deviceInfo);
+    const urgency = this.calculateUrgency(
+      categoryMatches,
+      sentiment,
+      rating,
+      deviceInfo
+    );
 
     // Sort matches by confidence and filter
     const sortedMatches = categoryMatches
@@ -274,25 +494,27 @@ export class ReviewCategorization {
       .filter(match => match.confidence >= this.config.confidenceThreshold);
 
     const primaryCategory = sortedMatches[0];
-    const secondaryCategories = sortedMatches
-      .slice(1, this.config.maxSecondaryCategories + 1);
+    const secondaryCategories = sortedMatches.slice(
+      1,
+      this.config.maxSecondaryCategories + 1
+    );
 
     const result: CategorizationResult = {
-      primaryCategory: primaryCategory || { 
+      primaryCategory: primaryCategory || {
         category: this.defaultCategories[0] || {
           id: 'general',
           name: 'General',
           description: 'General category for unmatched reviews',
-          priority: 'low'
-        }, 
+          priority: 'low',
+        },
         confidence: 0,
-        reasons: ['default category'] 
+        reasons: ['default category'],
       },
       secondaryCategories,
       sentiment,
       urgency,
       keywords,
-      deviceInfo: deviceInfo || { hasDeviceIssue: false }
+      deviceInfo: deviceInfo || { hasDeviceIssue: false },
     };
 
     this.logger.debug(`Categorization result for ${review.reviewId}:`, {
@@ -300,7 +522,7 @@ export class ReviewCategorization {
       confidence: primaryCategory?.confidence,
       sentiment,
       urgency,
-      keywordCount: keywords.length
+      keywordCount: keywords.length,
     });
 
     return result;
@@ -355,16 +577,22 @@ export class ReviewCategorization {
 
     // Load custom keywords from config
     if (this.config.customKeywords) {
-      for (const [categoryId, keywords] of Object.entries(this.config.customKeywords)) {
+      for (const [categoryId, keywords] of Object.entries(
+        this.config.customKeywords
+      )) {
         const existing = this.keywordMap.get(categoryId) || [];
         this.keywordMap.set(categoryId, [...existing, ...keywords]);
       }
     }
 
-    const totalKeywords = Array.from(this.keywordMap.values())
-      .reduce((sum, keywords) => sum + keywords.length, 0);
-    
-    this.logger.info(`Initialized ${totalKeywords} categorization keywords across ${this.keywordMap.size} categories`);
+    const totalKeywords = Array.from(this.keywordMap.values()).reduce(
+      (sum, keywords) => sum + keywords.length,
+      0
+    );
+
+    this.logger.info(
+      `Initialized ${totalKeywords} categorization keywords across ${this.keywordMap.size} categories`
+    );
   }
 
   private findCategoryMatches(text: string, rating: number): CategoryMatch[] {
@@ -379,7 +607,10 @@ export class ReviewCategorization {
 
       // Count keyword matches
       for (const keyword of keywords) {
-        const regex = new RegExp(`\\b${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi');
+        const regex = new RegExp(
+          `\\b${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`,
+          'gi'
+        );
         const matches = text.match(regex);
         if (matches) {
           matchedKeywords.push(keyword);
@@ -389,15 +620,25 @@ export class ReviewCategorization {
 
       if (matchedKeywords.length > 0) {
         // Calculate confidence based on matches and context
-        let confidence = Math.min(matchedKeywords.length / keywords.length, 1.0);
-        
+        let confidence = Math.min(
+          matchedKeywords.length / keywords.length,
+          1.0
+        );
+
         // Boost confidence for multiple occurrences
         if (totalMatches > matchedKeywords.length) {
-          confidence += Math.min((totalMatches - matchedKeywords.length) * 0.1, 0.3);
+          confidence += Math.min(
+            (totalMatches - matchedKeywords.length) * 0.1,
+            0.3
+          );
         }
 
         // Adjust confidence based on rating for certain categories
-        confidence = this.adjustConfidenceByRating(confidence, categoryId, rating);
+        confidence = this.adjustConfidenceByRating(
+          confidence,
+          categoryId,
+          rating
+        );
 
         // Ensure confidence doesn't exceed 1.0
         confidence = Math.min(confidence, 1.0);
@@ -408,8 +649,8 @@ export class ReviewCategorization {
             confidence,
             reasons: [
               `Matched ${matchedKeywords.length} keywords: ${matchedKeywords.slice(0, 3).join(', ')}${matchedKeywords.length > 3 ? '...' : ''}`,
-              `Total occurrences: ${totalMatches}`
-            ]
+              `Total occurrences: ${totalMatches}`,
+            ],
           });
         }
       }
@@ -418,9 +659,19 @@ export class ReviewCategorization {
     return matches;
   }
 
-  private adjustConfidenceByRating(confidence: number, categoryId: string, rating: number): number {
+  private adjustConfidenceByRating(
+    confidence: number,
+    categoryId: string,
+    rating: number
+  ): number {
     // Boost negative categories for low ratings
-    const negativeCategoryBoost = ['crash', 'bug', 'performance', 'billing', 'login_auth'];
+    const negativeCategoryBoost = [
+      'crash',
+      'bug',
+      'performance',
+      'billing',
+      'login_auth',
+    ];
     if (negativeCategoryBoost.includes(categoryId) && rating <= 2) {
       confidence *= 1.2;
     }
@@ -438,7 +689,10 @@ export class ReviewCategorization {
     return confidence;
   }
 
-  private analyzeSentiment(text: string, rating: number): 'positive' | 'neutral' | 'negative' {
+  private analyzeSentiment(
+    text: string,
+    rating: number
+  ): 'positive' | 'neutral' | 'negative' {
     if (!this.config.enableSentimentAnalysis) {
       // Simple rating-based sentiment
       if (rating >= 4) return 'positive';
@@ -476,7 +730,8 @@ export class ReviewCategorization {
     else if (rating <= 2) ratingScore = -1;
 
     const keywordScore = positiveScore - negativeScore;
-    const totalScore = (ratingScore * ratingWeight) + (keywordScore * keywordWeight);
+    const totalScore =
+      ratingScore * ratingWeight + keywordScore * keywordWeight;
 
     if (totalScore > 0.3) return 'positive';
     if (totalScore < -0.3) return 'negative';
@@ -489,7 +744,10 @@ export class ReviewCategorization {
     // Extract keywords from all categories
     for (const categoryKeywords of this.keywordMap.values()) {
       for (const keyword of categoryKeywords) {
-        const regex = new RegExp(`\\b${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi');
+        const regex = new RegExp(
+          `\\b${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`,
+          'gi'
+        );
         if (text.match(regex)) {
           keywords.add(keyword);
         }
@@ -499,19 +757,34 @@ export class ReviewCategorization {
     return Array.from(keywords).slice(0, 10); // Limit to top 10 keywords
   }
 
-  private analyzeDeviceInfo(review: GooglePlayReview): CategorizationResult['deviceInfo'] {
+  private analyzeDeviceInfo(
+    review: GooglePlayReview
+  ): CategorizationResult['deviceInfo'] {
     if (!this.config.enableDeviceDetection) {
       return undefined;
     }
 
     const text = review.text?.toLowerCase() || '';
     const hasDeviceKeywords = [
-      'device', 'phone', 'tablet', 'samsung', 'pixel', 'lg', 'htc', 
-      'oneplus', 'xiaomi', 'huawei', 'motorola'
+      'device',
+      'phone',
+      'tablet',
+      'samsung',
+      'pixel',
+      'lg',
+      'htc',
+      'oneplus',
+      'xiaomi',
+      'huawei',
+      'motorola',
     ].some(keyword => text.includes(keyword));
 
-    const result: { hasDeviceIssue: boolean; detectedDevice?: string; osVersion?: string } = {
-      hasDeviceIssue: hasDeviceKeywords
+    const result: {
+      hasDeviceIssue: boolean;
+      detectedDevice?: string;
+      osVersion?: string;
+    } = {
+      hasDeviceIssue: hasDeviceKeywords,
     };
 
     if (review.device) {
@@ -538,10 +811,18 @@ export class ReviewCategorization {
       const primaryCategory = categoryMatches[0];
       if (primaryCategory) {
         switch (primaryCategory.category.priority) {
-          case 'critical': urgencyScore += 4; break;
-          case 'high': urgencyScore += 3; break;
-          case 'medium': urgencyScore += 2; break;
-          case 'low': urgencyScore += 1; break;
+          case 'critical':
+            urgencyScore += 4;
+            break;
+          case 'high':
+            urgencyScore += 3;
+            break;
+          case 'medium':
+            urgencyScore += 2;
+            break;
+          case 'low':
+            urgencyScore += 1;
+            break;
         }
       }
     }

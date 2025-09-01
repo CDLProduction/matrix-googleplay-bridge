@@ -540,19 +540,27 @@ export class SQLiteDatabase extends BaseDatabase {
   }
 
   // App configuration operations
-  async saveAppConfig(packageName: string, config: import('../models/Config').GooglePlayApp): Promise<void> {
+  async saveAppConfig(
+    packageName: string,
+    config: import('../models/ConfigTypes').GooglePlayApp
+  ): Promise<void> {
     this.ensureInitialized();
-    
+
     const configJson = JSON.stringify(config);
-    await this.run(`
+    await this.run(
+      `
       INSERT OR REPLACE INTO app_configs (package_name, config_json, updated_at) 
       VALUES (?, ?, ?)
-    `, [packageName, configJson, new Date().toISOString()]);
+    `,
+      [packageName, configJson, new Date().toISOString()]
+    );
   }
 
-  async getAppConfig(packageName: string): Promise<import('../models/Config').GooglePlayApp | null> {
+  async getAppConfig(
+    packageName: string
+  ): Promise<import('../models/ConfigTypes').GooglePlayApp | null> {
     this.ensureInitialized();
-    
+
     const results = await this.query<any>(
       'SELECT * FROM app_configs WHERE package_name = ?',
       [packageName]
@@ -563,23 +571,31 @@ export class SQLiteDatabase extends BaseDatabase {
     try {
       return JSON.parse(results[0].config_json);
     } catch (error) {
-      this.logger.error(`Failed to parse app config for ${packageName}:`, error);
+      this.logger.error(
+        `Failed to parse app config for ${packageName}:`,
+        error
+      );
       return null;
     }
   }
 
-  async getAllAppConfigs(): Promise<Map<string, import('../models/Config').GooglePlayApp>> {
+  async getAllAppConfigs(): Promise<
+    Map<string, import('../models/ConfigTypes').GooglePlayApp>
+  > {
     this.ensureInitialized();
-    
+
     const results = await this.query<any>('SELECT * FROM app_configs');
-    const configs = new Map<string, import('../models/Config').GooglePlayApp>();
+    const configs = new Map<string, import('../models/ConfigTypes').GooglePlayApp>();
 
     for (const row of results) {
       try {
         const config = JSON.parse(row.config_json);
         configs.set(row.package_name, config);
       } catch (error) {
-        this.logger.error(`Failed to parse app config for ${row.package_name}:`, error);
+        this.logger.error(
+          `Failed to parse app config for ${row.package_name}:`,
+          error
+        );
       }
     }
 
@@ -588,7 +604,9 @@ export class SQLiteDatabase extends BaseDatabase {
 
   async deleteAppConfig(packageName: string): Promise<void> {
     this.ensureInitialized();
-    await this.run('DELETE FROM app_configs WHERE package_name = ?', [packageName]);
+    await this.run('DELETE FROM app_configs WHERE package_name = ?', [
+      packageName,
+    ]);
   }
 
   async vacuum(): Promise<void> {

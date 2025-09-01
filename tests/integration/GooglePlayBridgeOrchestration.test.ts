@@ -34,7 +34,7 @@ jest.mock('matrix-appservice-bridge', () => {
 
 import { GooglePlayBridge } from '../../src/bridge/GooglePlayBridge';
 import { Config } from '../../src/utils/Config';
-import { BridgeConfig } from '../../src/models/Config';
+import { BridgeConfig } from '../../src/models/ConfigTypes';
 
 // Mock all dependencies
 jest.mock('../../src/api/GooglePlayClient');

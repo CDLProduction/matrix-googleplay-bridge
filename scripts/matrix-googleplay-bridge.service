@@ -1,0 +1,41 @@
+[Unit]
+Description=Matrix Google Play Bridge
+Documentation=https://github.com/CDLProduction/matrix-googleplay-bridge
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=matrix-bridge
+Group=matrix-bridge
+WorkingDirectory=/opt/matrix-googleplay-bridge
+ExecStart=/usr/bin/node dist/app.js
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=matrix-googleplay-bridge
+
+# Security settings
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/var/log/matrix-googleplay-bridge /var/lib/matrix-googleplay-bridge /etc/matrix-googleplay-bridge
+CapabilityBoundingSet=
+AmbientCapabilities=
+SystemCallArchitectures=native
+
+# Environment
+Environment=NODE_ENV=production
+Environment=CONFIG_PATH=/etc/matrix-googleplay-bridge/config.yaml
+
+# Resource limits
+LimitNOFILE=65536
+LimitNPROC=4096
+MemoryMax=512M
+CPUQuota=50%
+
+[Install]
+WantedBy=multi-user.target

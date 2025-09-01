@@ -46,13 +46,13 @@ export class MatrixHandler {
     this.appManager = options.appManager;
     this.config = options.config;
     this.logger = Logger.getInstance();
-    
+
     // Initialize bridge commands with admin users from config (if AppManager is available)
     if (this.appManager) {
       const adminUsers = options.config.bridge?.admins || [];
       this.bridgeCommands = new BridgeCommands(
-        this.bridge, 
-        this.appManager, 
+        this.bridge,
+        this.appManager,
         options.googlePlayBridge,
         adminUsers
       );
@@ -82,12 +82,122 @@ export class MatrixHandler {
   }
 
   /**
-   * Internal event handler
+   * Strengthen Matrix event validation per specification
+   * Based on Context7 Matrix specification analysis
+   */
+  private validateMatrixEvent(event: any): boolean {
+    return event.type && 
+           event.content && 
+           event.room_id && 
+           event.sender &&
+           this.isValidEventType(event.type) &&
+           this.sanitizeEventContent(event.content);
+  }
+
+  /**
+   * Validate Matrix event type against known safe event types
+   */
+  private isValidEventType(eventType: string): boolean {
+    const allowedEventTypes = [
+      'm.room.message',
+      'm.room.member',
+      'm.room.create',
+      'm.room.join_rules',
+      'm.room.power_levels',
+      'm.room.name',
+      'm.room.topic',
+      'm.room.avatar',
+      'm.room.encrypted',
+      'm.typing',
+      'm.receipt',
+      'm.presence'
+    ];
+
+    // Basic validation: must start with 'm.' and be in allowed list or follow Matrix namespace pattern
+    if (!eventType.startsWith('m.')) {
+      // Allow state events with reverse DNS notation for custom events
+      return /^[a-zA-Z0-9][a-zA-Z0-9._-]*\.[a-zA-Z]{2,}/.test(eventType);
+    }
+
+    return allowedEventTypes.includes(eventType) || eventType.startsWith('m.room.') || eventType.startsWith('m.call.');
+  }
+
+  /**
+   * Sanitize Matrix event content to prevent malicious data
+   */
+  private sanitizeEventContent(content: any): boolean {
+    if (!content || typeof content !== 'object') {
+      return false;
+    }
+
+    // Check for dangerous script content in message bodies
+    if (content.body && typeof content.body === 'string') {
+      const dangerousPatterns = [
+        /<script[^>]*>/i,
+        /javascript:/i,
+        /on\w+\s*=/i,
+        /data:.*base64/i,
+        /vbscript:/i
+      ];
+      
+      if (dangerousPatterns.some(pattern => pattern.test(content.body))) {
+        this.logger.warn('Dangerous script content detected in event body', {
+          bodyPreview: content.body.substring(0, 100)
+        });
+        return false;
+      }
+    }
+
+    // Check for dangerous HTML in formatted_body
+    if (content.formatted_body && typeof content.formatted_body === 'string') {
+      const htmlDangerousPatterns = [
+        /<script[^>]*>/i,
+        /<iframe[^>]*>/i,
+        /<object[^>]*>/i,
+        /<embed[^>]*>/i,
+        /<link[^>]*>/i,
+        /javascript:/i,
+        /on\w+\s*=/i
+      ];
+
+      if (htmlDangerousPatterns.some(pattern => pattern.test(content.formatted_body))) {
+        this.logger.warn('Dangerous HTML content detected in formatted_body', {
+          htmlPreview: content.formatted_body.substring(0, 100)
+        });
+        return false;
+      }
+    }
+
+    // Additional validation for specific content types
+    if (content.msgtype) {
+      const allowedMsgTypes = ['m.text', 'm.notice', 'm.emote', 'm.image', 'm.file', 'm.audio', 'm.video'];
+      if (!allowedMsgTypes.includes(content.msgtype)) {
+        this.logger.warn('Unknown message type detected', { msgtype: content.msgtype });
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  /**
+   * Internal event handler with enhanced validation
    */
   private async onEvent(request: Request<WeakEvent>): Promise<void> {
     const event = request.getData();
 
     try {
+      // Enhanced Matrix event validation per Context7 specification analysis
+      if (!this.validateMatrixEvent(event)) {
+        this.logger.warn('Matrix event failed validation, rejecting', {
+          eventType: event.type,
+          roomId: event.room_id,
+          sender: event.sender,
+          hasContent: !!event.content
+        });
+        return;
+      }
+
       // Skip events from the bridge bot itself
       if (this.isBridgeBotEvent(event)) {
         return;
@@ -140,7 +250,7 @@ export class MatrixHandler {
       if (namespaceInfo && this.appManager) {
         const { packageName, userId: reviewId } = namespaceInfo;
         const app = this.appManager.getApp(packageName);
-        
+
         this.logger.info(
           `Creating virtual user: ${userId} for app ${packageName} (reviewer ${reviewId})`
         );
@@ -238,7 +348,9 @@ export class MatrixHandler {
       if (this.bridgeCommands) {
         await this.bridgeCommands.handleMessage(roomId, senderId, messageBody);
       } else {
-        this.logger.debug('Bridge commands not available - AppManager not initialized');
+        this.logger.debug(
+          'Bridge commands not available - AppManager not initialized'
+        );
       }
       return;
     }
@@ -254,7 +366,9 @@ export class MatrixHandler {
       // Fallback to old room manager for backwards compatibility
       const roomMapping = await this.roomManager.getRoomMappingByRoomId(roomId);
       if (!roomMapping) {
-        this.logger.debug(`Room ${roomId} is not mapped to any Google Play app`);
+        this.logger.debug(
+          `Room ${roomId} is not mapped to any Google Play app`
+        );
         return;
       }
 
@@ -313,7 +427,10 @@ export class MatrixHandler {
   /**
    * Handle app-specific reply using AppManager configuration
    */
-  private async handleAppSpecificReply(event: WeakEvent, app: import('../models/Config').GooglePlayApp): Promise<void> {
+  private async handleAppSpecificReply(
+    event: WeakEvent,
+    app: import('../models/ConfigTypes').GooglePlayApp
+  ): Promise<void> {
     const roomId = event.room_id!;
     const senderId = event.sender!;
     const content = event.content as any;
@@ -333,12 +450,17 @@ export class MatrixHandler {
       // 2. Try "reply: <text>" format (uses most recent review)
       else if (messageBody.toLowerCase().startsWith('reply:')) {
         replyText = messageBody.substring(6).trim();
-        reviewId = await this.findMostRecentReviewInRoom(roomId, app.packageName);
+        reviewId = await this.findMostRecentReviewInRoom(
+          roomId,
+          app.packageName
+        );
       }
       // 3. Handle threaded replies (if Matrix threading is supported)
       else if (content['m.relates_to']?.['m.in_reply_to']) {
-        const replyToEventId = content['m.relates_to']['m.in_reply_to'].event_id;
-        const mapping = await this.messageManager.getMessageMappingByEventId(replyToEventId);
+        const replyToEventId =
+          content['m.relates_to']['m.in_reply_to'].event_id;
+        const mapping =
+          await this.messageManager.getMessageMappingByEventId(replyToEventId);
         if (mapping && mapping.messageType === 'review') {
           reviewId = mapping.googlePlayReviewId;
           replyText = messageBody;
@@ -364,7 +486,6 @@ export class MatrixHandler {
         roomId,
         senderId
       );
-
     } catch (error) {
       this.logger.error(
         `Error handling app-specific reply for ${app.packageName}: ${error instanceof Error ? error.message : error}`
@@ -381,7 +502,7 @@ export class MatrixHandler {
    */
   private async processAppSpecificReply(
     reviewId: string,
-    app: import('../models/Config').GooglePlayApp,
+    app: import('../models/ConfigTypes').GooglePlayApp,
     rawMessage: string,
     matrixEventId: string,
     matrixRoomId: string,
@@ -457,13 +578,22 @@ export class MatrixHandler {
       // Update app statistics
       if (this.appManager) {
         this.appManager.updateAppStats(app.packageName, {
-          repliesSent: (this.appManager.getAppStats(app.packageName)?.repliesSent || 0) + 1
+          repliesSent:
+            (this.appManager.getAppStats(app.packageName)?.repliesSent || 0) +
+            1,
         });
       }
 
       // Notify admins/moderators if configured
-      if (app.notificationSettings?.mentionAdmins || app.notificationSettings?.mentionModerators) {
-        await this.notifyAppModerators(app, `New reply sent to review ${reviewId} by ${senderId}`, matrixRoomId);
+      if (
+        app.notificationSettings?.mentionAdmins ||
+        app.notificationSettings?.mentionModerators
+      ) {
+        await this.notifyAppModerators(
+          app,
+          `New reply sent to review ${reviewId} by ${senderId}`,
+          matrixRoomId
+        );
       }
 
       // Delegate to the bridge to queue the reply
@@ -479,11 +609,12 @@ export class MatrixHandler {
       this.logger.error(
         `Error processing app-specific reply to review ${reviewId}: ${error instanceof Error ? error.message : error}`
       );
-      
+
       // Update error statistics
       if (this.appManager) {
         this.appManager.updateAppStats(app.packageName, {
-          errors: (this.appManager.getAppStats(app.packageName)?.errors || 0) + 1
+          errors:
+            (this.appManager.getAppStats(app.packageName)?.errors || 0) + 1,
         });
       }
 
@@ -498,13 +629,13 @@ export class MatrixHandler {
    * Notify app moderators about important events
    */
   private async notifyAppModerators(
-    app: import('../models/Config').GooglePlayApp,
+    app: import('../models/ConfigTypes').GooglePlayApp,
     message: string,
     roomId: string
   ): Promise<void> {
     try {
       const intent = this.bridge.getIntent();
-      let mentions: string[] = [];
+      const mentions: string[] = [];
 
       if (app.notificationSettings?.mentionAdmins && app.admins) {
         mentions.push(...app.admins);
@@ -515,18 +646,24 @@ export class MatrixHandler {
       }
 
       if (mentions.length > 0) {
-        const mentionText = mentions.map(userId => `<a href="https://matrix.to/#/${userId}">${userId}</a>`).join(' ');
+        const mentionText = mentions
+          .map(
+            userId => `<a href="https://matrix.to/#/${userId}">${userId}</a>`
+          )
+          .join(' ');
         const notificationContent = {
           msgtype: 'm.text',
           body: `${message} - ${mentions.join(' ')}`,
           format: 'org.matrix.custom.html',
-          formatted_body: `<p>${message}</p><p>${mentionText}</p>`
+          formatted_body: `<p>${message}</p><p>${mentionText}</p>`,
         };
 
         await intent.sendMessage(roomId, notificationContent);
       }
     } catch (error) {
-      this.logger.warn(`Failed to notify moderators: ${error instanceof Error ? error.message : error}`);
+      this.logger.warn(
+        `Failed to notify moderators: ${error instanceof Error ? error.message : error}`
+      );
     }
   }
 

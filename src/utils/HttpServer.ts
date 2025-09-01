@@ -487,7 +487,7 @@ export class HttpServer {
   /**
    * Generate Prometheus format metrics
    */
-  private generatePrometheusMetrics(): string {
+  public generatePrometheusMetrics(): string {
     const lines: string[] = [];
     const processedMetrics = new Set<string>();
 

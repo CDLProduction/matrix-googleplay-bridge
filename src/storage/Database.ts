@@ -199,9 +199,16 @@ export interface DatabaseInterface {
   deleteMatrixMessage(eventId: string): Promise<void>;
 
   // App configuration operations
-  saveAppConfig(packageName: string, config: import('../models/Config').GooglePlayApp): Promise<void>;
-  getAppConfig(packageName: string): Promise<import('../models/Config').GooglePlayApp | null>;
-  getAllAppConfigs(): Promise<Map<string, import('../models/Config').GooglePlayApp>>;
+  saveAppConfig(
+    packageName: string,
+    config: import('../models/ConfigTypes').GooglePlayApp
+  ): Promise<void>;
+  getAppConfig(
+    packageName: string
+  ): Promise<import('../models/ConfigTypes').GooglePlayApp | null>;
+  getAllAppConfigs(): Promise<
+    Map<string, import('../models/ConfigTypes').GooglePlayApp>
+  >;
   deleteAppConfig(packageName: string): Promise<void>;
 
   // Statistics and maintenance
@@ -476,9 +483,16 @@ export abstract class BaseDatabase implements DatabaseInterface {
   ): Promise<MatrixMessageRow[]>;
   abstract deleteMatrixMessage(eventId: string): Promise<void>;
 
-  abstract saveAppConfig(packageName: string, config: import('../models/Config').GooglePlayApp): Promise<void>;
-  abstract getAppConfig(packageName: string): Promise<import('../models/Config').GooglePlayApp | null>;
-  abstract getAllAppConfigs(): Promise<Map<string, import('../models/Config').GooglePlayApp>>;
+  abstract saveAppConfig(
+    packageName: string,
+    config: import('../models/ConfigTypes').GooglePlayApp
+  ): Promise<void>;
+  abstract getAppConfig(
+    packageName: string
+  ): Promise<import('../models/ConfigTypes').GooglePlayApp | null>;
+  abstract getAllAppConfigs(): Promise<
+    Map<string, import('../models/ConfigTypes').GooglePlayApp>
+  >;
   abstract deleteAppConfig(packageName: string): Promise<void>;
 
   abstract getStorageStats(): Promise<{

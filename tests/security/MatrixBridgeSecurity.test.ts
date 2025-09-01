@@ -556,14 +556,19 @@ describe('Matrix Bridge Security and Virtual User Isolation Tests', () => {
 
     it('should log all administrative actions', async () => {
       try {
-        await bridgeCommands.handleMessage('!room:example.com', '@admin:example.com', '!help');
+        await bridgeCommands.handleMessage('!room:example.com', '@admin:example.com', '!maintenance status');
       } catch (error) {
         // Expected to fail in test environment
       }
 
       // Should log administrative actions for audit trail
+      // The maintenance command is admin-only and should be logged
       expect(mockLogger.info).toHaveBeenCalledWith(
-        expect.stringContaining('admin')
+        expect.stringContaining('maintenance'),
+        expect.objectContaining({
+          adminOnly: true,
+          authenticated: true
+        })
       );
     });
 

@@ -70,7 +70,7 @@ export class GooglePlayBridge {
   private circuitBreakerRegistry: CircuitBreakerRegistry;
   private rateLimitingRegistry: RateLimitingRegistry;
   private startTime: Date;
-  
+
   // Phase 4.3 components
   private maintenanceMode: boolean = false;
   private auditLogger: AuditLogger;
@@ -262,7 +262,11 @@ export class GooglePlayBridge {
     // TODO: Properly initialize database for production use
     try {
       // For now, create AppManager without database to fix tests
-      this.appManager = new AppManager(this.bridge, this.config as any, {} as any);
+      this.appManager = new AppManager(
+        this.bridge,
+        this.config as any,
+        {} as any
+      );
       await this.appManager.initialize();
 
       // Initialize audit logger
@@ -310,7 +314,9 @@ export class GooglePlayBridge {
     const features = bridgeConfig?.features;
 
     if (!features) {
-      this.logger.info('No feature configuration found, skipping feature initialization');
+      this.logger.info(
+        'No feature configuration found, skipping feature initialization'
+      );
       return;
     }
 
@@ -321,7 +327,7 @@ export class GooglePlayBridge {
         customCategories: [],
         confidenceThreshold: 0.6,
         enableDeviceDetection: true,
-        maxSecondaryCategories: 3
+        maxSecondaryCategories: 3,
       });
       this.logger.info('Review categorization initialized');
     }
@@ -335,8 +341,8 @@ export class GooglePlayBridge {
         defaultTone: 'helpful',
         companyInfo: {
           name: 'Support Team',
-          supportEmail: 'support@company.com'
-        }
+          supportEmail: 'support@company.com',
+        },
       });
       this.logger.info('Response suggestions initialized');
     }
@@ -349,7 +355,7 @@ export class GooglePlayBridge {
         allowTemplateOverrides: true,
         defaultCategory: 'response',
         autoBackup: false,
-        versionControl: true
+        versionControl: true,
       });
       this.logger.info('Message templates initialized');
     }
@@ -365,7 +371,7 @@ export class GooglePlayBridge {
         notifyOnNewThread: false,
         mentionOnReply: true,
         threadSummaryEnabled: true,
-        archiveResolvedThreads: true
+        archiveResolvedThreads: true,
       });
       this.logger.info('Message threading initialized');
     }
@@ -1024,7 +1030,7 @@ export class GooglePlayBridge {
       categorization: !!this.reviewCategorization,
       responseSuggestions: !!this.responseSuggestions,
       messageTemplates: !!this.messageTemplates,
-      messageThreading: !!this.messageThreading
+      messageThreading: !!this.messageThreading,
     };
   }
 
@@ -1047,7 +1053,7 @@ export class GooglePlayBridge {
 
     // Add Phase 4.2 feature stats
     const featureStats: any = {
-      enabled: this.getFeaturesStatus()
+      enabled: this.getFeaturesStatus(),
     };
 
     if (this.messageTemplates) {
@@ -1080,43 +1086,53 @@ export class GooglePlayBridge {
   // Phase 4.3 methods
   async onConfigReload(newConfig: any): Promise<void> {
     this.logger.info('Processing configuration reload');
-    
+
     try {
       // Update internal config reference
       this.config = newConfig;
-      
+
       // Update logger configuration if changed
       if (newConfig.logging) {
         this.logger.setLevel(this.getLogLevel());
       }
-      
+
       // Update health monitor if version changed
-      if (newConfig.version && newConfig.version !== this.healthMonitor.getVersion()) {
+      if (
+        newConfig.version &&
+        newConfig.version !== this.healthMonitor.getVersion()
+      ) {
         this.healthMonitor = new HealthMonitor(newConfig.version);
       }
-      
+
       // Update HTTP server configuration if monitoring settings changed
       if (this.httpServer && newConfig.monitoring) {
         // For now, just log that monitoring config changed
         // Full HTTP server reconfiguration would require restart
-        this.logger.info('Monitoring configuration detected, may require restart for full effect');
+        this.logger.info(
+          'Monitoring configuration detected, may require restart for full effect'
+        );
       }
-      
+
       // Reload Google Play client if auth settings changed
       if (this.googlePlayClient) {
-        this.logger.info('Google Play authentication settings may have changed, reconnecting...');
+        this.logger.info(
+          'Google Play authentication settings may have changed, reconnecting...'
+        );
         try {
           await this.googlePlayClient.initialize();
         } catch (error) {
-          this.logger.warn('Failed to reinitialize Google Play client after config reload', { error });
+          this.logger.warn(
+            'Failed to reinitialize Google Play client after config reload',
+            { error }
+          );
         }
       }
-      
+
       // Reload review manager polling intervals
       if (this.reviewManager) {
         this.reviewManager.updateConfiguration(newConfig.googleplay);
       }
-      
+
       this.logger.info('Configuration reload processed successfully');
     } catch (error) {
       this.logger.error('Failed to process configuration reload', { error });
@@ -1126,26 +1142,25 @@ export class GooglePlayBridge {
 
   async onMaintenanceMode(enabled: boolean, reason?: string): Promise<void> {
     this.maintenanceMode = enabled;
-    
+
     if (enabled) {
       this.logger.warn('Bridge entering maintenance mode', { reason });
-      
+
       // Pause review processing
       if (this.reviewManager) {
         await this.reviewManager.pauseProcessing();
       }
-      
+
       // Update health status
       this.healthMonitor.setMaintenanceMode(true);
-      
     } else {
       this.logger.info('Bridge exiting maintenance mode');
-      
+
       // Resume review processing
       if (this.reviewManager) {
         await this.reviewManager.resumeProcessing();
       }
-      
+
       // Update health status
       this.healthMonitor.setMaintenanceMode(false);
     }
