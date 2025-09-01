@@ -619,7 +619,10 @@ export class PostgreSQLDatabase extends BaseDatabase {
     this.ensureInitialized();
 
     const results = await this.query<any>('SELECT * FROM app_configs');
-    const configs = new Map<string, import('../models/ConfigTypes').GooglePlayApp>();
+    const configs = new Map<
+      string,
+      import('../models/ConfigTypes').GooglePlayApp
+    >();
 
     for (const row of results) {
       try {

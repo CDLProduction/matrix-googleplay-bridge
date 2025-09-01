@@ -35,7 +35,7 @@ export class MatrixAppServiceApi {
   private requestCount: number = 0;
 
   constructor(
-    private readonly _bridge: Bridge,  // Bridge instance for user/room queries
+    private readonly _bridge: Bridge, // Bridge instance for user/room queries
     config: MatrixAppServiceApiConfig
   ) {
     this.config = config;
@@ -128,7 +128,10 @@ export class MatrixAppServiceApi {
       }
 
       // Rate limiting for client-facing endpoints (not homeserver-to-appservice)
-      if (this.config.enableRateLimit && this.isClientFacingEndpoint(pathname)) {
+      if (
+        this.config.enableRateLimit &&
+        this.isClientFacingEndpoint(pathname)
+      ) {
         const rateLimitResult = await this.rateLimiter.checkLimit({
           remoteAddr: req.socket.remoteAddress,
         });
@@ -140,9 +143,18 @@ export class MatrixAppServiceApi {
             limit: rateLimitResult.info.limit,
           });
 
-          res.setHeader('X-RateLimit-Limit', rateLimitResult.info.limit.toString());
-          res.setHeader('X-RateLimit-Remaining', rateLimitResult.info.remaining.toString());
-          res.setHeader('X-RateLimit-Reset', rateLimitResult.info.resetTime.toISOString());
+          res.setHeader(
+            'X-RateLimit-Limit',
+            rateLimitResult.info.limit.toString()
+          );
+          res.setHeader(
+            'X-RateLimit-Remaining',
+            rateLimitResult.info.remaining.toString()
+          );
+          res.setHeader(
+            'X-RateLimit-Reset',
+            rateLimitResult.info.resetTime.toISOString()
+          );
 
           this.sendError(res, 429, 'Too Many Requests');
           return;
@@ -152,13 +164,22 @@ export class MatrixAppServiceApi {
       // Route requests to appropriate handlers
       let handled = false;
 
-      if (pathname.startsWith('/_matrix/app/v1/transactions/') && req.method === 'PUT') {
+      if (
+        pathname.startsWith('/_matrix/app/v1/transactions/') &&
+        req.method === 'PUT'
+      ) {
         handled = true;
         await this.handleTransaction(req, res, pathname);
-      } else if (pathname.startsWith('/_matrix/app/v1/users/') && req.method === 'GET') {
+      } else if (
+        pathname.startsWith('/_matrix/app/v1/users/') &&
+        req.method === 'GET'
+      ) {
         handled = true;
         await this.handleUserQuery(req, res, pathname);
-      } else if (pathname.startsWith('/_matrix/app/v1/rooms/') && req.method === 'GET') {
+      } else if (
+        pathname.startsWith('/_matrix/app/v1/rooms/') &&
+        req.method === 'GET'
+      ) {
         handled = true;
         await this.handleRoomQuery(req, res, pathname);
       } else if (pathname === '/_matrix/app/v1/ping' && req.method === 'GET') {
@@ -192,7 +213,10 @@ export class MatrixAppServiceApi {
    * Authenticate Matrix API request
    * Following Matrix specification authentication requirements
    */
-  private authenticateRequest(req: http.IncomingMessage): { success: boolean; error?: string } {
+  private authenticateRequest(req: http.IncomingMessage): {
+    success: boolean;
+    error?: string;
+  } {
     // Extract token from Authorization header (preferred) or query parameter (legacy)
     let token: string | undefined;
 
@@ -232,13 +256,13 @@ export class MatrixAppServiceApi {
 
     this.auditLogger.log({
       level: 'warn',
-      action: 'matrix_api_invalid_token', 
+      action: 'matrix_api_invalid_token',
       result: 'failure',
       details: {
         url: req.url,
-      method: req.method,
-      remoteAddr: req.socket.remoteAddress,
-      timestamp: new Date().toISOString(),
+        method: req.method,
+        remoteAddr: req.socket.remoteAddress,
+        timestamp: new Date().toISOString(),
       },
     });
 
@@ -249,7 +273,11 @@ export class MatrixAppServiceApi {
    * Validate token with constant-time comparison
    */
   private validateToken(providedToken: string, expectedToken: string): boolean {
-    if (!providedToken || !expectedToken || providedToken.length !== expectedToken.length) {
+    if (
+      !providedToken ||
+      !expectedToken ||
+      providedToken.length !== expectedToken.length
+    ) {
       return false;
     }
 
@@ -285,7 +313,7 @@ export class MatrixAppServiceApi {
     pathname: string
   ): Promise<void> {
     const txnId = pathname.split('/').pop();
-    
+
     if (!txnId) {
       this.sendError(res, 400, 'Missing transaction ID');
       return;
@@ -303,7 +331,9 @@ export class MatrixAppServiceApi {
       return;
     }
 
-    this.logger.info(`Processing transaction ${txnId} with ${events.length} events`);
+    this.logger.info(
+      `Processing transaction ${txnId} with ${events.length} events`
+    );
 
     try {
       // Process events through the bridge
@@ -330,15 +360,15 @@ export class MatrixAppServiceApi {
     pathname: string
   ): Promise<void> {
     const userId = pathname.split('/').pop();
-    
+
     if (!userId) {
       this.sendError(res, 400, 'Missing user ID');
       return;
     }
 
-    // Check if this user should be handled by this appservice  
+    // Check if this user should be handled by this appservice
     this._bridge.getIntent(userId); // Create intent to verify we handle this user
-    
+
     try {
       // If we can create an intent for this user, we handle it
       res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -359,7 +389,7 @@ export class MatrixAppServiceApi {
     pathname: string
   ): Promise<void> {
     const roomAlias = pathname.split('/').pop();
-    
+
     if (!roomAlias) {
       this.sendError(res, 400, 'Missing room alias');
       return;
@@ -382,10 +412,12 @@ export class MatrixAppServiceApi {
     res: http.ServerResponse
   ): Promise<void> {
     res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({
-      timestamp: new Date().toISOString(),
-      version: '1.0.0',
-    }));
+    res.end(
+      JSON.stringify({
+        timestamp: new Date().toISOString(),
+        version: '1.0.0',
+      })
+    );
   }
 
   /**

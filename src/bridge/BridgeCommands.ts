@@ -69,17 +69,17 @@ export class BridgeCommands {
     this.logger = Logger.getInstance().setComponent('BridgeCommands');
     this.auditLogger = AuditLogger.getInstance();
     this.adminUsers = new Set(adminUsers);
-    
+
     // Initialize security components
     this.commandRateLimiter = new SlidingWindowRateLimiter('bridge-commands', {
       windowSizeMs: 60000, // 1 minute window
       maxRequests: 60, // Max 60 commands per minute per user
-      keyGenerator: (context: any) => context?.userId || 'anonymous'
+      keyGenerator: (context: any) => context?.userId || 'anonymous',
     });
-    
+
     // Extract tokens from bridge configuration for Matrix authentication
     this.asToken = this.extractAsToken();
-    
+
     this.registerCommands();
   }
 
@@ -87,7 +87,7 @@ export class BridgeCommands {
     roomId: string,
     userId: string,
     message: string,
-    authHeaders?: { authorization?: string; 'access_token'?: string }
+    authHeaders?: { authorization?: string; access_token?: string }
   ): Promise<void> {
     const trimmed = message.trim();
 
@@ -173,7 +173,9 @@ export class BridgeCommands {
       // Fallback to environment variable or default
       return process.env.AS_TOKEN || '';
     } catch (error) {
-      this.logger.warn('Failed to extract AS token from registration', { error });
+      this.logger.warn('Failed to extract AS token from registration', {
+        error,
+      });
       return process.env.AS_TOKEN || '';
     }
   }
@@ -186,11 +188,14 @@ export class BridgeCommands {
     // Check if this is an Application Service making the request
     if (context.isAppService && context.accessToken) {
       // Validate AS token (Bearer token preferred per Matrix spec)
-      const isValidAsToken = this.validateToken(context.accessToken, this.asToken);
+      const isValidAsToken = this.validateToken(
+        context.accessToken,
+        this.asToken
+      );
       if (isValidAsToken) {
         this.logger.debug('Valid Application Service authentication', {
           userId: context.userId,
-          isAppService: true
+          isAppService: true,
         });
         return true;
       }
@@ -201,7 +206,7 @@ export class BridgeCommands {
     const isValidUser = await this.validateUserInBridge(context.userId);
     if (isValidUser) {
       this.logger.debug('Valid user authentication via bridge', {
-        userId: context.userId
+        userId: context.userId,
       });
       return true;
     }
@@ -210,7 +215,7 @@ export class BridgeCommands {
       userId: context.userId,
       roomId: context.roomId,
       hasToken: !!context.accessToken,
-      isAppService: context.isAppService
+      isAppService: context.isAppService,
     });
 
     return false;
@@ -240,7 +245,7 @@ export class BridgeCommands {
 
     let entropy = 0;
     const length = token.length;
-    
+
     for (const count of charCounts.values()) {
       const probability = count / length;
       entropy -= probability * Math.log2(probability);
@@ -255,7 +260,11 @@ export class BridgeCommands {
    * Enhanced with security validation per Context7 analysis
    */
   private validateToken(providedToken: string, expectedToken: string): boolean {
-    if (!providedToken || !expectedToken || providedToken.length !== expectedToken.length) {
+    if (
+      !providedToken ||
+      !expectedToken ||
+      providedToken.length !== expectedToken.length
+    ) {
       return false;
     }
 
@@ -263,7 +272,7 @@ export class BridgeCommands {
     if (!this.validateTokenSecurity(providedToken)) {
       this.logger.warn('Token failed security validation', {
         length: providedToken.length,
-        entropy: this.checkTokenEntropy(providedToken)
+        entropy: this.checkTokenEntropy(providedToken),
       });
       return false;
     }
@@ -294,7 +303,10 @@ export class BridgeCommands {
    * Following Matrix specification: prefer Authorization header over query parameters
    */
 
-  private extractAuthContext(authHeaders?: { authorization?: string; 'access_token'?: string }): {
+  private extractAuthContext(authHeaders?: {
+    authorization?: string;
+    access_token?: string;
+  }): {
     accessToken?: string;
     isAppService?: boolean;
     authenticatedUserId?: string;
@@ -304,7 +316,7 @@ export class BridgeCommands {
     }
 
     let accessToken: string | undefined;
-    
+
     // Enhanced Bearer header preference per Matrix specification (Context7)
     if (authHeaders.authorization) {
       const match = authHeaders.authorization.match(/^Bearer\s+(.+)$/);
@@ -314,18 +326,20 @@ export class BridgeCommands {
         if (accessToken && !this.validateTokenSecurity(accessToken)) {
           this.logger.warn('Bearer token failed security validation', {
             tokenLength: accessToken?.length,
-            entropy: accessToken ? this.checkTokenEntropy(accessToken) : 0
+            entropy: accessToken ? this.checkTokenEntropy(accessToken) : 0,
           });
           return {}; // Reject insecure tokens
         }
       }
     }
-    
+
     // Fallback to access_token query parameter (legacy support)
     if (!accessToken && authHeaders['access_token']) {
       accessToken = authHeaders['access_token'];
       // Log deprecation warning for query parameter usage
-      this.logger.warn('Using deprecated access_token query parameter, prefer Authorization Bearer header');
+      this.logger.warn(
+        'Using deprecated access_token query parameter, prefer Authorization Bearer header'
+      );
     }
 
     if (!accessToken) {
@@ -360,7 +374,7 @@ export class BridgeCommands {
     try {
       const rateLimitResult = await this.commandRateLimiter.checkLimit({
         userId: context.userId,
-        command: command.name
+        command: command.name,
       });
 
       if (!rateLimitResult.allowed) {
@@ -368,7 +382,7 @@ export class BridgeCommands {
           userId: context.userId,
           command: command.name,
           limit: rateLimitResult.info.limit,
-          remaining: rateLimitResult.info.remaining
+          remaining: rateLimitResult.info.remaining,
         });
 
         await this.sendResponse(context.roomId, {
@@ -378,7 +392,9 @@ export class BridgeCommands {
         return;
       }
     } catch (rateLimitError) {
-      this.logger.error('Rate limiting check failed', { error: rateLimitError });
+      this.logger.error('Rate limiting check failed', {
+        error: rateLimitError,
+      });
       // Continue execution - don't block on rate limit failures
     }
 
@@ -386,10 +402,10 @@ export class BridgeCommands {
     if (command.adminOnly) {
       // First check if user is in admin list (backwards compatibility)
       const isAdminUser = this.isAdmin(context.userId);
-      
+
       // Then validate Matrix authentication (new security requirement)
       const isAuthenticated = await this.validateMatrixAuth(context);
-      
+
       if (!isAdminUser || !isAuthenticated) {
         // Log security event using audit logger's log method
         this.auditLogger.log({
@@ -402,12 +418,13 @@ export class BridgeCommands {
             command: command.name,
             isAdminUser,
             isAuthenticated,
-          }
+          },
         });
 
         await this.sendResponse(context.roomId, {
           success: false,
-          message: 'This command requires administrator privileges and valid authentication.',
+          message:
+            'This command requires administrator privileges and valid authentication.',
         });
         return;
       }
@@ -416,9 +433,9 @@ export class BridgeCommands {
     try {
       this.logger.info(
         `Executing command "${command.name}" from user ${context.userId}`,
-        { 
+        {
           adminOnly: command.adminOnly,
-          authenticated: true 
+          authenticated: true,
         }
       );
 
@@ -432,7 +449,7 @@ export class BridgeCommands {
           result: 'success',
           details: {
             args: context.args,
-          }
+          },
         });
       }
 
@@ -1066,8 +1083,14 @@ export class BridgeCommands {
         }
 
         const appSpecificStats = await this.getAppSpecificStats(packageName);
-        statsMessage = this.formatAppSpecificStats(packageName, appSpecificStats);
-        htmlMessage = this.formatAppSpecificStatsHTML(packageName, appSpecificStats);
+        statsMessage = this.formatAppSpecificStats(
+          packageName,
+          appSpecificStats
+        );
+        htmlMessage = this.formatAppSpecificStatsHTML(
+          packageName,
+          appSpecificStats
+        );
       }
 
       return {
@@ -1076,7 +1099,8 @@ export class BridgeCommands {
         htmlMessage,
       };
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
       await this.auditLogger.logBridgeCommand(
         'stats',
         context.userId,
@@ -1112,7 +1136,8 @@ export class BridgeCommands {
     if (args.length === 0) {
       return {
         success: false,
-        message: '❌ Usage: !createroom <package-name> [--public] [--topic="Custom topic"] [--name="Custom name"]',
+        message:
+          '❌ Usage: !createroom <package-name> [--public] [--topic="Custom topic"] [--name="Custom name"]',
       };
     }
 
@@ -1121,12 +1146,13 @@ export class BridgeCommands {
       if (!packageName) {
         return {
           success: false,
-          message: '❌ Package name is required. Usage: !createroom <package-name> [options]',
+          message:
+            '❌ Package name is required. Usage: !createroom <package-name> [options]',
         };
       }
 
       const isPublic = args.includes('--public');
-      
+
       // Extract topic and name from arguments
       const topicArg = this.extractArgValue(args, '--topic');
       const nameArg = this.extractArgValue(args, '--name');
@@ -1151,7 +1177,9 @@ export class BridgeCommands {
       // Create room options
       const roomOptions = {
         name: nameArg || `Google Play Reviews - ${app.appName || packageName}`,
-        topic: topicArg || `Google Play reviews and support for ${app.appName || packageName}`,
+        topic:
+          topicArg ||
+          `Google Play reviews and support for ${app.appName || packageName}`,
         alias: `_googleplay_${packageName.replace(/\./g, '_')}`,
         isPublic,
         visibility: isPublic ? 'public' : 'private',
@@ -1174,7 +1202,13 @@ export class BridgeCommands {
         context.roomId,
         true,
         undefined,
-        { packageName, roomId: roomResult.roomId, alias: roomOptions.alias, isPublic, roomName: roomOptions.name }
+        {
+          packageName,
+          roomId: roomResult.roomId,
+          alias: roomOptions.alias,
+          isPublic,
+          roomName: roomOptions.name,
+        }
       );
 
       const successMessage = `✅ Successfully created room for ${packageName}
@@ -1205,7 +1239,8 @@ The bridge bot has joined the room and is ready to forward reviews.`;
         htmlMessage,
       };
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
       await this.auditLogger.logBridgeCommand(
         'createroom',
         context.userId,
@@ -1271,7 +1306,7 @@ The bridge bot has joined the room and is ready to forward reviews.`;
       }
 
       if (users.length === 0) {
-        const message = packageName 
+        const message = packageName
           ? `📱 No virtual users found for app "${packageName}".`
           : '📱 No virtual users currently active.';
         return {
@@ -1299,7 +1334,8 @@ The bridge bot has joined the room and is ready to forward reviews.`;
         htmlMessage: htmlContent,
       };
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
       await this.auditLogger.logBridgeCommand(
         'users',
         context.userId,
@@ -1317,9 +1353,7 @@ The bridge bot has joined the room and is ready to forward reviews.`;
     }
   }
 
-  private async handleCleanup(
-    context: CommandContext
-  ): Promise<CommandResult> {
+  private async handleCleanup(context: CommandContext): Promise<CommandResult> {
     const { args } = context;
 
     try {
@@ -1332,7 +1366,8 @@ The bridge bot has joined the room and is ready to forward reviews.`;
       if (isNaN(days) || days < 7) {
         return {
           success: false,
-          message: '❌ Days must be a number ≥ 7 for safety. Usage: !cleanup [days] [--preview] [--force]',
+          message:
+            '❌ Days must be a number ≥ 7 for safety. Usage: !cleanup [days] [--preview] [--force]',
         };
       }
 
@@ -1404,7 +1439,8 @@ The bridge bot has joined the room and is ready to forward reviews.`;
         message: successMessage,
       };
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
       await this.auditLogger.logBridgeCommand(
         'cleanup',
         context.userId,
@@ -1823,7 +1859,7 @@ The bridge bot has joined the room and is ready to forward reviews.`;
       // Step 1: Validate configuration file before loading
       const configPath = process.env.CONFIG_PATH || './config/config.yaml';
       const validationResult = await this.validateConfigFile(configPath);
-      
+
       if (!validationResult.valid) {
         await this.auditLogger.logConfigReload(
           context.userId,
@@ -1831,7 +1867,7 @@ The bridge bot has joined the room and is ready to forward reviews.`;
           { validationErrors: validationResult.errors },
           'Configuration validation failed'
         );
-        
+
         return {
           success: false,
           message: `❌ Configuration validation failed:\n${validationResult.errors.join('\n')}`,
@@ -1845,7 +1881,10 @@ The bridge bot has joined the room and is ready to forward reviews.`;
 
       // Step 3: Detect critical changes that require restart
       const criticalChanges = this.detectCriticalChanges(oldConfig, newConfig);
-      const nonCriticalChanges = this.detectNonCriticalChanges(oldConfig, newConfig);
+      const nonCriticalChanges = this.detectNonCriticalChanges(
+        oldConfig,
+        newConfig
+      );
 
       // Step 4: Apply hot-reload for non-critical changes
       if (nonCriticalChanges.length > 0) {
@@ -1857,16 +1896,21 @@ The bridge bot has joined the room and is ready to forward reviews.`;
             error: hotReloadError,
             userId: context.userId,
           });
-          
+
           await this.rollbackConfiguration(configBackup);
-          
+
           await this.auditLogger.logConfigReload(
             context.userId,
             false,
-            { hotReloadError: hotReloadError instanceof Error ? hotReloadError.message : hotReloadError },
+            {
+              hotReloadError:
+                hotReloadError instanceof Error
+                  ? hotReloadError.message
+                  : hotReloadError,
+            },
             'Hot-reload failed, configuration rolled back'
           );
-          
+
           return {
             success: false,
             message: `❌ Hot-reload failed, configuration rolled back: ${hotReloadError instanceof Error ? hotReloadError.message : 'Unknown error'}`,
@@ -1876,7 +1920,8 @@ The bridge bot has joined the room and is ready to forward reviews.`;
 
       // Step 5: Prepare response message
       let message = '✅ Configuration reloaded successfully.';
-      let htmlMessage = '<strong>✅ Configuration reloaded successfully.</strong>';
+      let htmlMessage =
+        '<strong>✅ Configuration reloaded successfully.</strong>';
 
       if (nonCriticalChanges.length > 0) {
         const changesMsg = `\n\n📝 Applied hot-reload changes:\n${nonCriticalChanges.map(c => `  • ${c.description}`).join('\n')}`;
@@ -1899,8 +1944,14 @@ The bridge bot has joined the room and is ready to forward reviews.`;
 
       // Log successful config reload to audit log
       await this.auditLogger.logConfigReload(context.userId, true, {
-        criticalChanges: criticalChanges.map(c => ({ key: c.key, description: c.description })),
-        nonCriticalChanges: nonCriticalChanges.map(c => ({ key: c.key, description: c.description })),
+        criticalChanges: criticalChanges.map(c => ({
+          key: c.key,
+          description: c.description,
+        })),
+        nonCriticalChanges: nonCriticalChanges.map(c => ({
+          key: c.key,
+          description: c.description,
+        })),
         hotReloadApplied: nonCriticalChanges.length > 0,
       });
 
@@ -1921,12 +1972,18 @@ The bridge bot has joined the room and is ready to forward reviews.`;
       if (rollbackRequired && configBackup) {
         try {
           await this.rollbackConfiguration(configBackup);
-          this.logger.info('Configuration rolled back successfully after failure', {
-            userId: context.userId,
-          });
+          this.logger.info(
+            'Configuration rolled back successfully after failure',
+            {
+              userId: context.userId,
+            }
+          );
         } catch (rollbackError) {
           this.logger.error('Failed to rollback configuration', {
-            rollbackError: rollbackError instanceof Error ? rollbackError.message : rollbackError,
+            rollbackError:
+              rollbackError instanceof Error
+                ? rollbackError.message
+                : rollbackError,
             userId: context.userId,
           });
         }
@@ -2610,7 +2667,9 @@ The bridge bot has joined the room and is ready to forward reviews.`;
   /**
    * Validate configuration file before loading
    */
-  private async validateConfigFile(configPath: string): Promise<ConfigValidationResult> {
+  private async validateConfigFile(
+    configPath: string
+  ): Promise<ConfigValidationResult> {
     const errors: string[] = [];
     const warnings: string[] = [];
 
@@ -2628,12 +2687,19 @@ The bridge bot has joined the room and is ready to forward reviews.`;
       try {
         parsedConfig = yaml.load(configContent);
       } catch (yamlError) {
-        errors.push(`Invalid YAML syntax: ${yamlError instanceof Error ? yamlError.message : 'Unknown YAML error'}`);
+        errors.push(
+          `Invalid YAML syntax: ${yamlError instanceof Error ? yamlError.message : 'Unknown YAML error'}`
+        );
         return { valid: false, errors, warnings };
       }
 
       // Validate required sections
-      const requiredSections = ['homeserver', 'appservice', 'googleplay', 'database'];
+      const requiredSections = [
+        'homeserver',
+        'appservice',
+        'googleplay',
+        'database',
+      ];
       for (const section of requiredSections) {
         if (!parsedConfig[section]) {
           errors.push(`Missing required configuration section: ${section}`);
@@ -2652,11 +2718,21 @@ The bridge bot has joined the room and is ready to forward reviews.`;
 
       // Validate appservice configuration
       if (parsedConfig.appservice) {
-        if (!parsedConfig.appservice.port || typeof parsedConfig.appservice.port !== 'number') {
-          errors.push('Invalid or missing field: appservice.port (must be a number)');
+        if (
+          !parsedConfig.appservice.port ||
+          typeof parsedConfig.appservice.port !== 'number'
+        ) {
+          errors.push(
+            'Invalid or missing field: appservice.port (must be a number)'
+          );
         }
-        if (!parsedConfig.appservice.bind || typeof parsedConfig.appservice.bind !== 'string') {
-          errors.push('Invalid or missing field: appservice.bind (must be a string)');
+        if (
+          !parsedConfig.appservice.bind ||
+          typeof parsedConfig.appservice.bind !== 'string'
+        ) {
+          errors.push(
+            'Invalid or missing field: appservice.bind (must be a string)'
+          );
         }
         if (!parsedConfig.appservice.botUsername) {
           errors.push('Missing required field: appservice.botUsername');
@@ -2665,42 +2741,63 @@ The bridge bot has joined the room and is ready to forward reviews.`;
 
       // Validate database configuration
       if (parsedConfig.database) {
-        if (!parsedConfig.database.type || !['sqlite', 'postgresql'].includes(parsedConfig.database.type)) {
-          errors.push('Invalid database.type (must be "sqlite" or "postgresql")');
+        if (
+          !parsedConfig.database.type ||
+          !['sqlite', 'postgresql'].includes(parsedConfig.database.type)
+        ) {
+          errors.push(
+            'Invalid database.type (must be "sqlite" or "postgresql")'
+          );
         }
       }
 
       // Validate Google Play configuration
       if (parsedConfig.googleplay) {
-        const hasServiceAccountFile = parsedConfig.googleplay.serviceAccount?.keyFile;
-        const hasServiceAccountContent = parsedConfig.googleplay.serviceAccount?.keyFileContent;
-        const hasOAuth2 = parsedConfig.googleplay.oauth2?.clientId && parsedConfig.googleplay.oauth2?.clientSecret;
-        
+        const hasServiceAccountFile =
+          parsedConfig.googleplay.serviceAccount?.keyFile;
+        const hasServiceAccountContent =
+          parsedConfig.googleplay.serviceAccount?.keyFileContent;
+        const hasOAuth2 =
+          parsedConfig.googleplay.oauth2?.clientId &&
+          parsedConfig.googleplay.oauth2?.clientSecret;
+
         if (!hasServiceAccountFile && !hasServiceAccountContent && !hasOAuth2) {
-          errors.push('Google Play authentication configuration missing (need service account or oauth2)');
+          errors.push(
+            'Google Play authentication configuration missing (need service account or oauth2)'
+          );
         }
 
-        if (parsedConfig.googleplay.apps && !Array.isArray(parsedConfig.googleplay.apps)) {
+        if (
+          parsedConfig.googleplay.apps &&
+          !Array.isArray(parsedConfig.googleplay.apps)
+        ) {
           errors.push('googleplay.apps must be an array');
         }
       }
 
       // Add warnings for deprecated or risky configurations
       if (parsedConfig.logging?.level === 'debug') {
-        warnings.push('Debug logging level may impact performance in production');
+        warnings.push(
+          'Debug logging level may impact performance in production'
+        );
       }
 
-      if (parsedConfig.database?.type === 'sqlite' && parsedConfig.database?.path === ':memory:') {
+      if (
+        parsedConfig.database?.type === 'sqlite' &&
+        parsedConfig.database?.path === ':memory:'
+      ) {
         warnings.push('In-memory database will lose data on restart');
       }
 
-      return { 
-        valid: errors.length === 0, 
-        errors, 
-        warnings 
+      return {
+        valid: errors.length === 0,
+        errors,
+        warnings,
       };
     } catch (error) {
-      errors.push(`Failed to validate configuration: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      errors.push(
+        `Failed to validate configuration: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
       return { valid: false, errors, warnings };
     }
   }
@@ -2708,7 +2805,10 @@ The bridge bot has joined the room and is ready to forward reviews.`;
   /**
    * Detect critical configuration changes that require restart
    */
-  private detectCriticalChanges(oldConfig: any, newConfig: any): ConfigChange[] {
+  private detectCriticalChanges(
+    oldConfig: any,
+    newConfig: any
+  ): ConfigChange[] {
     const changes: ConfigChange[] = [];
 
     // Appservice configuration changes
@@ -2740,15 +2840,28 @@ The bridge bot has joined the room and is ready to forward reviews.`;
       });
     }
 
-    if (oldConfig.database?.type === 'postgresql' && newConfig.database?.type === 'postgresql') {
-      if (oldConfig.database?.host !== newConfig.database?.host ||
-          oldConfig.database?.port !== newConfig.database?.port ||
-          oldConfig.database?.database !== newConfig.database?.database) {
+    if (
+      oldConfig.database?.type === 'postgresql' &&
+      newConfig.database?.type === 'postgresql'
+    ) {
+      if (
+        oldConfig.database?.host !== newConfig.database?.host ||
+        oldConfig.database?.port !== newConfig.database?.port ||
+        oldConfig.database?.database !== newConfig.database?.database
+      ) {
         changes.push({
           key: 'database.connection',
           description: 'PostgreSQL connection parameters changed',
-          oldValue: { host: oldConfig.database?.host, port: oldConfig.database?.port, database: oldConfig.database?.database },
-          newValue: { host: newConfig.database?.host, port: newConfig.database?.port, database: newConfig.database?.database },
+          oldValue: {
+            host: oldConfig.database?.host,
+            port: oldConfig.database?.port,
+            database: oldConfig.database?.database,
+          },
+          newValue: {
+            host: newConfig.database?.host,
+            port: newConfig.database?.port,
+            database: newConfig.database?.database,
+          },
         });
       }
     }
@@ -2788,7 +2901,10 @@ The bridge bot has joined the room and is ready to forward reviews.`;
   /**
    * Detect non-critical configuration changes that can be hot-reloaded
    */
-  private detectNonCriticalChanges(oldConfig: any, newConfig: any): ConfigChange[] {
+  private detectNonCriticalChanges(
+    oldConfig: any,
+    newConfig: any
+  ): ConfigChange[] {
     const changes: ConfigChange[] = [];
 
     // Logging configuration changes
@@ -2811,9 +2927,16 @@ The bridge bot has joined the room and is ready to forward reviews.`;
     }
 
     // Google Play configuration changes
-    if (JSON.stringify(oldConfig.googleplay?.apps || []) !== JSON.stringify(newConfig.googleplay?.apps || [])) {
-      const oldApps = (oldConfig.googleplay?.apps || []).map((app: any) => app.packageName);
-      const newApps = (newConfig.googleplay?.apps || []).map((app: any) => app.packageName);
+    if (
+      JSON.stringify(oldConfig.googleplay?.apps || []) !==
+      JSON.stringify(newConfig.googleplay?.apps || [])
+    ) {
+      const oldApps = (oldConfig.googleplay?.apps || []).map(
+        (app: any) => app.packageName
+      );
+      const newApps = (newConfig.googleplay?.apps || []).map(
+        (app: any) => app.packageName
+      );
       changes.push({
         key: 'googleplay.apps',
         description: `Google Play apps configuration updated (${oldApps.length} → ${newApps.length} apps)`,
@@ -2822,7 +2945,10 @@ The bridge bot has joined the room and is ready to forward reviews.`;
       });
     }
 
-    if (oldConfig.googleplay?.polling?.interval !== newConfig.googleplay?.polling?.interval) {
+    if (
+      oldConfig.googleplay?.polling?.interval !==
+      newConfig.googleplay?.polling?.interval
+    ) {
       changes.push({
         key: 'googleplay.polling.interval',
         description: `Polling interval changed (${oldConfig.googleplay?.polling?.interval || 300}s → ${newConfig.googleplay?.polling?.interval || 300}s)`,
@@ -2832,7 +2958,10 @@ The bridge bot has joined the room and is ready to forward reviews.`;
     }
 
     // Features configuration changes
-    if (JSON.stringify(oldConfig.features || {}) !== JSON.stringify(newConfig.features || {})) {
+    if (
+      JSON.stringify(oldConfig.features || {}) !==
+      JSON.stringify(newConfig.features || {})
+    ) {
       changes.push({
         key: 'features',
         description: 'Feature configuration updated',
@@ -2847,7 +2976,11 @@ The bridge bot has joined the room and is ready to forward reviews.`;
   /**
    * Apply hot-reload changes for non-critical configuration
    */
-  private async applyHotReload(_oldConfig: any, newConfig: any, changes: ConfigChange[]): Promise<void> {
+  private async applyHotReload(
+    _oldConfig: any,
+    newConfig: any,
+    changes: ConfigChange[]
+  ): Promise<void> {
     try {
       // Apply logging changes
       const loggingChanges = changes.filter(c => c.key.startsWith('logging.'));
@@ -2867,11 +3000,18 @@ The bridge bot has joined the room and is ready to forward reviews.`;
       }
 
       // Apply polling interval changes
-      const pollingChanges = changes.filter(c => c.key === 'googleplay.polling.interval');
+      const pollingChanges = changes.filter(
+        c => c.key === 'googleplay.polling.interval'
+      );
       if (pollingChanges.length > 0) {
         // Notify bridge about polling changes if available
-        if (this.googlePlayBridge && typeof this.googlePlayBridge.updatePollingInterval === 'function') {
-          await this.googlePlayBridge.updatePollingInterval(newConfig.googleplay.polling.interval);
+        if (
+          this.googlePlayBridge &&
+          typeof this.googlePlayBridge.updatePollingInterval === 'function'
+        ) {
+          await this.googlePlayBridge.updatePollingInterval(
+            newConfig.googleplay.polling.interval
+          );
         }
         this.logger.info('Polling interval updated', {
           newInterval: newConfig.googleplay.polling.interval,
@@ -2882,14 +3022,19 @@ The bridge bot has joined the room and is ready to forward reviews.`;
       const featureChanges = changes.filter(c => c.key === 'features');
       if (featureChanges.length > 0) {
         // Notify bridge about feature changes if available
-        if (this.googlePlayBridge && typeof this.googlePlayBridge.updateFeatureConfig === 'function') {
+        if (
+          this.googlePlayBridge &&
+          typeof this.googlePlayBridge.updateFeatureConfig === 'function'
+        ) {
           await this.googlePlayBridge.updateFeatureConfig(newConfig.features);
         }
         this.logger.info('Feature configuration updated');
       }
     } catch (error) {
       this.logger.error('Failed to apply hot-reload changes', { error });
-      throw new Error(`Hot-reload failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Hot-reload failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -2908,14 +3053,19 @@ The bridge bot has joined the room and is ready to forward reviews.`;
       await this.appManager.reloadConfiguration();
 
       // Notify bridge about rollback if available
-      if (this.googlePlayBridge && typeof this.googlePlayBridge.onConfigReload === 'function') {
+      if (
+        this.googlePlayBridge &&
+        typeof this.googlePlayBridge.onConfigReload === 'function'
+      ) {
         await this.googlePlayBridge.onConfigReload(backupConfig);
       }
 
       this.logger.info('Configuration rolled back successfully');
     } catch (error) {
       this.logger.error('Failed to rollback configuration', { error });
-      throw new Error(`Rollback failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Rollback failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -2957,7 +3107,7 @@ The bridge bot has joined the room and is ready to forward reviews.`;
   private async getSystemStats(): Promise<any> {
     const memUsage = process.memoryUsage();
     const cpuUsage = process.cpuUsage();
-    
+
     return {
       uptime: Math.floor(process.uptime()),
       nodeVersion: process.version,
@@ -2988,7 +3138,7 @@ The bridge bot has joined the room and is ready to forward reviews.`;
   private async getAppSpecificStats(packageName: string): Promise<any> {
     const app = this.appManager.getApp(packageName);
     const stats = this.appManager.getAppStats(packageName);
-    
+
     return {
       app,
       stats,
@@ -3000,7 +3150,7 @@ The bridge bot has joined the room and is ready to forward reviews.`;
   private formatSummaryStats(summary: any): string {
     const uptimeHours = Math.floor(summary.uptime / 3600);
     const uptimeMinutes = Math.floor((summary.uptime % 3600) / 60);
-    
+
     return `📊 Bridge Statistics Summary
 
 🔧 Bridge Status: Running
@@ -3018,7 +3168,7 @@ Use !stats system for system performance.`;
   private formatSummaryStatsHTML(summary: any): string {
     const uptimeHours = Math.floor(summary.uptime / 3600);
     const uptimeMinutes = Math.floor((summary.uptime % 3600) / 60);
-    
+
     return `<h3>📊 Bridge Statistics Summary</h3>
 <ul>
 <li><strong>🔧 Bridge Status:</strong> Running</li>
@@ -3143,7 +3293,10 @@ Note: Advanced performance metrics would require additional instrumentation.`;
 ⏰ Last Poll: ${appStats.lastPoll}`;
   }
 
-  private formatAppSpecificStatsHTML(packageName: string, appStats: any): string {
+  private formatAppSpecificStatsHTML(
+    packageName: string,
+    appStats: any
+  ): string {
     const stats = appStats.stats || {};
     return `<h3>📱 Statistics for ${packageName}</h3>
 <ul>
@@ -3226,7 +3379,9 @@ Note: Advanced performance metrics would require additional instrumentation.`;
     output += ')\n\n';
 
     users.forEach(user => {
-      const daysSinceActive = Math.floor((Date.now() - user.lastActiveAt.getTime()) / (24 * 60 * 60 * 1000));
+      const daysSinceActive = Math.floor(
+        (Date.now() - user.lastActiveAt.getTime()) / (24 * 60 * 60 * 1000)
+      );
       output += `🔹 ${user.displayName}\n`;
       output += `   User ID: ${user.userId}\n`;
       output += `   Package: ${user.packageName}\n`;
@@ -3238,7 +3393,11 @@ Note: Advanced performance metrics would require additional instrumentation.`;
     return output;
   }
 
-  private formatUserListHTML(users: any[], title: string, limit: number): string {
+  private formatUserListHTML(
+    users: any[],
+    title: string,
+    limit: number
+  ): string {
     let output = `<h3>👥 ${title} (${users.length}`;
     if (users.length >= limit) {
       output += `, limited to ${limit}`;
@@ -3246,7 +3405,9 @@ Note: Advanced performance metrics would require additional instrumentation.`;
     output += ')</h3><ul>';
 
     users.forEach(user => {
-      const daysSinceActive = Math.floor((Date.now() - user.lastActiveAt.getTime()) / (24 * 60 * 60 * 1000));
+      const daysSinceActive = Math.floor(
+        (Date.now() - user.lastActiveAt.getTime()) / (24 * 60 * 60 * 1000)
+      );
       output += `<li><strong>${user.displayName}</strong><br>`;
       output += `User ID: <code>${user.userId}</code><br>`;
       output += `Package: ${user.packageName}<br>`;
@@ -3272,8 +3433,11 @@ Note: Advanced performance metrics would require additional instrumentation.`;
     let output = `🧹 Cleanup Preview (${days}+ days inactive)\n\n`;
     output += `Found ${usersToCleanup.length} users to clean up:\n\n`;
 
-    usersToCleanup.slice(0, 10).forEach(user => { // Show only first 10 for preview
-      const daysSinceActive = Math.floor((Date.now() - user.lastActiveAt.getTime()) / (24 * 60 * 60 * 1000));
+    usersToCleanup.slice(0, 10).forEach(user => {
+      // Show only first 10 for preview
+      const daysSinceActive = Math.floor(
+        (Date.now() - user.lastActiveAt.getTime()) / (24 * 60 * 60 * 1000)
+      );
       output += `🔸 ${user.displayName} (${daysSinceActive} days inactive)\n`;
       output += `   Package: ${user.packageName}\n`;
       output += `   User ID: ${user.userId}\n\n`;
@@ -3287,12 +3451,18 @@ Note: Advanced performance metrics would require additional instrumentation.`;
     return output;
   }
 
-  private formatCleanupPreviewHTML(usersToCleanup: any[], days: number): string {
+  private formatCleanupPreviewHTML(
+    usersToCleanup: any[],
+    days: number
+  ): string {
     let output = `<h3>🧹 Cleanup Preview (${days}+ days inactive)</h3>`;
     output += `<p>Found <strong>${usersToCleanup.length}</strong> users to clean up:</p><ul>`;
 
-    usersToCleanup.slice(0, 10).forEach(user => { // Show only first 10 for preview
-      const daysSinceActive = Math.floor((Date.now() - user.lastActiveAt.getTime()) / (24 * 60 * 60 * 1000));
+    usersToCleanup.slice(0, 10).forEach(user => {
+      // Show only first 10 for preview
+      const daysSinceActive = Math.floor(
+        (Date.now() - user.lastActiveAt.getTime()) / (24 * 60 * 60 * 1000)
+      );
       output += `<li><strong>${user.displayName}</strong> (${daysSinceActive} days inactive)<br>`;
       output += `Package: ${user.packageName}<br>`;
       output += `User ID: <code>${user.userId}</code></li>`;
@@ -3319,7 +3489,7 @@ Note: Advanced performance metrics would require additional instrumentation.`;
         // 1. Remove user from UserManager
         // 2. Delete user mapping from database
         // 3. Optionally leave the Matrix user (or deactivate it)
-        
+
         this.logger.info('Cleaning up inactive user', {
           userId: user.userId,
           packageName: user.packageName,
@@ -3352,11 +3522,14 @@ Note: Advanced performance metrics would require additional instrumentation.`;
     return undefined;
   }
 
-  private async createAppRoom(packageName: string, roomOptions: any): Promise<{ success: boolean; roomId?: string; error?: string }> {
+  private async createAppRoom(
+    packageName: string,
+    roomOptions: any
+  ): Promise<{ success: boolean; roomId?: string; error?: string }> {
     try {
       // This is a placeholder implementation - in a real implementation,
       // this would use the Bridge's Intent system to create a Matrix room
-      
+
       // Create room using Matrix Client-Server API
       const createRoomParams = {
         name: roomOptions.name,
@@ -3365,8 +3538,8 @@ Note: Advanced performance metrics would require additional instrumentation.`;
         visibility: roomOptions.visibility,
         preset: roomOptions.preset,
         creation_content: {
-          'type': 'googleplay.app_room',
-          'package_name': packageName,
+          type: 'googleplay.app_room',
+          package_name: packageName,
         },
         initial_state: [
           {
@@ -3385,10 +3558,10 @@ Note: Advanced performance metrics would require additional instrumentation.`;
       // const intent = this.bridge.getIntent();
       // const room = await intent.createRoom(createRoomParams);
       console.log('Room creation params:', createRoomParams);
-      
+
       // Mock room creation for now
       const mockRoomId = `!${Math.random().toString(36).substring(7)}:${this.getBridgeDomain()}`;
-      
+
       this.logger.info('Created room for app', {
         packageName,
         roomId: mockRoomId,

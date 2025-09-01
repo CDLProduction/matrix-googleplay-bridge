@@ -86,12 +86,14 @@ export class MatrixHandler {
    * Based on Context7 Matrix specification analysis
    */
   private validateMatrixEvent(event: any): boolean {
-    return event.type && 
-           event.content && 
-           event.room_id && 
-           event.sender &&
-           this.isValidEventType(event.type) &&
-           this.sanitizeEventContent(event.content);
+    return (
+      event.type &&
+      event.content &&
+      event.room_id &&
+      event.sender &&
+      this.isValidEventType(event.type) &&
+      this.sanitizeEventContent(event.content)
+    );
   }
 
   /**
@@ -110,7 +112,7 @@ export class MatrixHandler {
       'm.room.encrypted',
       'm.typing',
       'm.receipt',
-      'm.presence'
+      'm.presence',
     ];
 
     // Basic validation: must start with 'm.' and be in allowed list or follow Matrix namespace pattern
@@ -119,7 +121,11 @@ export class MatrixHandler {
       return /^[a-zA-Z0-9][a-zA-Z0-9._-]*\.[a-zA-Z]{2,}/.test(eventType);
     }
 
-    return allowedEventTypes.includes(eventType) || eventType.startsWith('m.room.') || eventType.startsWith('m.call.');
+    return (
+      allowedEventTypes.includes(eventType) ||
+      eventType.startsWith('m.room.') ||
+      eventType.startsWith('m.call.')
+    );
   }
 
   /**
@@ -137,12 +143,12 @@ export class MatrixHandler {
         /javascript:/i,
         /on\w+\s*=/i,
         /data:.*base64/i,
-        /vbscript:/i
+        /vbscript:/i,
       ];
-      
+
       if (dangerousPatterns.some(pattern => pattern.test(content.body))) {
         this.logger.warn('Dangerous script content detected in event body', {
-          bodyPreview: content.body.substring(0, 100)
+          bodyPreview: content.body.substring(0, 100),
         });
         return false;
       }
@@ -157,12 +163,16 @@ export class MatrixHandler {
         /<embed[^>]*>/i,
         /<link[^>]*>/i,
         /javascript:/i,
-        /on\w+\s*=/i
+        /on\w+\s*=/i,
       ];
 
-      if (htmlDangerousPatterns.some(pattern => pattern.test(content.formatted_body))) {
+      if (
+        htmlDangerousPatterns.some(pattern =>
+          pattern.test(content.formatted_body)
+        )
+      ) {
         this.logger.warn('Dangerous HTML content detected in formatted_body', {
-          htmlPreview: content.formatted_body.substring(0, 100)
+          htmlPreview: content.formatted_body.substring(0, 100),
         });
         return false;
       }
@@ -170,9 +180,19 @@ export class MatrixHandler {
 
     // Additional validation for specific content types
     if (content.msgtype) {
-      const allowedMsgTypes = ['m.text', 'm.notice', 'm.emote', 'm.image', 'm.file', 'm.audio', 'm.video'];
+      const allowedMsgTypes = [
+        'm.text',
+        'm.notice',
+        'm.emote',
+        'm.image',
+        'm.file',
+        'm.audio',
+        'm.video',
+      ];
       if (!allowedMsgTypes.includes(content.msgtype)) {
-        this.logger.warn('Unknown message type detected', { msgtype: content.msgtype });
+        this.logger.warn('Unknown message type detected', {
+          msgtype: content.msgtype,
+        });
         return false;
       }
     }
@@ -193,7 +213,7 @@ export class MatrixHandler {
           eventType: event.type,
           roomId: event.room_id,
           sender: event.sender,
-          hasContent: !!event.content
+          hasContent: !!event.content,
         });
         return;
       }
