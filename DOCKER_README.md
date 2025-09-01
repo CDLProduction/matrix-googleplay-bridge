@@ -38,20 +38,20 @@ cp .env.example .env
 nano .env
 
 # Start development environment
-docker-compose up -d
+docker-compose -f docker/docker-compose.yml up -d
 
 # View logs
-docker-compose logs -f bridge
+docker-compose -f docker/docker-compose.yml logs -f bridge
 ```
 
 #### Production Environment
 
 ```bash
 # Start production environment
-docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+docker-compose -f docker/docker-compose.yml -f docker/docker-compose.prod.yml up -d
 
 # View status
-docker-compose ps
+docker-compose -f docker/docker-compose.yml ps
 ```
 
 ## 📁 Docker Architecture
@@ -141,26 +141,26 @@ secrets/
 
 ```bash
 # Development environment
-docker-compose up -d
+docker-compose -f docker/docker-compose.yml up -d
 
 # Production environment
-docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+docker-compose -f docker/docker-compose.yml -f docker-compose.yml -f docker-compose.prod.yml up -d
 
 # Specific services only
-docker-compose up -d postgres redis bridge
+docker-compose -f docker/docker-compose.yml up -d postgres redis bridge
 ```
 
 ### Viewing Logs
 
 ```bash
 # All services
-docker-compose logs -f
+docker-compose -f docker/docker-compose.yml logs -f
 
 # Specific service
-docker-compose logs -f bridge
+docker-compose -f docker/docker-compose.yml logs -f bridge
 
 # Last 100 lines
-docker-compose logs --tail=100 bridge
+docker-compose -f docker/docker-compose.yml logs --tail=100 bridge
 ```
 
 ## 🤖 Docker Automation Scripts
@@ -337,10 +337,10 @@ curl http://localhost:9090/stats
 
 ```bash
 # Check all services status
-docker-compose ps
+docker-compose -f docker/docker-compose.yml ps
 
 # View service logs
-docker-compose logs -f bridge
+docker-compose -f docker/docker-compose.yml logs -f bridge
 ```
 
 ## 🔒 Security Best Practices
@@ -387,10 +387,10 @@ location /metrics {
 2. **Database Connection Issues**
    ```bash
    # Check database logs
-   docker-compose logs postgres
+   docker-compose -f docker/docker-compose.yml logs postgres
    
    # Test connection
-   docker-compose exec bridge curl postgres:5432
+   docker-compose -f docker/docker-compose.yml exec bridge curl postgres:5432
    ```
 
 3. **Memory Issues**
@@ -406,23 +406,23 @@ location /metrics {
 
 ```bash
 # Run bridge in debug mode
-docker-compose exec bridge npm run dev
+docker-compose -f docker/docker-compose.yml exec bridge npm run dev
 
 # View detailed logs
-docker-compose logs -f bridge | grep -E "(ERROR|WARN|DEBUG)"
+docker-compose -f docker/docker-compose.yml logs -f bridge | grep -E "(ERROR|WARN|DEBUG)"
 ```
 
 ### Container Access
 
 ```bash
 # Access bridge container shell
-docker-compose exec bridge sh
+docker-compose -f docker/docker-compose.yml exec bridge sh
 
 # Access database
-docker-compose exec postgres psql -U bridge_user -d matrix_googleplay_bridge
+docker-compose -f docker/docker-compose.yml exec postgres psql -U bridge_user -d matrix_googleplay_bridge
 
 # Access Redis
-docker-compose exec redis redis-cli
+docker-compose -f docker/docker-compose.yml exec redis redis-cli
 ```
 
 ## 📦 Volume Management
@@ -441,10 +441,10 @@ Persistent volumes are created for:
 
 ```bash
 # Backup database
-docker-compose exec postgres pg_dump -U bridge_user matrix_googleplay_bridge > backup.sql
+docker-compose -f docker/docker-compose.yml exec postgres pg_dump -U bridge_user matrix_googleplay_bridge > backup.sql
 
 # Restore database
-docker-compose exec -T postgres psql -U bridge_user matrix_googleplay_bridge < backup.sql
+docker-compose -f docker/docker-compose.yml exec -T postgres psql -U bridge_user matrix_googleplay_bridge < backup.sql
 
 # Backup volumes
 docker run --rm -v googleplay-bridge_postgres_data:/data -v $(pwd):/backup alpine tar czf /backup/postgres-backup.tar.gz -C /data .
@@ -459,8 +459,8 @@ docker run --rm -v googleplay-bridge_postgres_data:/data -v $(pwd):/backup alpin
 git pull origin main
 
 # Rebuild and restart
-docker-compose build bridge
-docker-compose up -d bridge
+docker-compose -f docker/docker-compose.yml build bridge
+docker-compose -f docker/docker-compose.yml up -d bridge
 
 # Check health
 curl http://localhost:9090/health
@@ -470,10 +470,10 @@ curl http://localhost:9090/health
 
 ```bash
 # Run migrations
-docker-compose exec bridge npm run migrate
+docker-compose -f docker/docker-compose.yml exec bridge npm run migrate
 
 # Check migration status  
-docker-compose exec bridge npm run migrate:status
+docker-compose -f docker/docker-compose.yml exec bridge npm run migrate:status
 ```
 
 ## 📊 Performance Optimization
@@ -501,8 +501,8 @@ deploy:
 docker stats
 
 # Service-specific monitoring
-docker-compose exec bridge top
-docker-compose exec postgres top
+docker-compose -f docker/docker-compose.yml exec bridge top
+docker-compose -f docker/docker-compose.yml exec postgres top
 ```
 
 ## 🆘 Support
@@ -510,8 +510,8 @@ docker-compose exec postgres top
 For issues with the Docker setup:
 
 1. Check the [Troubleshooting Guide](docs/troubleshooting.md)
-2. Review container logs: `docker-compose logs -f`
-3. Verify configuration: `docker-compose config`
+2. Review container logs: `docker-compose -f docker/docker-compose.yml logs -f`
+3. Verify configuration: `docker-compose -f docker/docker-compose.yml config`
 4. Test health endpoints: `curl http://localhost:9090/health`
 5. Open an issue with logs and configuration details
 

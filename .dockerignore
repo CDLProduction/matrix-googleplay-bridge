@@ -73,11 +73,6 @@ tmp/
 temp/
 *.tmp
 
-# Docker files (avoid recursive copying)
-Dockerfile*
-docker-compose*.yml
-.dockerignore
-
 # CI/CD and deployment
 .github/
 .gitlab-ci.yml

@@ -218,7 +218,7 @@ build_image() {
     
     # Build the image
     log_info "Building with tags: ${TAGS[*]}"
-    if docker build "${build_args[@]}" .; then
+    if docker build "${build_args[@]}" --file docker/Dockerfile .; then
         log_success "$target image built successfully"
         
         # Show image information

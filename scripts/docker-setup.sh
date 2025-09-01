@@ -55,7 +55,7 @@ check_prerequisites() {
     fi
     
     # Check if bridge is installed
-    if [[ ! -d "$INSTALL_DIR" ]] || [[ ! -f "$INSTALL_DIR/docker-compose.yml" ]]; then
+    if [[ ! -d "$INSTALL_DIR" ]] || [[ ! -f "$INSTALL_DIR/docker/docker-compose.yml" ]]; then
         log_error "Matrix Google Play Bridge Docker installation not found."
         log_error "Please run docker-install.sh first."
         exit 1

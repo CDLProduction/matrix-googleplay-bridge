@@ -222,7 +222,7 @@ git clone https://github.com/CDLProduction/matrix-googleplay-bridge.git
 cd matrix-googleplay-bridge
 
 # Create environment file
-cp docker-compose.production.yml docker-compose.yml
+cp docker/docker-compose.production.yml docker/docker-compose.yml
 cp .env.example .env
 
 # Edit environment variables
@@ -270,10 +270,10 @@ cp config/registration.yaml.example ./data/config/registration.yaml
 cp monitoring/prometheus.yml ./data/prometheus/
 
 # Start the stack
-docker-compose up -d
+docker-compose -f docker/docker-compose.yml up -d
 
 # Check status
-docker-compose ps
+docker-compose -f docker/docker-compose.yml ps
 ```
 
 ## Post-Installation Setup
@@ -414,10 +414,10 @@ docker logs matrix-googleplay-bridge -f
 **Docker Compose:**
 ```bash
 # Check all services
-docker-compose ps
+docker-compose -f docker/docker-compose.yml ps
 
 # Check bridge logs
-docker-compose logs bridge -f
+docker-compose -f docker/docker-compose.yml logs bridge -f
 ```
 
 ### Step 2: Verify Health Endpoints
@@ -532,7 +532,7 @@ tail -f /opt/matrix-googleplay-bridge/logs/bridge.log
 docker logs matrix-googleplay-bridge --tail 100 -f
 
 # Docker Compose
-docker-compose logs bridge --tail 100 -f
+docker-compose -f docker/docker-compose.yml logs bridge --tail 100 -f
 ```
 
 **Enable debug logging:**

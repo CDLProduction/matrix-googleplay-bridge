@@ -355,7 +355,7 @@ For production environments, use the production override:
 
 ```bash
 # Start with production configuration
-docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+docker compose -f docker/docker-compose.yml -f docker/docker-compose.prod.yml up -d
 
 # Production features include:
 # - Resource limits and reservations

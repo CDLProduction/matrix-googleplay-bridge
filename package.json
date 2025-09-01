@@ -17,7 +17,7 @@
     "clean": "rm -rf dist",
     "setup": "node scripts/setup.js",
     "db:migrate": "node dist/scripts/migrate.js",
-    "docker:build": "docker build -t matrix-googleplay-bridge .",
+    "docker:build": "docker build -f docker/Dockerfile -t matrix-googleplay-bridge .",
     "docker:dev": "docker build -f docker/Dockerfile.dev -t matrix-googleplay-bridge:dev ."
   },
   "repository": {

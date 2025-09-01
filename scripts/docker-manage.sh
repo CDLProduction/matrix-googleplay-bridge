@@ -41,8 +41,8 @@ log_step() {
 
 # Check if in correct directory
 check_directory() {
-    if [[ ! -f "docker-compose.yml" ]]; then
-        if [[ -f "$INSTALL_DIR/docker-compose.yml" ]]; then
+    if [[ ! -f "docker/docker-compose.yml" ]]; then
+        if [[ -f "$INSTALL_DIR/docker/docker-compose.yml" ]]; then
             cd "$INSTALL_DIR"
             log_info "Changed to installation directory: $INSTALL_DIR"
         else
