@@ -133,19 +133,20 @@ export class CircuitBreaker {
     fn: () => Promise<T>,
     timeout: number
   ): Promise<T> {
-    return new Promise<T>(async (resolve, reject) => {
+    return new Promise<T>((resolve, reject) => {
       const timeoutId = setTimeout(() => {
         reject(new Error(`Circuit breaker timeout after ${timeout}ms`));
       }, timeout);
 
-      try {
-        const result = await fn();
-        clearTimeout(timeoutId);
-        resolve(result);
-      } catch (error) {
-        clearTimeout(timeoutId);
-        reject(error);
-      }
+      fn()
+        .then(result => {
+          clearTimeout(timeoutId);
+          resolve(result);
+        })
+        .catch(error => {
+          clearTimeout(timeoutId);
+          reject(error);
+        });
     });
   }
 

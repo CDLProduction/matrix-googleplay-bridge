@@ -536,13 +536,14 @@ export class GooglePlayClient {
             { status, data }
           );
 
-        case 429:
+        case 429: {
           const retryAfter = error.response.headers?.['retry-after'];
           return new GooglePlayRateLimitError(
             `Rate limit exceeded: ${statusText}`,
             retryAfter ? parseInt(retryAfter) * 1000 : 60000,
             { status, data }
           );
+        }
 
         case 404:
           return new GooglePlayAPIError(

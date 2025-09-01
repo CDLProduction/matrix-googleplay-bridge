@@ -1353,7 +1353,9 @@ export class MatrixHandler {
     } catch (error) {
       // Bot probably needs to be created, which will happen automatically
       // when the bridge processes events
-      this.logger.debug(`Bot user registration will be handled automatically`);
+      this.logger.debug(`Bot user registration will be handled automatically`, {
+        error,
+      });
     }
   }
 

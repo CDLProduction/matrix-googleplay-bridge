@@ -2056,7 +2056,7 @@ The bridge bot has joined the room and is ready to forward reviews.`;
           };
 
         case 'off':
-        case 'disable':
+        case 'disable': {
           if (!this.maintenanceMode) {
             return {
               success: false,
@@ -2097,9 +2097,10 @@ The bridge bot has joined the room and is ready to forward reviews.`;
             message: `Bridge is no longer in maintenance mode.\nDuration: ${duration} minutes`,
             htmlMessage: `<strong>Bridge is no longer in maintenance mode.</strong><br>Duration: ${duration} minutes`,
           };
+        }
 
         case 'status':
-        default:
+        default: {
           if (!this.maintenanceMode) {
             return {
               success: true,
@@ -2122,6 +2123,7 @@ The bridge bot has joined the room and is ready to forward reviews.`;
             message: `Bridge is in maintenance mode.\nReason: ${this.maintenanceReason}\nDuration: ${uptimeMinutes} minutes`,
             htmlMessage: `<strong>Bridge is in maintenance mode.</strong><br>Reason: ${this.maintenanceReason}<br>Duration: ${uptimeMinutes} minutes`,
           };
+        }
       }
     } catch (error) {
       const errorMsg = `Failed to handle maintenance command: ${error instanceof Error ? error.message : 'Unknown error'}`;

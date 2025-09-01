@@ -288,7 +288,7 @@ export class Logger {
       if (fileSizeMB > (this.config.maxFileSize || 10)) {
         this.rotateLogFile();
       }
-    } catch (error) {
+    } catch {
       // File might not exist yet, ignore
     }
   }

@@ -491,7 +491,7 @@ export class HttpServer {
     const lines: string[] = [];
     const processedMetrics = new Set<string>();
 
-    for (const [_key, metric] of this.metrics) {
+    for (const metric of this.metrics.values()) {
       // Add help text (once per metric name)
       if (metric.help && !processedMetrics.has(metric.name)) {
         lines.push(`# HELP ${metric.name} ${metric.help}`);

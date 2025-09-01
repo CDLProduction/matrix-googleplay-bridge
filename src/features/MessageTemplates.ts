@@ -403,6 +403,7 @@ export class MessageTemplates extends EventEmitter {
         throw new Error('Invalid template format');
       }
     } catch (error) {
+      this.logger.error('JSON parsing failed during template import:', error);
       throw new Error('Invalid JSON format');
     }
 

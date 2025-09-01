@@ -268,6 +268,10 @@ export class AppManager extends EventEmitter {
       }
     } catch (error) {
       // Room doesn't exist, create it
+      this.logger.debug('Room does not exist, creating new one', {
+        roomId: context.app.matrixRoom,
+        error,
+      });
     }
 
     // Create new room

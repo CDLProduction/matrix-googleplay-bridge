@@ -253,6 +253,7 @@ export abstract class BaseDatabase implements DatabaseInterface {
       return result.length > 0 ? result[0]!.version : 0;
     } catch (error) {
       // Table doesn't exist yet, return 0
+      this.logger.debug('Schema version table does not exist yet', { error });
       return 0;
     }
   }

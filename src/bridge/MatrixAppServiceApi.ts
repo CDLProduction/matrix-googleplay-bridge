@@ -327,6 +327,7 @@ export class MatrixAppServiceApi {
       const data = JSON.parse(body);
       events = data.events || [];
     } catch (error) {
+      this.logger.error('Invalid JSON in transaction', error);
       this.sendError(res, 400, 'Invalid JSON');
       return;
     }
@@ -337,7 +338,11 @@ export class MatrixAppServiceApi {
 
     try {
       // Process events through the bridge
-      for (const _event of events) {
+      for (const event of events) {
+        this.logger.debug('Received Matrix event', {
+          eventType: event.type,
+          eventId: event.event_id,
+        });
         // Bridge will handle the actual event processing
         // This is just the API endpoint implementation
       }
@@ -375,6 +380,7 @@ export class MatrixAppServiceApi {
       res.end('{}');
     } catch (error) {
       // User not in our namespace
+      this.logger.debug('User not in namespace', { userId, error });
       this.sendError(res, 404, 'User not found');
     }
   }
