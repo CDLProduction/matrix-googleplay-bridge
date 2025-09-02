@@ -442,14 +442,12 @@ export class StandardHealthChecks {
   ): HealthCheckFunction {
     return async () => {
       try {
-        // @ts-expect-error - statvfs is not in @types/node but exists in Node.js
         const { promisify } = await import('util');
-        // @ts-expect-error - statvfs is not in @types/node but exists in Node.js
         const fs = await import('fs');
-        const statvfsAsync = promisify(fs.statvfs);
+        const statfsAsync = promisify(fs.statfs);
 
-        const stats = await statvfsAsync(path);
-        const freeMB = (stats.f_bavail * stats.f_frsize) / 1024 / 1024;
+        const stats = await statfsAsync(path);
+        const freeMB = (stats.bavail * stats.bsize) / 1024 / 1024;
 
         let status = HealthStatus.HEALTHY;
         let message = `Free disk space: ${Math.round(freeMB)}MB`;
