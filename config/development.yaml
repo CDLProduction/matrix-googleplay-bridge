@@ -1,0 +1,92 @@
+# Development Configuration for Matrix Google Play Bridge
+# Optimized for local development and testing
+
+# Bridge version
+version: "0.1.0-dev"
+
+# Matrix Homeserver Configuration
+homeserver:
+  url: "http://localhost:8008"
+  domain: "localhost"
+
+# Application Service Configuration
+appservice:
+  port: 8080
+  bind: "127.0.0.1"
+  token: "dev-appservice-token"
+  id: "googleplay-bridge-dev"
+  botUsername: "googleplay-bot"
+
+# Google Play Console API Configuration
+googleplay:
+  auth:
+    # For development, use service account key file
+    keyFile: "./credentials/service-account-key.json"
+    scopes:
+      - "https://www.googleapis.com/auth/androidpublisher"
+
+  # Test application
+  applications:
+    - packageName: "com.example.testapp"
+      matrixRoom: "!test:localhost"
+      appName: "Test App"
+      pollIntervalMs: 60000  # 1 minute for faster testing
+      maxReviewsPerPoll: 10
+      lookbackDays: 7
+
+  # Global polling settings
+  pollIntervalMs: 60000  # 1 minute for development
+  maxReviewsPerPoll: 20
+  rateLimitDelayMs: 500
+
+# Database Configuration
+database:
+  type: "sqlite"
+  path: "./data/development.db"
+
+# Development Logging Configuration
+logging:
+  level: "debug"
+  enableFile: true
+  filePath: "./logs/bridge.log"
+  enableStructured: false  # Human-readable logs for development
+  maxFileSize: 10  # MB
+  maxFiles: 5
+
+# Development Monitoring Configuration
+monitoring:
+  enabled: true
+  port: 9090
+  host: "127.0.0.1"
+  enableMetrics: true
+  enableHealthCheck: true
+  requestLogging: true
+
+# Circuit Breaker Configuration (more lenient for development)
+circuitBreakers:
+  googlePlayApi:
+    failureThreshold: 10
+    resetTimeout: 30000  # 30 seconds
+    monitoringPeriod: 60000  # 1 minute
+    successThreshold: 1
+  
+  matrixApi:
+    failureThreshold: 5
+    resetTimeout: 15000
+    monitoringPeriod: 60000
+    successThreshold: 1
+
+# Rate Limiting Configuration (more lenient for development)
+rateLimiting:
+  googlePlayApi:
+    windowSizeMs: 60000
+    maxRequests: 200  # Higher limit for testing
+  
+  matrixApi:
+    windowSizeMs: 60000
+    maxRequests: 500
+  
+  replyProcessing:
+    baseDelayMs: 500
+    maxDelayMs: 5000
+    backoffMultiplier: 1.5

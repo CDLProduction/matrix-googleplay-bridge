@@ -1,0 +1,246 @@
+# Performance Testing Configuration - Database SQLite Test (2.1)
+# High-frequency database operations for development/small deployments
+# Expected: Efficient file I/O, WAL mode optimization, minimal lock contention
+
+version: "0.1.0-perf-db-sqlite"
+
+# Matrix Homeserver Configuration (Test Environment)
+homeserver:
+  url: "http://localhost:8008"
+  domain: "localhost"
+
+# Application Service Configuration
+appservice:
+  port: 8080
+  bind: "127.0.0.1"
+  token: "perf-db-sqlite-token"
+  id: "googleplay-bridge-perf-db-sqlite"
+  botUsername: "googleplay-bot-db-sqlite"
+
+# Google Play Console API Configuration - Database Test
+googleplay:
+  auth:
+    # Mock credentials for testing
+    clientEmail: "perf-db-sqlite@test.iam.gserviceaccount.com"
+    privateKey: "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDU5Z8P2JrtFPRN\nR6Fo4XB6+kF/7Qc1P5VmTimeGStwcKJdDPpTTjSjZ6nnha3h/lhrVJLPUJGaVQRB\nBAUDAgEAAoIBAQDfLlUfQE6k\n-----END PRIVATE KEY-----\n"
+    projectId: "perf-db-sqlite-project"
+    scopes:
+      - "https://www.googleapis.com/auth/androidpublisher"
+
+  # 3 app configuration for focused database testing
+  applications:
+    # Database Load App 1: High Write Volume
+    - packageName: "com.perftest.dbsqlite.app1"
+      matrixRoom: "!dbsqlite1:localhost"
+      appName: "DB SQLite Test App 1"
+      pollIntervalMs: 30000   # 30 seconds - frequent polling
+      maxReviewsPerPoll: 50   # Moderate volume for sustained load
+      lookbackDays: 7
+      
+    # Database Load App 2: Mixed Read/Write Operations
+    - packageName: "com.perftest.dbsqlite.app2"
+      matrixRoom: "!dbsqlite2:localhost"
+      appName: "DB SQLite Test App 2"
+      pollIntervalMs: 45000   # 45 seconds
+      maxReviewsPerPoll: 40   # Mixed operations load
+      lookbackDays: 7
+      
+    # Database Load App 3: Query-Heavy Operations
+    - packageName: "com.perftest.dbsqlite.app3"
+      matrixRoom: "!dbsqlite3:localhost"
+      appName: "DB SQLite Test App 3"
+      pollIntervalMs: 60000   # 1 minute
+      maxReviewsPerPoll: 30   # Query-focused load
+      lookbackDays: 7
+
+  # Database-focused polling settings
+  pollIntervalMs: 45000       # 45 seconds average
+  maxReviewsPerPoll: 40       # Moderate sustained load
+  rateLimitDelayMs: 100       # Minimal delay for database focus
+
+# Database Configuration - SQLite Optimization for Performance Testing
+database:
+  type: "sqlite"
+  path: "./data/performance_test.db"  # File-based for I/O testing
+  options:
+    pragma:
+      journal_mode: "WAL"      # Write-Ahead Logging for concurrent access
+      synchronous: "NORMAL"    # Balance between safety and performance
+      cache_size: -32000       # 32MB cache for performance
+      temp_store: "MEMORY"     # Store temp tables in memory
+      mmap_size: 67108864      # 64MB memory-mapped I/O
+      page_size: 4096          # Standard page size
+      wal_autocheckpoint: 1000 # Checkpoint every 1000 pages
+      busy_timeout: 30000      # 30 second timeout for locks
+      foreign_keys: "ON"       # Enable foreign key constraints
+      auto_vacuum: "INCREMENTAL" # Manage database size growth
+
+# Logging Configuration - Detailed for database analysis
+logging:
+  level: "info"               # Detailed logging for analysis
+  enableFile: true            # File logging for performance analysis
+  enableStructured: true      # Structured logs for metrics
+  enableDatabaseLogs: true    # Database-specific logging
+
+# Monitoring Configuration - Database-focused metrics
+monitoring:
+  enabled: true
+  port: 9091
+  host: "127.0.0.1"
+  enableMetrics: true
+  enableHealthCheck: true
+  requestLogging: true
+  metricsCollection:
+    interval: 5000            # Collect every 5 seconds for database monitoring
+    enableGC: true            # Monitor garbage collection
+    enableEventLoop: true     # Monitor event loop lag
+    enableMemoryProfile: true # Memory profiling for database operations
+    enableDatabaseMetrics: true # Database-specific metrics
+
+# Circuit Breaker Configuration - Relaxed for database testing
+circuitBreakers:
+  googlePlayApi:
+    failureThreshold: 10      # Moderate threshold
+    resetTimeout: 15000       # 15 seconds
+    monitoringPeriod: 30000   # 30 seconds
+    successThreshold: 2
+  
+  matrixApi:
+    failureThreshold: 8
+    resetTimeout: 10000       # 10 seconds
+    monitoringPeriod: 30000
+    successThreshold: 2
+
+# Rate Limiting Configuration - Moderate for database focus
+rateLimiting:
+  googlePlayApi:
+    windowSizeMs: 60000       # 1 minute window
+    maxRequests: 200          # Moderate limit
+  
+  matrixApi:
+    windowSizeMs: 60000
+    maxRequests: 400          # Higher limit for database operations
+  
+  replyProcessing:
+    baseDelayMs: 50           # Minimal delay
+    maxDelayMs: 2000          # Moderate max delay
+    backoffMultiplier: 1.5    # Moderate backoff
+
+# Performance Test Specific Settings - Database SQLite Test
+performance:
+  testDuration: 1800000       # 30 minutes in milliseconds
+  metricsCollectionInterval: 5000    # Collect metrics every 5 seconds
+  expectedMetrics:
+    # SQLite-specific performance expectations
+    maxMemoryMB: 200          # 200MB memory limit
+    maxCpuPercent: 30         # 30% CPU for database operations
+    maxLatencyMs: 2000        # 2s max latency
+    minThroughput: 15         # 15+ reviews per minute
+    maxDatabaseSizeMB: 100    # 100MB max database size
+    maxQueryTimeMs: 500       # 500ms max query time
+    minDbOperationsPerSec: 10 # 10+ database operations per second
+  
+  testScenario:
+    name: "database-sqlite-test"
+    description: "SQLite Database Performance Test for Development Deployments"
+    reviewsPerPoll: 40        # Moderate per app
+    pollIntervalMs: 45000     # 45 seconds
+    concurrentApps: 3         # 3 applications
+    duration: "30 minutes"
+    
+    # Database-specific test patterns
+    databasePatterns:
+      type: "high-frequency-operations"
+      writeIntensity: "high"          # High write operations
+      readIntensity: "moderate"       # Moderate read operations
+      queryComplexity: "mixed"        # Mix of simple and complex queries
+      concurrentConnections: 10       # Concurrent database connections
+      transactionSize: "medium"       # Medium transaction sizes
+      
+    # SQLite-specific testing parameters
+    sqliteTestParameters:
+      walModeEnabled: true            # Test WAL mode specifically
+      checkpointFrequency: 1000       # Pages before checkpoint
+      cacheHitRatioTarget: 0.85       # 85% cache hit ratio target
+      maxLockWaitTime: 5000          # 5 second max lock wait
+      fileLockMonitoring: true        # Monitor file lock contention
+      pageUtilizationTracking: true   # Track page utilization
+      
+    # Database operation patterns
+    operationPatterns:
+      insertOperations: 40            # 40% inserts
+      updateOperations: 25            # 25% updates  
+      selectOperations: 30            # 30% selects
+      deleteOperations: 5             # 5% deletes
+      complexJoins: 10               # 10% complex join queries
+      indexUsageOptimization: true    # Optimize index usage
+      
+    # Performance monitoring focus areas
+    monitoringFocus:
+      ioOperationsPerSecond: true     # I/O operations monitoring
+      diskUsageGrowth: true          # Database file size growth
+      lockContentionFrequency: true  # File lock contention
+      queryExecutionTime: true       # Individual query timing
+      transactionCommitTime: true    # Transaction commit latency
+      walFileSize: true              # WAL file size monitoring
+      checkpointDuration: true       # Checkpoint operation time
+      
+# Database Performance Thresholds
+databaseThresholds:
+  queryTime:
+    warning: 200                    # 200ms query warning
+    critical: 500                   # 500ms query critical
+    breaking: 1000                  # 1s query breaking point
+    
+  lockContention:
+    warningRate: 0.05              # 5% lock contention warning
+    criticalRate: 0.15             # 15% lock contention critical
+    breakingRate: 0.30             # 30% lock contention breaking
+    
+  ioThroughput:
+    minReadsPerSec: 50             # Minimum 50 reads/sec
+    minWritesPerSec: 20            # Minimum 20 writes/sec
+    maxIoWaitPercent: 15           # Max 15% I/O wait
+    
+  databaseSize:
+    warningGrowthMB: 50            # 50MB growth warning
+    criticalGrowthMB: 80           # 80MB growth critical
+    maxSizeMB: 100                 # 100MB max size
+    
+  walFileManagement:
+    maxWalSizeMB: 20               # 20MB max WAL size
+    checkpointFrequencyPages: 1000  # Checkpoint every 1000 pages
+    maxCheckpointTimeMs: 5000      # 5s max checkpoint time
+
+# SQLite Specific Configuration
+sqliteConfiguration:
+  connectionPooling:
+    maxConnections: 10             # SQLite connection pool size
+    connectionTimeout: 5000        # 5s connection timeout
+    idleTimeout: 300000           # 5 minute idle timeout
+    
+  performanceOptimizations:
+    enableSharedCache: true        # Enable shared cache mode
+    enableThreadSafety: true       # Thread-safe operations
+    optimizeForSize: false         # Optimize for performance over size
+    enableQueryPlanAnalysis: true  # Analyze query plans
+    
+  maintenanceOperations:
+    vacuumFrequency: "weekly"      # Vacuum database weekly
+    analyzeFrequency: "daily"      # Update statistics daily  
+    integrityCheckFrequency: "monthly" # Integrity check monthly
+    reindexFrequency: "monthly"    # Reindex monthly
+
+# Test Data Generation - Database focused
+testDataGeneration:
+  reviewDataVariation:
+    textLengthVariation: true      # Vary review text length
+    ratingDistribution: true       # Realistic rating distribution
+    temporalClustering: true       # Time-based clustering
+    unicodeContent: true           # Unicode content testing
+    
+  databaseStressPatterns:
+    burstWrites: true              # Burst write operations
+    sustainedReads: true           # Sustained read operations
+    mixedWorkload: true            # Mixed read/write workload
+    largeTransactions: true        # Large transaction testing

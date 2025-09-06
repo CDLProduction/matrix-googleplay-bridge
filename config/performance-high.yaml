@@ -1,0 +1,231 @@
+# Performance Testing Configuration - High Load (1.3)
+# Many apps with high review volume for 1 hour
+# Expected: <500MB memory, <50% CPU, <5s response time
+
+version: "0.1.0-perf-high"
+
+# Matrix Homeserver Configuration (Test Environment)
+homeserver:
+  url: "http://localhost:8008"
+  domain: "localhost"
+
+# Application Service Configuration
+appservice:
+  port: 8080
+  bind: "127.0.0.1"
+  token: "perf-high-token"
+  id: "googleplay-bridge-perf-high"
+  botUsername: "googleplay-bot-perf"
+
+# Google Play Console API Configuration - High Load Test
+googleplay:
+  auth:
+    # Mock credentials for testing
+    clientEmail: "perf-high@test.iam.gserviceaccount.com"
+    privateKey: "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDU5Z8P2JrtFPRN\nR6Fo4XB6+kF/7Qc1P5VmTimeGStwcKJdDPpTTjSjZ6nnha3h/lhrVJLPUJGaVQRB\nBAUDAgEAAoIBAQDfLlUfQE6k\n-----END PRIVATE KEY-----\n"
+    projectId: "perf-high-project"
+    scopes:
+      - "https://www.googleapis.com/auth/androidpublisher"
+
+  # 10 app configuration for high load testing
+  applications:
+    # Tier 1: Very High Volume Apps (3 apps)
+    - packageName: "com.perftest.high.app1"
+      matrixRoom: "!high1:localhost"
+      appName: "Performance High Volume App 1"
+      pollIntervalMs: 120000  # 2 minutes
+      maxReviewsPerPoll: 100  # 50-100 reviews per poll
+      lookbackDays: 7
+      
+    - packageName: "com.perftest.high.app2"
+      matrixRoom: "!high2:localhost"
+      appName: "Performance High Volume App 2"
+      pollIntervalMs: 120000  # 2 minutes
+      maxReviewsPerPoll: 90   # 50-100 reviews per poll
+      lookbackDays: 7
+      
+    - packageName: "com.perftest.high.app3"
+      matrixRoom: "!high3:localhost"
+      appName: "Performance High Volume App 3"
+      pollIntervalMs: 120000  # 2 minutes
+      maxReviewsPerPoll: 85   # 50-100 reviews per poll
+      lookbackDays: 7
+    
+    # Tier 2: High Volume Apps (4 apps)
+    - packageName: "com.perftest.high.app4"
+      matrixRoom: "!high4:localhost"
+      appName: "Performance High Volume App 4"
+      pollIntervalMs: 120000  # 2 minutes
+      maxReviewsPerPoll: 80   # 50-100 reviews per poll
+      lookbackDays: 7
+      
+    - packageName: "com.perftest.high.app5"
+      matrixRoom: "!high5:localhost"
+      appName: "Performance High Volume App 5"
+      pollIntervalMs: 120000  # 2 minutes
+      maxReviewsPerPoll: 75   # 50-100 reviews per poll
+      lookbackDays: 7
+      
+    - packageName: "com.perftest.high.app6"
+      matrixRoom: "!high6:localhost"
+      appName: "Performance High Volume App 6"
+      pollIntervalMs: 120000  # 2 minutes
+      maxReviewsPerPoll: 70   # 50-100 reviews per poll
+      lookbackDays: 7
+      
+    - packageName: "com.perftest.high.app7"
+      matrixRoom: "!high7:localhost"
+      appName: "Performance High Volume App 7"
+      pollIntervalMs: 120000  # 2 minutes
+      maxReviewsPerPoll: 65   # 50-100 reviews per poll
+      lookbackDays: 7
+    
+    # Tier 3: Moderate-High Volume Apps (3 apps)
+    - packageName: "com.perftest.high.app8"
+      matrixRoom: "!high8:localhost"
+      appName: "Performance High Volume App 8"
+      pollIntervalMs: 120000  # 2 minutes
+      maxReviewsPerPoll: 60   # 50-100 reviews per poll
+      lookbackDays: 7
+      
+    - packageName: "com.perftest.high.app9"
+      matrixRoom: "!high9:localhost"
+      appName: "Performance High Volume App 9"
+      pollIntervalMs: 120000  # 2 minutes
+      maxReviewsPerPoll: 55   # 50-100 reviews per poll
+      lookbackDays: 7
+      
+    - packageName: "com.perftest.high.app10"
+      matrixRoom: "!high10:localhost"
+      appName: "Performance High Volume App 10"
+      pollIntervalMs: 120000  # 2 minutes
+      maxReviewsPerPoll: 50   # 50-100 reviews per poll
+      lookbackDays: 7
+
+  # High-intensity polling settings
+  pollIntervalMs: 120000      # 2 minutes - more frequent than typical production
+  maxReviewsPerPoll: 75       # High average volume
+  rateLimitDelayMs: 200       # Faster API calls for high load
+
+# Database Configuration - SQLite with high performance settings
+database:
+  type: "sqlite"
+  path: ":memory:"           # In-memory for maximum performance
+  options:
+    pragma:
+      journal_mode: "WAL"    # Write-Ahead Logging for better concurrency
+      synchronous: "NORMAL"  # Balance between safety and performance
+      cache_size: -64000     # 64MB cache
+      temp_store: "MEMORY"   # Store temp tables in memory
+
+# Logging Configuration - Optimized for high load
+logging:
+  level: "warn"              # Reduce logging overhead during high load
+  enableFile: false          # Disable file I/O during performance test
+  enableStructured: false    # Simple logging to reduce overhead
+
+# Monitoring Configuration - Enhanced for high load testing
+monitoring:
+  enabled: true
+  port: 9091
+  host: "127.0.0.1"
+  enableMetrics: true
+  enableHealthCheck: true
+  requestLogging: false      # Disable to reduce overhead
+  metricsCollection:
+    interval: 5000           # Collect every 5 seconds for granular monitoring
+    enableGC: true           # Monitor garbage collection
+    enableEventLoop: true    # Monitor event loop lag
+
+# Circuit Breaker Configuration - Tuned for high load
+circuitBreakers:
+  googlePlayApi:
+    failureThreshold: 10     # Higher threshold for burst load
+    resetTimeout: 20000      # 20 seconds - faster recovery
+    monitoringPeriod: 30000  # 30 seconds - shorter monitoring
+    successThreshold: 3      # More attempts before opening
+  
+  matrixApi:
+    failureThreshold: 8      # Higher threshold
+    resetTimeout: 10000      # 10 seconds - very fast recovery
+    monitoringPeriod: 30000  # 30 seconds
+    successThreshold: 2
+
+# Rate Limiting Configuration - Optimized for high throughput
+rateLimiting:
+  googlePlayApi:
+    windowSizeMs: 60000      # 1 minute window
+    maxRequests: 500         # High limit for 10 apps
+  
+  matrixApi:
+    windowSizeMs: 60000
+    maxRequests: 1000        # Very high limit for message bursts
+  
+  replyProcessing:
+    baseDelayMs: 100         # Minimal delay
+    maxDelayMs: 2000         # Low max delay for high throughput
+    backoffMultiplier: 1.3   # Gentle backoff
+
+# Performance Test Specific Settings - High Load
+performance:
+  testDuration: 3600000      # 1 hour (60 minutes) in milliseconds
+  metricsCollectionInterval: 5000   # Collect metrics every 5 seconds
+  expectedMetrics:
+    maxMemoryMB: 500         # <500MB memory target
+    maxCpuPercent: 50        # <50% CPU target  
+    maxLatencyMs: 5000       # <5s response time target
+    minThroughput: 25        # Minimum 25 reviews per minute (10 apps * ~2.5/min avg)
+  
+  testScenario:
+    name: "high-load"
+    description: "High Load Peak Usage Test"
+    reviewsPerPoll: 75       # Average 50-100 per app
+    pollIntervalMs: 120000   # 2 minutes
+    concurrentApps: 10       # 10 applications
+    duration: "1 hour"
+    
+    # High-intensity load pattern
+    loadPattern:
+      type: "peak-usage"     # Simulates peak usage patterns
+      intensityLevels: [0.7, 1.0, 1.2, 1.5, 1.8, 2.0]  # Escalating intensity
+      burstPatterns: true    # Enable burst generation
+      sustainedLoad: true    # Maintain high load throughout test
+      
+    # App tiers for different load levels
+    appTiers:
+      tier1:  # Very High Volume (3 apps)
+        reviewsPerPoll: [85, 100]
+        peakMultiplier: 2.5
+        burstProbability: 0.4
+      tier2:  # High Volume (4 apps)  
+        reviewsPerPoll: [65, 85]
+        peakMultiplier: 2.0
+        burstProbability: 0.3
+      tier3:  # Moderate-High Volume (3 apps)
+        reviewsPerPoll: [50, 70]
+        peakMultiplier: 1.5
+        burstProbability: 0.2
+        
+    # Stress testing parameters
+    stressConditions:
+      enableMemoryPressure: true      # Gradually increase memory usage
+      enableCpuBursts: true           # Periodic CPU-intensive operations
+      enableLatencySpikes: true       # Simulate network latency spikes
+      monitorDegradation: true        # Monitor performance degradation
+      
+# Resource Monitoring - Detailed for capacity testing
+resourceMonitoring:
+  memoryTracking:
+    enableHeapSnapshots: false       # Disable during test to avoid overhead
+    trackGarbageCollection: true     # Monitor GC frequency and duration
+    memoryLeakDetection: true        # Alert on continuous growth
+    
+  cpuTracking:
+    sampleInterval: 1000            # Sample every second
+    trackEventLoopLag: true         # Monitor event loop performance
+    cpuProfiler: false              # Disable profiler during test
+    
+  networkTracking:
+    trackConnectionPool: true       # Monitor connection usage
+    trackRequestQueue: true         # Monitor request queue depth
+    timeoutDetection: true          # Detect request timeouts

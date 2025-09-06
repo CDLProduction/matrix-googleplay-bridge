@@ -1,0 +1,279 @@
+# CPU Usage Patterns Test Configuration
+# Scenario 3.2: CPU profiling and patterns analysis
+
+# Basic bridge configuration
+bridge:
+  domain: "localhost"
+  homeserverUrl: "http://localhost:8008"
+  registration: "/data/registration.yaml"
+  bindAddress: "127.0.0.1"
+  port: 9003
+  database:
+    engine: "sqlite"
+    filename: ":memory:"  # In-memory for CPU testing
+
+# Google Play API configuration
+google:
+  serviceAccountKeyFile: "/path/to/service-account-key.json"
+  pollingInterval: 10000  # 10 seconds for CPU pattern testing
+
+# Test applications
+apps:
+  - packageName: "com.test.cpu.app1"
+    matrixRoomId: "!cpu1:localhost"
+    
+  - packageName: "com.test.cpu.app2"
+    matrixRoomId: "!cpu2:localhost"
+    
+  - packageName: "com.test.cpu.app3"
+    matrixRoomId: "!cpu3:localhost"
+
+# Performance test configuration
+performance:
+  # Test duration: 2 hours for CPU pattern analysis
+  testDuration: 7200000  # 2 hours in milliseconds
+  
+  # CPU profiling configuration
+  cpuProfiling:
+    enabled: true
+    sampleInterval: 100  # Microseconds between samples
+    profileDuration: 60000  # 1 minute profile captures
+    captureInterval: 300000  # Capture every 5 minutes
+    maxProfiles: 24  # Maximum number of profiles to store
+    
+  # CPU thresholds and expectations
+  expectedMetrics:
+    # Average CPU usage thresholds
+    avgCpuUsagePercent: 30  # Average CPU should stay below 30%
+    maxCpuUsagePercent: 80  # Peak CPU should not exceed 80%
+    
+    # CPU spike detection
+    spikeThreshold: 60  # CPU usage above 60% is considered a spike
+    maxSpikeDuration: 5000  # Spikes should not last more than 5 seconds
+    maxSpikesPerHour: 10  # No more than 10 spikes per hour
+    
+    # Core utilization
+    maxCoresUtilized: 2  # Should not use more than 2 cores on average
+    coreBalancing: true  # Expect balanced load across cores
+    
+    # Event loop metrics
+    maxEventLoopLag: 100  # Maximum event loop lag in ms
+    avgEventLoopLag: 20  # Average event loop lag in ms
+    eventLoopBlockingThreshold: 500  # Blocking threshold in ms
+    
+  # Workload simulation patterns
+  workloadPatterns:
+    # Pattern 1: Steady state
+    - name: "steady_state"
+      duration: 1800000  # 30 minutes
+      reviewsPerMinute: 10
+      messagesPerMinute: 20
+      concurrentUsers: 5
+      
+    # Pattern 2: Peak load
+    - name: "peak_load"
+      duration: 900000  # 15 minutes
+      reviewsPerMinute: 50
+      messagesPerMinute: 100
+      concurrentUsers: 20
+      
+    # Pattern 3: Burst traffic
+    - name: "burst_traffic"
+      duration: 600000  # 10 minutes
+      burstSize: 100
+      burstInterval: 60000  # 1 minute between bursts
+      baselineLoad: 5
+      
+    # Pattern 4: Gradual ramp
+    - name: "gradual_ramp"
+      duration: 1200000  # 20 minutes
+      startLoad: 1
+      endLoad: 30
+      rampSteps: 10
+      
+    # Pattern 5: Idle periods
+    - name: "idle_periods"
+      duration: 900000  # 15 minutes
+      activeMinutes: 5
+      idleMinutes: 10
+      activeLoad: 25
+      
+    # Pattern 6: Mixed workload
+    - name: "mixed_workload"
+      duration: 1800000  # 30 minutes
+      smallMessages: 100  # Small text messages
+      largeMessages: 10   # Large messages with attachments
+      apiCalls: 50        # API intensive operations
+      databaseOps: 30     # Database heavy operations
+      
+  # CPU analysis configuration
+  analysis:
+    # Function profiling
+    functionProfiling:
+      enabled: true
+      topFunctions: 50  # Track top 50 CPU consuming functions
+      minSelfTime: 1    # Minimum self time in ms to report
+      includeNative: false  # Include native functions
+      
+    # Flame graph generation
+    flameGraphs:
+      enabled: true
+      format: "svg"
+      outputDir: "performance-reports/cpu/flame-graphs"
+      simplifyPaths: true
+      
+    # Hot path detection
+    hotPathDetection:
+      enabled: true
+      threshold: 10  # Functions using >10% CPU are hot
+      depth: 10      # Maximum call stack depth to analyze
+      
+    # CPU bottleneck identification
+    bottleneckDetection:
+      enabled: true
+      categories:
+        - "message_processing"
+        - "api_calls"
+        - "database_operations"
+        - "encryption_decryption"
+        - "serialization"
+        - "network_io"
+        - "event_handling"
+        
+  # Resource monitoring
+  monitoring:
+    # Process metrics
+    processMetrics:
+      enabled: true
+      interval: 1000  # Collect every second
+      metrics:
+        - "cpu_percent"
+        - "cpu_times"
+        - "memory_info"
+        - "num_threads"
+        - "io_counters"
+        
+    # System metrics
+    systemMetrics:
+      enabled: true
+      interval: 5000  # Collect every 5 seconds
+      metrics:
+        - "cpu_count"
+        - "cpu_freq"
+        - "cpu_stats"
+        - "load_average"
+        - "context_switches"
+        
+    # V8 metrics
+    v8Metrics:
+      enabled: true
+      interval: 10000  # Collect every 10 seconds
+      metrics:
+        - "heap_statistics"
+        - "gc_statistics"
+        - "compilation_statistics"
+        
+  # Alert thresholds
+  alerts:
+    cpuHighUsage:
+      threshold: 70
+      duration: 30000  # Alert if CPU > 70% for 30 seconds
+      
+    eventLoopBlocked:
+      threshold: 1000  # Alert if event loop blocked > 1 second
+      
+    excessiveContextSwitching:
+      threshold: 10000  # Alert if > 10k context switches/sec
+      
+  # Test data generation
+  testData:
+    reviewGenerator:
+      languages: ["en", "es", "fr", "de", "ja"]
+      ratingsDistribution:
+        1: 10
+        2: 10
+        3: 20
+        4: 30
+        5: 30
+      includeReplies: true
+      replyProbability: 0.3
+      
+    messageGenerator:
+      types: ["text", "image", "file", "reaction", "edit"]
+      typeDistribution:
+        text: 70
+        image: 10
+        file: 5
+        reaction: 10
+        edit: 5
+      messageLengths:
+        short: 40   # < 100 chars
+        medium: 40  # 100-500 chars
+        long: 20    # > 500 chars
+        
+  # Optimization validation
+  optimization:
+    # Async operation optimization
+    asyncOptimization:
+      validateBatching: true
+      validateConcurrency: true
+      maxConcurrentOps: 10
+      
+    # Cache effectiveness
+    cacheValidation:
+      enabled: true
+      expectedHitRate: 0.7  # 70% cache hit rate
+      
+    # Database query optimization
+    queryOptimization:
+      validateIndexUsage: true
+      maxQueryTime: 100  # Max 100ms per query
+      
+  # Report generation
+  reporting:
+    generateReport: true
+    reportFormat: "html"
+    includeGraphs: true
+    includeFlameGraphs: true
+    includeRecommendations: true
+    outputPath: "performance-reports/cpu-patterns-report.html"
+    
+  # Safety mechanisms
+  safety:
+    # Auto-stop on critical CPU usage
+    autoStopOnHighCpu:
+      enabled: true
+      threshold: 95  # Stop if CPU > 95%
+      duration: 60000  # For 1 minute
+      
+    # CPU throttling simulation
+    cpuThrottling:
+      enabled: false
+      throttlePercent: 50  # Simulate 50% CPU availability
+      
+    # Resource limits
+    resourceLimits:
+      maxCpuPercent: 100
+      maxMemoryMB: 500
+      maxThreads: 50
+
+# Feature flags for CPU testing
+features:
+  # Disable non-essential features for baseline
+  enableCategorization: false
+  enableSuggestions: false
+  enableTemplates: false
+  enableThreading: true  # Keep threading for realistic load
+  
+  # Performance optimizations to test
+  enableBatching: true
+  enableCaching: true
+  enableConnectionPooling: true
+  enableCompression: true
+
+# Logging configuration
+logging:
+  level: "info"
+  performanceMetrics: true
+  cpuProfiling: true
+  eventLoopMonitoring: true

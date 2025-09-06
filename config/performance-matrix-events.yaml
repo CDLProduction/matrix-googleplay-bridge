@@ -1,0 +1,440 @@
+# Matrix Event Processing Performance Test Configuration
+# Scenario 4.2: High-frequency Matrix events, event queue processing, virtual user management
+
+# Basic bridge configuration
+bridge:
+  domain: "localhost"
+  homeserverUrl: "http://localhost:8008"
+  registration: "/data/registration.yaml"
+  bindAddress: "127.0.0.1"
+  port: 9006
+  database:
+    engine: "sqlite"
+    filename: ":memory:"  # In-memory for event processing testing
+
+# Google Play API configuration (minimal for Matrix event focus)
+google:
+  serviceAccountKeyFile: "/path/to/service-account-key.json"
+  pollingInterval: 60000  # 1 minute for background load
+  maxRetries: 3
+  retryDelay: 1000
+  timeout: 15000
+
+# Test applications for Matrix event generation
+apps:
+  # High-frequency event generators
+  - packageName: "com.matrixevents.highfreq.app1"
+    matrixRoomId: "!highfreq1:localhost"
+    eventGenerationRate: 50    # Events per minute
+    priority: "high"
+    
+  - packageName: "com.matrixevents.highfreq.app2"
+    matrixRoomId: "!highfreq2:localhost"
+    eventGenerationRate: 60
+    priority: "high"
+    
+  - packageName: "com.matrixevents.highfreq.app3"
+    matrixRoomId: "!highfreq3:localhost"
+    eventGenerationRate: 45
+    priority: "high"
+    
+  # Medium-frequency event generators
+  - packageName: "com.matrixevents.medfreq.app4"
+    matrixRoomId: "!medfreq4:localhost"
+    eventGenerationRate: 25    # Events per minute
+    priority: "medium"
+    
+  - packageName: "com.matrixevents.medfreq.app5"
+    matrixRoomId: "!medfreq5:localhost"
+    eventGenerationRate: 30
+    priority: "medium"
+    
+  - packageName: "com.matrixevents.medfreq.app6"
+    matrixRoomId: "!medfreq6:localhost"
+    eventGenerationRate: 20
+    priority: "medium"
+    
+  # Burst event generators
+  - packageName: "com.matrixevents.burst.app7"
+    matrixRoomId: "!burst7:localhost"
+    eventGenerationRate: 100   # Burst events
+    priority: "burst"
+    burstPattern: true
+    
+  - packageName: "com.matrixevents.burst.app8"
+    matrixRoomId: "!burst8:localhost"
+    eventGenerationRate: 120
+    priority: "burst"
+    burstPattern: true
+
+# Performance test configuration
+performance:
+  # Test duration: 2 hours for Matrix event processing analysis
+  testDuration: 7200000  # 2 hours in milliseconds
+  
+  # Matrix event monitoring configuration
+  matrixEventMonitoring:
+    enabled: true
+    sampleInterval: 500     # Sample every 500ms for high-frequency events
+    trackEventQueue: true
+    trackVirtualUsers: true
+    trackProcessingLatency: true
+    trackMemoryPerEvent: true
+    trackEventThroughput: true
+    
+  # Expected Matrix event processing metrics
+  expectedMetrics:
+    # Event processing throughput
+    maxEventsPerSecond: 20         # Max 20 events/second sustainable
+    avgEventsPerSecond: 8          # Average 8 events/second
+    burstEventsPerSecond: 50       # Max 50 events/second during bursts
+    
+    # Event queue management
+    maxQueueDepth: 100             # Max 100 events in queue
+    avgQueueDepth: 20              # Average 20 events in queue
+    maxQueueWaitTime: 5000         # Max 5 seconds queue wait
+    avgQueueWaitTime: 1000         # Average 1 second queue wait
+    
+    # Virtual user management
+    maxVirtualUsers: 200           # Max 200 virtual users
+    avgVirtualUsers: 80            # Average 80 virtual users
+    userCreationTime: 2000         # Max 2 seconds to create user
+    userLookupTime: 100            # Max 100ms user lookup
+    
+    # Event processing latency
+    maxEventLatency: 3000          # Max 3 seconds end-to-end
+    avgEventLatency: 800           # Average 800ms processing time
+    p95EventLatency: 2000          # P95 under 2 seconds
+    
+    # Memory efficiency
+    memoryPerEvent: 50             # Max 50KB per event
+    memoryPerUser: 10240           # Max 10KB per virtual user
+    maxTotalMemoryMB: 400          # Max 400MB total memory
+    
+    # Error rates
+    eventProcessingErrors: 0.005   # Less than 0.5% event errors
+    userCreationErrors: 0.001      # Less than 0.1% user creation errors
+    queueOverflowRate: 0.0         # Zero queue overflows
+    
+  # Matrix event test scenarios
+  matrixEventScenarios:
+    # Scenario 1: Steady high-frequency events
+    - name: "steady_high_frequency"
+      duration: 1800000  # 30 minutes
+      description: "Continuous high-frequency Matrix events"
+      eventRate: 15      # Events per second
+      eventTypes: ["m.room.message", "m.room.member", "m.room.topic"]
+      expectedThroughput: 15
+      
+    # Scenario 2: Burst event processing
+    - name: "burst_event_processing"
+      duration: 1200000  # 20 minutes
+      description: "Burst patterns with high event peaks"
+      burstMode: true
+      burstEventsPerSecond: 40
+      burstDuration: 30000    # 30 second bursts
+      burstInterval: 120000   # Every 2 minutes
+      expectedPeakThroughput: 40
+      
+    # Scenario 3: Virtual user creation stress
+    - name: "virtual_user_stress"
+      duration: 1800000  # 30 minutes
+      description: "High rate virtual user creation and management"
+      newUsersPerMinute: 50
+      userChurnRate: 0.2      # 20% user turnover
+      expectedUserCreationRate: 50
+      
+    # Scenario 4: Event queue saturation
+    - name: "event_queue_saturation"
+      duration: 900000   # 15 minutes
+      description: "Push event queue to capacity limits"
+      eventRate: 25      # Events per second
+      processingDelay: 200    # Introduce processing delay
+      expectedQueueDepth: 80
+      
+    # Scenario 5: Mixed event types processing
+    - name: "mixed_event_types"
+      duration: 1800000  # 30 minutes
+      description: "Various Matrix event types processing"
+      eventTypes: ["m.room.message", "m.room.member", "m.room.topic", 
+                   "m.room.avatar", "m.room.name", "m.room.join_rules",
+                   "m.room.power_levels", "m.room.create", "m.typing"]
+      eventDistribution:
+        "m.room.message": 0.6    # 60% messages
+        "m.room.member": 0.15    # 15% membership
+        "m.room.topic": 0.05     # 5% topic changes
+        "others": 0.2            # 20% other events
+      expectedVariedThroughput: 12
+      
+    # Scenario 6: Event processing recovery
+    - name: "event_processing_recovery"
+      duration: 1200000  # 20 minutes
+      description: "Recovery from event processing failures"
+      simulateFailures: true
+      failureRate: 0.05        # 5% failure rate
+      recoveryTime: 10000      # 10 second recovery
+      expectedRecoveryThroughput: 10
+      
+  # Event queue analysis configuration
+  eventQueueAnalysis:
+    enabled: true
+    
+    # Queue depth monitoring
+    queueDepthMonitoring:
+      enabled: true
+      trackMaxDepth: true
+      trackAvgDepth: true
+      trackDepthVariation: true
+      alertThreshold: 150      # Alert if queue depth > 150
+      
+    # Queue processing efficiency
+    processingEfficiency:
+      enabled: true
+      trackProcessingRate: true
+      trackWaitTimes: true
+      trackThroughputVariation: true
+      measureBackpressure: true
+      
+    # Queue overflow detection
+    overflowDetection:
+      enabled: true
+      overflowThreshold: 200   # Queue overflow at 200 events
+      trackDroppedEvents: true
+      analyzeOverflowCauses: true
+      
+  # Virtual user management analysis
+  virtualUserAnalysis:
+    enabled: true
+    
+    # User lifecycle tracking
+    lifecycleTracking:
+      enabled: true
+      trackCreationTime: true
+      trackLookupPerformance: true
+      trackMemoryUsage: true
+      trackCacheEfficiency: true
+      
+    # User management efficiency
+    managementEfficiency:
+      enabled: true
+      trackUserCreationRate: true
+      trackUserLookupRate: true
+      trackUserDeletionRate: true
+      measureCacheHitRatio: true
+      
+    # User scaling analysis
+    scalingAnalysis:
+      enabled: true
+      trackUserCountGrowth: true
+      analyzeMemoryScaling: true
+      assessLookupScaling: true
+      predictCapacityLimits: true
+      
+  # Event processing latency analysis
+  latencyAnalysis:
+    enabled: true
+    
+    # End-to-end latency
+    endToEndLatency:
+      enabled: true
+      trackReceiveToProcess: true
+      trackProcessToSend: true
+      trackQueueLatency: true
+      measureTotalLatency: true
+      
+    # Processing stage breakdown
+    stageBreakdown:
+      enabled: true
+      trackParsingTime: true
+      trackValidationTime: true
+      trackBusinessLogicTime: true
+      trackDatabaseTime: true
+      trackMatrixApiTime: true
+      
+    # Latency distribution analysis
+    distributionAnalysis:
+      enabled: true
+      calculatePercentiles: [50, 75, 90, 95, 99]
+      trackLatencyTrends: true
+      identifyLatencySpikes: true
+      
+  # Event type performance analysis
+  eventTypeAnalysis:
+    enabled: true
+    
+    # Per-type processing metrics
+    perTypeMetrics:
+      enabled: true
+      trackProcessingTime: true
+      trackMemoryUsage: true
+      trackSuccessRate: true
+      compareEventTypes: true
+      
+    # Event complexity analysis
+    complexityAnalysis:
+      enabled: true
+      measurePayloadSize: true
+      trackProcessingComplexity: true
+      analyzeResourceUsage: true
+      
+  # Memory usage optimization
+  memoryOptimization:
+    enabled: true
+    
+    # Event memory tracking
+    eventMemoryTracking:
+      enabled: true
+      trackEventSize: true
+      trackProcessingMemory: true
+      trackMemoryLeaks: true
+      
+    # Virtual user memory efficiency
+    userMemoryEfficiency:
+      enabled: true
+      trackUserMemoryFootprint: true
+      optimizeUserCaching: true
+      trackMemoryGrowth: true
+      
+    # Queue memory management
+    queueMemoryManagement:
+      enabled: true
+      trackQueueMemoryUsage: true
+      optimizeQueueStorage: true
+      preventMemoryLeaks: true
+      
+  # Alert thresholds
+  alerts:
+    # Event processing alerts
+    eventProcessing:
+      highLatencyThreshold: 5000    # Alert if >5s latency
+      lowThroughputThreshold: 5     # Alert if <5 events/second
+      highErrorRateThreshold: 0.02  # Alert if >2% error rate
+      
+    # Queue management alerts
+    queueManagement:
+      highDepthThreshold: 120       # Alert if queue depth >120
+      longWaitThreshold: 8000       # Alert if wait time >8s
+      overflowThreshold: 1          # Alert on any overflow
+      
+    # Virtual user alerts
+    virtualUsers:
+      highCountThreshold: 250       # Alert if >250 users
+      slowCreationThreshold: 3000   # Alert if creation >3s
+      lowCacheHitThreshold: 0.8     # Alert if cache hit <80%
+      
+    # Memory usage alerts
+    memoryUsage:
+      highUsageThreshold: 450       # Alert if >450MB
+      memoryLeakThreshold: 1.5      # Alert if 50% growth/hour
+      
+  # Report generation
+  reporting:
+    generateReport: true
+    reportFormat: "html"
+    includeEventTimeline: true
+    includeQueueAnalysis: true
+    includeVirtualUserAnalysis: true
+    includeLatencyDistribution: true
+    includeMemoryAnalysis: true
+    includeOptimizationRecommendations: true
+    outputPath: "performance-reports/matrix-events-report.html"
+    
+  # Optimization testing
+  optimization:
+    # Event processing optimizations to test
+    testOptimizations:
+      - "event_queue_batching"
+      - "virtual_user_caching"
+      - "async_processing_pipeline"
+      - "event_deduplication"
+      - "user_lookup_optimization"
+      - "memory_pool_management"
+      
+    # Configuration tuning parameters
+    tuningParameters:
+      - parameter: "maxQueueDepth"
+        values: [50, 100, 150, 200]
+      - parameter: "processingBatchSize"
+        values: [1, 5, 10, 20]
+      - parameter: "userCacheSize"
+        values: [100, 500, 1000, 2000]
+      - parameter: "eventProcessingTimeout"
+        values: [1000, 2000, 5000, 10000]
+
+# Matrix API configuration for event processing
+matrixApi:
+  # Event processing configuration
+  eventProcessing:
+    enabled: true
+    maxConcurrentEvents: 20
+    eventBatchSize: 5
+    processingTimeout: 10000
+    retryAttempts: 3
+    
+  # Virtual user management
+  virtualUserManagement:
+    enabled: true
+    userCacheSize: 1000
+    userCacheTTL: 3600000      # 1 hour cache TTL
+    userCreationTimeout: 5000
+    userLookupTimeout: 1000
+    
+  # Rate limiting for event processing
+  rateLimiting:
+    enabled: true
+    eventsPerSecond: 25
+    burstSize: 50
+    
+  # Connection management
+  connectionManagement:
+    enabled: true
+    maxConnections: 15
+    keepAlive: true
+    connectionTimeout: 10000
+
+# Database configuration for event processing
+database:
+  # Connection pool for event processing
+  connectionPool:
+    minConnections: 3
+    maxConnections: 15
+    acquireTimeout: 2000
+    createTimeout: 3000
+    destroyTimeout: 5000
+    idleTimeout: 30000
+    reapInterval: 1000
+    
+  # Event storage optimization
+  eventStorage:
+    batchInserts: true
+    batchSize: 10
+    insertTimeout: 5000
+    
+  # Virtual user storage
+  userStorage:
+    enableCaching: true
+    cacheSize: 1000
+    cacheTTL: 3600000
+
+# Feature flags for Matrix event testing
+features:
+  # Enable event processing optimizations
+  enableEventBatching: true
+  enableVirtualUserCaching: true
+  enableAsyncProcessing: true
+  enableEventDeduplication: true
+  
+  # Disable non-essential features for focus
+  enableCategorization: false
+  enableSuggestions: false
+  enableTemplates: false
+  enableThreading: true    # Keep threading for event complexity
+
+# Logging configuration
+logging:
+  level: "info"
+  matrixEvents: true
+  virtualUsers: true
+  eventQueue: true
+  processingLatency: true
+  memoryUsage: true

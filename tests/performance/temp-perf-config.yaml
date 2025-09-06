@@ -1,0 +1,35 @@
+version: 0.1.0-perf
+homeserver:
+  url: http://localhost:8008
+  domain: localhost
+appservice:
+  port: 8080
+  bind: 127.0.0.1
+  token: perf-test-token
+  id: googleplay-bridge-perf
+  botUsername: googleplay-bot
+googleplay:
+  auth:
+    clientEmail: perf-test@test.iam.gserviceaccount.com
+    privateKey: |
+      -----BEGIN PRIVATE KEY-----
+      MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDU5Z8P2JrtFPRN
+      -----END PRIVATE KEY-----
+    projectId: perf-test-project
+  applications:
+    - packageName: com.perftest.app1
+      appName: Performance Test App 1
+      matrixRoom: '!test1:localhost'
+      pollIntervalMs: 108327.29847050487
+      maxReviewsPerPoll: 61
+  pollIntervalMs: 60000
+  maxReviewsPerPoll: 5
+database:
+  type: sqlite
+  path: ':memory:'
+logging:
+  level: error
+  enableFile: false
+  enableStructured: false
+monitoring:
+  enabled: false

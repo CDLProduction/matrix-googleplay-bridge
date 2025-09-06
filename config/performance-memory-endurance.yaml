@@ -1,0 +1,323 @@
+# Performance Testing Configuration - Memory Leak Detection Test (3.1)
+# 24-hour continuous run for memory growth pattern analysis and GC efficiency
+# Expected: Stable memory usage, efficient GC, no memory leaks detected
+
+version: "0.1.0-perf-memory-endurance"
+
+# Matrix Homeserver Configuration (Test Environment)
+homeserver:
+  url: "http://localhost:8008"
+  domain: "localhost"
+
+# Application Service Configuration
+appservice:
+  port: 8080
+  bind: "127.0.0.1"
+  token: "perf-memory-endurance-token"
+  id: "googleplay-bridge-perf-memory-endurance"
+  botUsername: "googleplay-bot-memory-endurance"
+
+# Google Play Console API Configuration - Long-term Memory Test
+googleplay:
+  auth:
+    # Mock credentials for testing
+    clientEmail: "perf-memory-endurance@test.iam.gserviceaccount.com"
+    privateKey: "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDU5Z8P2JrtFPRN\nR6Fo4XB6+kF/7Qc1P5VmTimeGStwcKJdDPpTTjSjZ6nnha3h/lhrVJLPUJGaVQRB\nBAUDAgEAAoIBAQDfLlUfQE6k\n-----END PRIVATE KEY-----\n"
+    projectId: "perf-memory-endurance-project"
+    scopes:
+      - "https://www.googleapis.com/auth/androidpublisher"
+
+  # 3 app configuration for sustained long-term load
+  applications:
+    # Memory Test App 1: Consistent Load Pattern
+    - packageName: "com.perftest.memory.app1"
+      matrixRoom: "!memory1:localhost"
+      appName: "Memory Endurance Test App 1"
+      pollIntervalMs: 300000  # 5 minutes - consistent load
+      maxReviewsPerPoll: 25   # Moderate volume for stability
+      lookbackDays: 7
+      
+    # Memory Test App 2: Variable Load Pattern
+    - packageName: "com.perftest.memory.app2"
+      matrixRoom: "!memory2:localhost"
+      appName: "Memory Endurance Test App 2"
+      pollIntervalMs: 240000  # 4 minutes
+      maxReviewsPerPoll: 30   # Slightly higher volume
+      lookbackDays: 7
+      
+    # Memory Test App 3: Periodic Burst Pattern
+    - packageName: "com.perftest.memory.app3"
+      matrixRoom: "!memory3:localhost"
+      appName: "Memory Endurance Test App 3"
+      pollIntervalMs: 360000  # 6 minutes with periodic bursts
+      maxReviewsPerPoll: 20   # Lower base with bursts
+      lookbackDays: 7
+
+  # Sustained long-term polling settings
+  pollIntervalMs: 300000      # 5 minutes - sustainable rate
+  maxReviewsPerPoll: 25       # Moderate consistent load
+  rateLimitDelayMs: 200       # Conservative delay for stability
+
+# Database Configuration - Optimized for long-term stability
+database:
+  type: "sqlite"
+  path: "./data/memory_endurance_test.db"
+  options:
+    pragma:
+      journal_mode: "WAL"      # WAL mode for stability
+      synchronous: "NORMAL"    # Balance safety and performance
+      cache_size: -16000       # 16MB cache - conservative
+      temp_store: "MEMORY"     # Memory temp storage
+      mmap_size: 33554432      # 32MB mmap - conservative
+      page_size: 4096          # Standard page size
+      wal_autocheckpoint: 2000 # More frequent checkpoints
+      busy_timeout: 60000      # 1 minute timeout
+      foreign_keys: "ON"       # Enable constraints
+      auto_vacuum: "INCREMENTAL" # Manage database growth
+
+# Logging Configuration - Optimized for long-term monitoring
+logging:
+  level: "info"               # Info level for balance
+  enableFile: true            # File logging for analysis
+  enableStructured: true      # Structured logs for metrics
+  enableDatabaseLogs: false   # Reduce log volume
+  enableMemoryLogs: true      # Memory-specific logging
+  logRotation:
+    enabled: true             # Enable log rotation
+    maxSize: "100MB"          # Rotate at 100MB
+    maxFiles: 24              # Keep 24 hours of logs
+    compress: true            # Compress old logs
+
+# Monitoring Configuration - Memory-focused metrics
+monitoring:
+  enabled: true
+  port: 9091
+  host: "127.0.0.1"
+  enableMetrics: true
+  enableHealthCheck: true
+  requestLogging: false       # Reduce overhead for long-term test
+  metricsCollection:
+    interval: 30000           # Collect every 30 seconds for long-term
+    enableGC: true            # Critical for memory leak detection
+    enableEventLoop: true     # Monitor event loop health
+    enableMemoryProfile: true # Detailed memory profiling
+    enableHeapSnapshots: true # Heap snapshot collection
+    heapSnapshotInterval: 3600000 # Hourly heap snapshots
+    
+# Memory Profiling Configuration
+memoryProfiling:
+  enabled: true
+  detailedProfiling: true
+  gcMetrics: true
+  heapSnapshots:
+    enabled: true
+    interval: 3600000         # Every hour
+    maxSnapshots: 25          # Keep 24 hours + 1
+    compressionEnabled: true  # Compress snapshots
+    
+  memoryThresholds:
+    warningMB: 200            # 200MB warning threshold
+    criticalMB: 400           # 400MB critical threshold
+    maxAllowedMB: 600         # 600MB maximum allowed
+    
+  gcAnalysis:
+    trackGCFrequency: true    # Track GC frequency
+    trackGCDuration: true     # Track GC duration
+    trackGCEfficiency: true   # Track GC efficiency
+    alertOnInefficiency: true # Alert on GC inefficiency
+
+# Circuit Breaker Configuration - Stable for long-term test
+circuitBreakers:
+  googlePlayApi:
+    failureThreshold: 5       # Lower threshold for stability
+    resetTimeout: 60000       # 1 minute reset
+    monitoringPeriod: 120000  # 2 minutes monitoring
+    successThreshold: 3
+  
+  matrixApi:
+    failureThreshold: 4
+    resetTimeout: 45000       # 45 seconds
+    monitoringPeriod: 120000
+    successThreshold: 3
+
+# Rate Limiting Configuration - Conservative for stability
+rateLimiting:
+  googlePlayApi:
+    windowSizeMs: 60000       # 1 minute window
+    maxRequests: 100          # Conservative limit
+  
+  matrixApi:
+    windowSizeMs: 60000
+    maxRequests: 200          # Conservative limit
+  
+  replyProcessing:
+    baseDelayMs: 500          # Higher base delay
+    maxDelayMs: 5000          # Higher max delay
+    backoffMultiplier: 2.5    # Aggressive backoff
+
+# Performance Test Specific Settings - Memory Leak Detection Test
+performance:
+  testDuration: 86400000      # 24 hours in milliseconds
+  metricsCollectionInterval: 30000   # Collect metrics every 30 seconds
+  expectedMetrics:
+    # Long-term stability expectations
+    maxMemoryMB: 300          # 300MB max memory over 24 hours
+    memoryGrowthRateMBPerHour: 5  # Max 5MB/hour growth rate
+    maxCpuPercent: 25         # 25% CPU average
+    maxLatencyMs: 5000        # 5s max latency
+    minThroughput: 5          # 5+ reviews per minute
+    gcEfficiencyThreshold: 0.80 # 80% GC efficiency minimum
+    maxGCPauseMs: 100         # 100ms max GC pause
+  
+  testScenario:
+    name: "memory-leak-detection-test"
+    description: "24-Hour Memory Leak Detection and Endurance Test"
+    reviewsPerPoll: 25        # Sustainable load per app
+    pollIntervalMs: 300000    # 5 minutes
+    concurrentApps: 3         # 3 applications
+    duration: "24 hours"
+    
+    # Memory-specific test patterns
+    memoryTestPatterns:
+      type: "long-term-stability"
+      loadVariation: "moderate"        # Moderate load variation
+      memoryPressureSimulation: false # No artificial memory pressure
+      objectLifecycleTracking: true   # Track object lifecycles
+      referenceLeakDetection: true    # Detect reference leaks
+      eventEmitterTracking: true      # Track event emitter leaks
+      timerLeakDetection: true        # Detect timer leaks
+      
+    # Long-term stability patterns
+    stabilityPatterns:
+      consistentLoad: 70              # 70% consistent load
+      burstLoad: 20                   # 20% burst load
+      idleLoad: 10                    # 10% idle periods
+      loadCycles: true                # Enable load cycling
+      cycleIntervalHours: 4           # 4-hour cycles
+      nightlyLowLoad: true            # Lower load during night hours
+      
+    # Memory leak detection parameters
+    memoryLeakDetection:
+      baselineEstablishmentPeriod: 3600000  # 1 hour baseline
+      leakDetectionSensitivity: "medium"    # Medium sensitivity
+      growthRateThreshold: 0.05             # 5% growth rate threshold
+      consecutiveGrowthLimit: 6             # 6 consecutive growth samples
+      memoryUsageAnalysisWindow: 7200000    # 2 hour analysis window
+      
+    # Garbage collection monitoring
+    gcMonitoring:
+      trackAllGCTypes: true           # Track all GC types
+      trackGCCauses: true            # Track GC causes
+      analyzeGCEffectiveness: true   # Analyze GC effectiveness
+      detectGCThrashing: true        # Detect GC thrashing
+      monitorHeapFragmentation: true # Monitor heap fragmentation
+      
+    # Object lifecycle tracking
+    objectTracking:
+      trackLargeObjects: true        # Track objects >1MB
+      trackFrequentAllocations: true # Track frequent allocations
+      trackObjectRetention: true     # Track object retention
+      trackEventListeners: true     # Track event listener lifecycle
+      trackTimers: true             # Track timer lifecycle
+      trackStreams: true            # Track stream lifecycle
+
+# Memory Leak Detection Thresholds
+memoryLeakThresholds:
+  memoryGrowth:
+    sustainedGrowthHours: 4         # 4 hours of sustained growth
+    growthRateWarning: 10           # 10MB/hour warning
+    growthRateCritical: 20          # 20MB/hour critical
+    totalGrowthWarning: 100         # 100MB total growth warning
+    totalGrowthCritical: 200        # 200MB total growth critical
+    
+  gcEfficiency:
+    efficiencyWarning: 0.70         # 70% GC efficiency warning
+    efficiencyCritical: 0.50        # 50% GC efficiency critical
+    frequencyWarning: 60            # GC every 60 seconds warning
+    frequencyCritical: 30           # GC every 30 seconds critical
+    pauseTimeWarning: 50            # 50ms GC pause warning
+    pauseTimeCritical: 100          # 100ms GC pause critical
+    
+  heapAnalysis:
+    heapUtilizationWarning: 0.80    # 80% heap utilization warning
+    heapUtilizationCritical: 0.90   # 90% heap utilization critical
+    fragmentationWarning: 0.30      # 30% fragmentation warning
+    fragmentationCritical: 0.50     # 50% fragmentation critical
+
+# Node.js Memory Configuration
+nodeMemoryConfiguration:
+  # V8 heap settings for long-term stability
+  maxOldSpaceSize: 512              # 512MB max old space
+  maxSemiSpaceSize: 16              # 16MB max semi space
+  
+  # GC tuning for stability
+  gcSettings:
+    exposeGC: true                  # Expose manual GC
+    maxOldGenerationSizeMB: 400     # 400MB max old generation
+    maxSemiSpaceSizeMB: 16          # 16MB max semi space
+    initialOldSpaceSizeMB: 64       # 64MB initial old space
+    
+  # Memory monitoring
+  memoryMonitoring:
+    trackExternalMemory: true       # Track external memory
+    trackArrayBuffers: true         # Track array buffers
+    trackNativeObjects: true        # Track native objects
+
+# Long-term Test Data Management
+testDataManagement:
+  dataRetention:
+    metricsRetentionHours: 48       # Keep 48 hours of metrics
+    logRetentionHours: 72           # Keep 72 hours of logs
+    snapshotRetentionHours: 48      # Keep 48 hours of snapshots
+    
+  dataRotation:
+    enableAutoRotation: true        # Auto-rotate old data
+    rotationCheckIntervalMinutes: 60 # Check every hour
+    compressionEnabled: true        # Compress old data
+    
+  performanceReporting:
+    hourlyReports: true             # Generate hourly reports
+    quarterlyReports: true          # Generate 6-hour reports
+    finalReport: true               # Generate final 24-hour report
+    reportCompression: true         # Compress reports
+
+# Resource Management for 24-hour Test
+resourceManagement:
+  # File system management
+  diskSpace:
+    reservedSpaceGB: 5              # Reserve 5GB disk space
+    maxLogSizeGB: 2                 # Max 2GB logs
+    maxSnapshotSizeGB: 2            # Max 2GB snapshots
+    
+  # System resource limits
+  systemLimits:
+    maxCpuPercent: 50               # Max 50% CPU usage
+    maxMemoryMB: 600                # Max 600MB memory
+    maxOpenFiles: 1000              # Max 1000 open files
+    maxConnections: 50              # Max 50 connections
+    
+  # Health monitoring
+  healthChecks:
+    intervalMinutes: 5              # Health check every 5 minutes
+    timeoutSeconds: 30              # 30 second timeout
+    failureThreshold: 3             # 3 failures trigger alert
+    
+# Test Environment Safety
+safetyMechanisms:
+  # Automatic shutdown conditions
+  emergencyShutdown:
+    memoryLimitMB: 800              # Emergency shutdown at 800MB
+    cpuLimitPercent: 80             # Emergency shutdown at 80% CPU
+    diskSpaceLimitMB: 1000          # Emergency shutdown at low disk space
+    errorRateThreshold: 0.10        # Emergency shutdown at 10% error rate
+    
+  # Recovery mechanisms
+  autoRecovery:
+    enableAutoRestart: false        # No auto-restart during test
+    gracefulShutdownTimeoutMs: 30000 # 30 second graceful shutdown
+    
+  # Data preservation
+  dataPreservation:
+    backupOnShutdown: true          # Backup data on shutdown
+    preserveLogsOnError: true       # Keep logs if test fails
+    preserveSnapshotsOnError: true  # Keep snapshots if test fails

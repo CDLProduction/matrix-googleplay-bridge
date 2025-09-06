@@ -1,0 +1,278 @@
+
+> matrix-googleplay-bridge@0.1.0 lint
+> eslint src/**/*.ts
+
+
+/home/cdl/Projects/matrix-googleplay-bridge/src/api/GooglePlayClient.ts
+   64:22  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   72:42  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   79:63  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  100:24  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  178:28  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  199:18  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  518:33  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  586:34  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/cdl/Projects/matrix-googleplay-bridge/src/api/ReviewManager.ts
+  469:13  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  493:12  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  550:44  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/cdl/Projects/matrix-googleplay-bridge/src/bridge/BridgeCommands.ts
+    33:13  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+    34:13  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+    65:41  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+    77:31  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   169:44  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   473:20  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  1286:18  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  1539:59  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  1619:40  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  1671:40  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  1691:50  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  1719:38  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  1776:36  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  1846:23  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  2151:28  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  2687:25  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  2811:16  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  2812:16  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  2907:16  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  2908:16  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  2937:15  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  2940:15  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  2982:17  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  2983:16  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  3046:53  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  3051:20  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  3076:44  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  3099:40  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  3109:43  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  3130:48  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  3140:67  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  3152:39  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  3170:43  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  3188:36  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  3207:40  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  3227:42  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  3245:46  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  3262:45  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  3273:49  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  3284:65  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  3300:15  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  3318:70  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  3343:46  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  3376:33  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  3399:12  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  3427:47  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  3434:48  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  3457:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  3483:52  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  3529:18  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  3562:7   warning  Unexpected console statement              no-console
+
+/home/cdl/Projects/matrix-googleplay-bridge/src/bridge/GooglePlayBridge.ts
+    42:35  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   204:35  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   218:28  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   267:24  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   268:15  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   389:25  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   463:33  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   596:13  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   614:37  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  1040:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  1055:25  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  1087:35  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/cdl/Projects/matrix-googleplay-bridge/src/bridge/MatrixAppServiceApi.ts
+   51:31  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  324:17  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/cdl/Projects/matrix-googleplay-bridge/src/bridge/MatrixHandler.ts
+    21:22  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+    88:38  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   134:41  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   351:38  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   456:38  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   706:27  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   707:48  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   958:56  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  1244:14  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  1353:14  error    'error' is defined but never used         @typescript-eslint/no-unused-vars
+  1366:43  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  1487:58  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/cdl/Projects/matrix-googleplay-bridge/src/features/MessageTemplates.ts
+   26:10  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  405:14  error    'error' is defined but never used         @typescript-eslint/no-unused-vars
+  718:75  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/cdl/Projects/matrix-googleplay-bridge/src/features/MessageThreading.ts
+   23:12  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  133:14  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  185:20  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  191:12  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  301:12  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  492:36  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  601:40  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  617:6   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  618:20  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  638:40  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/cdl/Projects/matrix-googleplay-bridge/src/managers/AppManager.ts
+  239:60  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  278:24  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  365:14  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  458:16  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/cdl/Projects/matrix-googleplay-bridge/src/models/ConfigTypes.ts
+  38:35  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/cdl/Projects/matrix-googleplay-bridge/src/models/Message.ts
+  84:18  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/cdl/Projects/matrix-googleplay-bridge/src/storage/Database.ts
+   84:13  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   84:40  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   87:14  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  113:13  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  113:40  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  120:14  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  242:22  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  242:49  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  245:14  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  254:14  error    'error' is defined but never used         @typescript-eslint/no-unused-vars
+  347:38  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  370:38  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  407:38  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  411:30  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/cdl/Projects/matrix-googleplay-bridge/src/storage/DatabaseFactory.ts
+  52:66  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/cdl/Projects/matrix-googleplay-bridge/src/storage/PostgreSQLDatabase.ts
+   27:19  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   27:46  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   34:14  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  114:19  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  114:46  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  122:14  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  139:14  error    'error' is defined but never used         @typescript-eslint/no-unused-vars
+  188:38  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  202:38  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  216:19  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  256:38  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  296:38  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  310:38  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  325:38  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  382:38  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  398:19  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  433:38  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  450:38  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  487:38  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  507:38  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  598:38  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  621:38  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  661:34  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  675:37  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  688:39  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  719:36  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/cdl/Projects/matrix-googleplay-bridge/src/storage/SQLiteDatabase.ts
+   30:19  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   30:46  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   36:14  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  106:19  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  106:46  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  113:14  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  162:38  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  176:38  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  190:19  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  229:38  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  268:38  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  282:38  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  297:38  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  338:38  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  354:19  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  390:38  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  407:38  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  438:38  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  458:38  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  564:38  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  587:38  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  627:34  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  641:37  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  654:39  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  685:36  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/cdl/Projects/matrix-googleplay-bridge/src/utils/AuditLogger.ts
+   12:28  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  157:15  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  189:15  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  209:15  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  229:15  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  247:15  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  337:19  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  444:30  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/cdl/Projects/matrix-googleplay-bridge/src/utils/CircuitBreaker.ts
+  180:28  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  432:14  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  439:49  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/cdl/Projects/matrix-googleplay-bridge/src/utils/Config.ts
+   38:53  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   79:53  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  106:52  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  253:41  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/cdl/Projects/matrix-googleplay-bridge/src/utils/HealthCheck.ts
+  19:14  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/cdl/Projects/matrix-googleplay-bridge/src/utils/Logger.ts
+   17:14  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  128:42  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  128:58  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  135:36  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  142:36  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  149:36  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  156:37  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  167:16  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  180:60  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  197:18  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  197:58  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  198:18  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  199:39  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  219:7   warning  Unexpected console statement              no-console
+  232:7   warning  Unexpected console statement              no-console
+  235:9   warning  Unexpected console statement              no-console
+  271:9   warning  Unexpected console statement              no-console
+  274:7   warning  Unexpected console statement              no-console
+  333:7   warning  Unexpected console statement              no-console
+
+/home/cdl/Projects/matrix-googleplay-bridge/src/utils/RateLimiter.ts
+   10:28  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   12:37  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   90:31  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  103:30  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  145:52  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  182:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  202:19  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  324:20  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  444:34  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  450:20  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  548:34  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  549:32  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  552:40  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  553:38  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/cdl/Projects/matrix-googleplay-bridge/src/utils/Validator.ts
+   8:27  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  39:24  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  48:25  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  57:25  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  66:26  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+✖ 227 problems (4 errors, 223 warnings)
+

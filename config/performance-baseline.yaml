@@ -1,0 +1,109 @@
+# Performance Testing Configuration - Light Load Baseline (1.1)
+# Single app with low review volume for 30 minutes
+# Expected: <100MB memory, <5% CPU, <500ms response time
+
+version: "0.1.0-perf-baseline"
+
+# Matrix Homeserver Configuration (Test Environment)
+homeserver:
+  url: "http://localhost:8008"
+  domain: "localhost"
+
+# Application Service Configuration
+appservice:
+  port: 8080
+  bind: "127.0.0.1"
+  token: "perf-baseline-token"
+  id: "googleplay-bridge-perf-baseline"
+  botUsername: "googleplay-bot-perf"
+
+# Google Play Console API Configuration - Baseline Test
+googleplay:
+  auth:
+    # Mock credentials for testing
+    clientEmail: "perf-baseline@test.iam.gserviceaccount.com"
+    privateKey: "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDU5Z8P2JrtFPRN\nR6Fo4XB6+kF/7Qc1P5VmTimeGStwcKJdDPpTTjSjZ6nnha3h/lhrVJLPUJGaVQRB\nBAUDAgEAAoIBAQDfLlUfQE6k\n-----END PRIVATE KEY-----\n"
+    projectId: "perf-baseline-project"
+    scopes:
+      - "https://www.googleapis.com/auth/androidpublisher"
+
+  # Single app configuration for baseline testing
+  applications:
+    - packageName: "com.perftest.baseline.app1"
+      matrixRoom: "!baseline1:localhost"
+      appName: "Performance Baseline App 1"
+      pollIntervalMs: 300000  # 5 minutes
+      maxReviewsPerPoll: 10   # 5-10 reviews per poll
+      lookbackDays: 7
+
+  # Conservative polling settings for baseline
+  pollIntervalMs: 300000      # 5 minutes
+  maxReviewsPerPoll: 10       # Low volume
+  rateLimitDelayMs: 1000      # 1 second delay
+
+# Database Configuration - In-memory SQLite for consistent baseline
+database:
+  type: "sqlite"
+  path: ":memory:"
+
+# Logging Configuration - Minimal overhead
+logging:
+  level: "warn"               # Only warnings and errors
+  enableFile: false           # No file logging during tests
+  enableStructured: false     # Simple logging format
+
+# Monitoring Configuration - Enabled for metrics collection
+monitoring:
+  enabled: true
+  port: 9091                  # Different port to avoid conflicts
+  host: "127.0.0.1"
+  enableMetrics: true
+  enableHealthCheck: true
+  requestLogging: false       # Disable request logging to reduce overhead
+
+# Circuit Breaker Configuration - Lenient for testing
+circuitBreakers:
+  googlePlayApi:
+    failureThreshold: 10      # More tolerant during testing
+    resetTimeout: 30000       # 30 seconds
+    monitoringPeriod: 60000   # 1 minute
+    successThreshold: 1
+  
+  matrixApi:
+    failureThreshold: 10
+    resetTimeout: 15000       # 15 seconds
+    monitoringPeriod: 60000
+    successThreshold: 1
+
+# Rate Limiting Configuration - Minimal for baseline
+rateLimiting:
+  googlePlayApi:
+    windowSizeMs: 60000       # 1 minute window
+    maxRequests: 500          # High limit for testing
+  
+  matrixApi:
+    windowSizeMs: 60000
+    maxRequests: 1000         # High limit
+  
+  replyProcessing:
+    baseDelayMs: 100          # Minimal delay
+    maxDelayMs: 1000          # Low max delay
+    backoffMultiplier: 1.2    # Gentle backoff
+
+# Performance Test Specific Settings
+performance:
+  testDuration: 1800000       # 30 minutes in milliseconds
+  metricsCollectionInterval: 5000  # Collect metrics every 5 seconds
+  expectedMetrics:
+    maxMemoryMB: 100          # <100MB memory target
+    maxCpuPercent: 5          # <5% CPU target  
+    maxLatencyMs: 500         # <500ms response time target
+    minThroughput: 2          # Minimum reviews per minute
+  
+  testScenario:
+    name: "baseline"
+    description: "Light Load Baseline Test"
+    reviewsPerPoll: 10
+    pollIntervalMs: 300000    # 5 minutes
+    concurrentApps: 1
+    duration: "30 minutes"

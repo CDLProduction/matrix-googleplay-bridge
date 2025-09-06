@@ -18,7 +18,22 @@
     "setup": "node scripts/setup.js",
     "db:migrate": "node dist/scripts/migrate.js",
     "docker:build": "docker build -f docker/Dockerfile -t matrix-googleplay-bridge .",
-    "docker:dev": "docker build -f docker/Dockerfile.dev -t matrix-googleplay-bridge:dev ."
+    "docker:dev": "docker build -f docker/Dockerfile.dev -t matrix-googleplay-bridge:dev .",
+    "perf:test": "ts-node tests/performance/performance-runner.ts test",
+    "perf:baseline": "ts-node tests/performance/performance-runner.ts test baseline",
+    "perf:medium": "ts-node tests/performance/performance-runner.ts test typical-production",
+    "perf:high": "ts-node tests/performance/performance-runner.ts test high-load",
+    "perf:stress": "ts-node tests/performance/performance-runner.ts test stress-test",
+    "perf:db-sqlite": "ts-node tests/performance/performance-runner.ts test database-sqlite",
+    "perf:db-postgresql": "ts-node tests/performance/performance-runner.ts test database-postgresql",
+    "perf:memory-leak": "node --expose-gc -r ts-node/register tests/performance/performance-runner.ts test memory-leak-detection",
+    "perf:cpu-patterns": "ts-node tests/performance/performance-runner.ts test cpu-patterns",
+    "perf:network-io": "ts-node tests/performance/performance-runner.ts test network-io",
+    "perf:concurrent-apps": "ts-node tests/performance/performance-runner.ts test concurrent-apps",
+    "perf:matrix-events": "ts-node tests/performance/performance-runner.ts test matrix-events",
+    "perf:quick": "ts-node tests/performance/performance-runner.ts quick",
+    "perf:endurance": "ts-node tests/performance/performance-runner.ts endurance",
+    "perf:report": "ts-node tests/performance/performance-runner.ts report"
   },
   "repository": {
     "type": "git",

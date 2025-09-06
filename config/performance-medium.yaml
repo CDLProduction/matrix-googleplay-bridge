@@ -1,0 +1,162 @@
+# Performance Testing Configuration - Medium Load (1.2)
+# Multiple apps with moderate review volume for 2 hours
+# Expected: <300MB memory, <20% CPU, <2s response time
+
+version: "0.1.0-perf-medium"
+
+# Matrix Homeserver Configuration (Test Environment)
+homeserver:
+  url: "http://localhost:8008"
+  domain: "localhost"
+
+# Application Service Configuration
+appservice:
+  port: 8080
+  bind: "127.0.0.1"
+  token: "perf-medium-token"
+  id: "googleplay-bridge-perf-medium"
+  botUsername: "googleplay-bot-perf"
+
+# Google Play Console API Configuration - Medium Load Test
+googleplay:
+  auth:
+    # Mock credentials for testing
+    clientEmail: "perf-medium@test.iam.gserviceaccount.com"
+    privateKey: "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDU5Z8P2JrtFPRN\nR6Fo4XB6+kF/7Qc1P5VmTimeGStwcKJdDPpTTjSjZ6nnha3h/lhrVJLPUJGaVQRB\nBAUDAgEAAoIBAQDfLlUfQE6k\n-----END PRIVATE KEY-----\n"
+    projectId: "perf-medium-project"
+    scopes:
+      - "https://www.googleapis.com/auth/androidpublisher"
+
+  # Multiple app configuration for medium load testing
+  applications:
+    - packageName: "com.perftest.medium.app1"
+      matrixRoom: "!medium1:localhost"
+      appName: "Performance Medium App 1"
+      pollIntervalMs: 300000  # 5 minutes
+      maxReviewsPerPoll: 30   # 20-50 reviews per poll
+      lookbackDays: 7
+      
+    - packageName: "com.perftest.medium.app2"
+      matrixRoom: "!medium2:localhost"
+      appName: "Performance Medium App 2"
+      pollIntervalMs: 300000  # 5 minutes
+      maxReviewsPerPoll: 40   # 20-50 reviews per poll
+      lookbackDays: 7
+      
+    - packageName: "com.perftest.medium.app3"
+      matrixRoom: "!medium3:localhost"
+      appName: "Performance Medium App 3"
+      pollIntervalMs: 300000  # 5 minutes
+      maxReviewsPerPoll: 35   # 20-50 reviews per poll
+      lookbackDays: 7
+      
+    - packageName: "com.perftest.medium.app4"
+      matrixRoom: "!medium4:localhost"
+      appName: "Performance Medium App 4"
+      pollIntervalMs: 300000  # 5 minutes
+      maxReviewsPerPoll: 45   # 20-50 reviews per poll
+      lookbackDays: 7
+      
+    - packageName: "com.perftest.medium.app5"
+      matrixRoom: "!medium5:localhost"
+      appName: "Performance Medium App 5"
+      pollIntervalMs: 300000  # 5 minutes
+      maxReviewsPerPoll: 50   # 20-50 reviews per poll
+      lookbackDays: 7
+
+  # Production-like polling settings
+  pollIntervalMs: 300000      # 5 minutes
+  maxReviewsPerPoll: 40       # Medium volume per app
+  rateLimitDelayMs: 500       # 500ms delay between API calls
+
+# Database Configuration - SQLite for consistent testing
+database:
+  type: "sqlite"
+  path: ":memory:"
+
+# Logging Configuration - Balanced for medium load
+logging:
+  level: "info"               # More detailed logging for production simulation
+  enableFile: true            # Enable file logging to test I/O impact
+  enableStructured: true      # Structured logging for analysis
+
+# Monitoring Configuration - Production-like metrics
+monitoring:
+  enabled: true
+  port: 9091
+  host: "127.0.0.1"
+  enableMetrics: true
+  enableHealthCheck: true
+  requestLogging: true        # Enable request logging for medium load analysis
+
+# Circuit Breaker Configuration - Production settings
+circuitBreakers:
+  googlePlayApi:
+    failureThreshold: 5       # More strict for production simulation
+    resetTimeout: 30000       # 30 seconds
+    monitoringPeriod: 60000   # 1 minute
+    successThreshold: 2
+  
+  matrixApi:
+    failureThreshold: 5       # More strict
+    resetTimeout: 15000       # 15 seconds
+    monitoringPeriod: 60000
+    successThreshold: 2
+
+# Rate Limiting Configuration - Production-like limits
+rateLimiting:
+  googlePlayApi:
+    windowSizeMs: 60000       # 1 minute window
+    maxRequests: 200          # Moderate limit for 5 apps
+  
+  matrixApi:
+    windowSizeMs: 60000
+    maxRequests: 500          # Higher limit for more activity
+  
+  replyProcessing:
+    baseDelayMs: 200          # Moderate delay
+    maxDelayMs: 5000          # Higher max for production simulation
+    backoffMultiplier: 1.5    # Moderate backoff
+
+# Performance Test Specific Settings - Medium Load
+performance:
+  testDuration: 7200000       # 2 hours (120 minutes) in milliseconds
+  metricsCollectionInterval: 10000  # Collect metrics every 10 seconds
+  expectedMetrics:
+    maxMemoryMB: 300          # <300MB memory target
+    maxCpuPercent: 20         # <20% CPU target  
+    maxLatencyMs: 2000        # <2s response time target
+    minThroughput: 10         # Minimum reviews per minute (5 apps * ~2/min each)
+  
+  testScenario:
+    name: "typical-production"
+    description: "Medium Load Typical Production Test"
+    reviewsPerPoll: 40        # Average 20-50 per app
+    pollIntervalMs: 300000    # 5 minutes
+    concurrentApps: 5         # 5 applications
+    duration: "2 hours"
+    
+    # Load pattern simulation
+    loadPattern:
+      type: "realistic"       # Realistic usage patterns
+      peakHours: [9, 12, 15, 18]  # Peak review times (9AM, 12PM, 3PM, 6PM)
+      peakMultiplier: 1.5     # 50% more reviews during peak hours
+      weekendReduction: 0.7   # 30% less activity on weekends
+      
+    # App-specific configurations
+    appProfiles:
+      - name: "high-volume-app"     # App 1 - High review volume
+        reviewsPerPoll: 50
+        peakMultiplier: 2.0
+      - name: "popular-app"         # App 2 - Popular but stable
+        reviewsPerPoll: 40
+        peakMultiplier: 1.3
+      - name: "standard-app"        # App 3 - Standard volume
+        reviewsPerPoll: 35
+        peakMultiplier: 1.2
+      - name: "growing-app"         # App 4 - Growing user base
+        reviewsPerPoll: 45
+        peakMultiplier: 1.8
+      - name: "established-app"     # App 5 - Established app
+        reviewsPerPoll: 30
+        peakMultiplier: 1.1

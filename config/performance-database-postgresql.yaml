@@ -1,0 +1,354 @@
+# Performance Testing Configuration - Database PostgreSQL Test (2.2)
+# Connection pool efficiency and query performance for production deployments
+# Expected: Efficient connection management, optimized query performance, scalable concurrent operations
+
+version: "0.1.0-perf-db-postgresql"
+
+# Matrix Homeserver Configuration (Test Environment)
+homeserver:
+  url: "http://localhost:8008"
+  domain: "localhost"
+
+# Application Service Configuration
+appservice:
+  port: 8080
+  bind: "127.0.0.1"
+  token: "perf-db-postgresql-token"
+  id: "googleplay-bridge-perf-db-postgresql"
+  botUsername: "googleplay-bot-db-postgresql"
+
+# Google Play Console API Configuration - Database Test
+googleplay:
+  auth:
+    # Mock credentials for testing
+    clientEmail: "perf-db-postgresql@test.iam.gserviceaccount.com"
+    privateKey: "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDU5Z8P2JrtFPRN\nR6Fo4XB6+kF/7Qc1P5VmTimeGStwcKJdDPpTTjSjZ6nnha3h/lhrVJLPUJGaVQRB\nBAUDAgEAAoIBAQDfLlUfQE6k\n-----END PRIVATE KEY-----\n"
+    projectId: "perf-db-postgresql-project"
+    scopes:
+      - "https://www.googleapis.com/auth/androidpublisher"
+
+  # 5 app configuration for connection pool testing
+  applications:
+    # Connection Pool App 1: High Concurrency Write Operations
+    - packageName: "com.perftest.dbpostgres.app1"
+      matrixRoom: "!dbpostgres1:localhost"
+      appName: "DB PostgreSQL Test App 1"
+      pollIntervalMs: 20000   # 20 seconds - high frequency
+      maxReviewsPerPoll: 75   # High volume for connection stress
+      lookbackDays: 7
+      
+    # Connection Pool App 2: Complex Query Operations
+    - packageName: "com.perftest.dbpostgres.app2"
+      matrixRoom: "!dbpostgres2:localhost"
+      appName: "DB PostgreSQL Test App 2"
+      pollIntervalMs: 30000   # 30 seconds
+      maxReviewsPerPoll: 60   # Complex query load
+      lookbackDays: 7
+      
+    # Connection Pool App 3: Mixed Read/Write Operations
+    - packageName: "com.perftest.dbpostgres.app3"
+      matrixRoom: "!dbpostgres3:localhost"
+      appName: "DB PostgreSQL Test App 3"
+      pollIntervalMs: 25000   # 25 seconds
+      maxReviewsPerPoll: 65   # Mixed operations
+      lookbackDays: 7
+      
+    # Connection Pool App 4: Transaction-Heavy Operations
+    - packageName: "com.perftest.dbpostgres.app4"
+      matrixRoom: "!dbpostgres4:localhost"
+      appName: "DB PostgreSQL Test App 4"
+      pollIntervalMs: 35000   # 35 seconds
+      maxReviewsPerPoll: 55   # Transaction focus
+      lookbackDays: 7
+      
+    # Connection Pool App 5: Analytical Query Operations
+    - packageName: "com.perftest.dbpostgres.app5"
+      matrixRoom: "!dbpostgres5:localhost"
+      appName: "DB PostgreSQL Test App 5"
+      pollIntervalMs: 40000   # 40 seconds
+      maxReviewsPerPoll: 50   # Analytics focus
+      lookbackDays: 7
+
+  # Production-focused polling settings
+  pollIntervalMs: 30000       # 30 seconds average
+  maxReviewsPerPoll: 60       # Production-level sustained load
+  rateLimitDelayMs: 150       # Minimal delay for connection pool focus
+
+# Database Configuration - PostgreSQL Optimization for Production Performance
+database:
+  type: "postgresql"
+  host: "localhost"
+  port: 5432
+  database: "bridge_perf_test_postgres"
+  username: "perf_user"
+  password: "perf_pass"
+  
+  # Connection Pool Configuration - Production Settings
+  poolConfig:
+    min: 10                   # Minimum connections in pool
+    max: 100                  # Maximum connections for load testing
+    acquireTimeoutMillis: 10000 # 10 second acquire timeout
+    idleTimeoutMillis: 300000 # 5 minute idle timeout
+    createTimeoutMillis: 5000 # 5 second create timeout
+    destroyTimeoutMillis: 2000 # 2 second destroy timeout
+    createRetryIntervalMillis: 500 # 500ms retry interval
+    
+  # PostgreSQL-specific optimizations
+  options:
+    connectionTimeoutMillis: 5000    # Connection timeout
+    queryTimeoutMillis: 30000        # Query timeout (30s for complex queries)
+    statementTimeoutMillis: 25000    # Statement timeout
+    applicationName: "bridge-perf-test"
+    ssl: false                       # SSL disabled for test environment
+    
+  # Performance optimization settings
+  performanceSettings:
+    maxConnections: 100              # Match pool max
+    sharedBuffers: "256MB"          # Shared buffer cache
+    effectiveCacheSize: "1GB"       # Effective cache size
+    workMem: "4MB"                  # Work memory per operation
+    maintenanceWorkMem: "64MB"      # Maintenance work memory
+    checkpointCompletionTarget: 0.9  # Checkpoint completion target
+    walBuffers: "16MB"              # WAL buffers
+    defaultStatisticsTarget: 100     # Statistics target for query planning
+
+# Logging Configuration - Detailed for connection analysis
+logging:
+  level: "info"               # Detailed logging for connection analysis
+  enableFile: true            # File logging for performance analysis
+  enableStructured: true      # Structured logs for metrics
+  enableDatabaseLogs: true    # Database-specific logging
+  enableConnectionLogs: true  # Connection pool logging
+
+# Monitoring Configuration - Connection-focused metrics
+monitoring:
+  enabled: true
+  port: 9091
+  host: "127.0.0.1"
+  enableMetrics: true
+  enableHealthCheck: true
+  requestLogging: true
+  metricsCollection:
+    interval: 3000            # Collect every 3 seconds for connection monitoring
+    enableGC: true            # Monitor garbage collection
+    enableEventLoop: true     # Monitor event loop lag
+    enableMemoryProfile: true # Memory profiling
+    enableConnectionMetrics: true # Connection pool metrics
+    enableQueryMetrics: true  # Query performance metrics
+
+# Circuit Breaker Configuration - Production-ready for PostgreSQL
+circuitBreakers:
+  googlePlayApi:
+    failureThreshold: 8       # Moderate threshold
+    resetTimeout: 20000       # 20 seconds
+    monitoringPeriod: 45000   # 45 seconds
+    successThreshold: 3
+  
+  matrixApi:
+    failureThreshold: 6
+    resetTimeout: 15000       # 15 seconds
+    monitoringPeriod: 45000
+    successThreshold: 3
+    
+  database:
+    failureThreshold: 5       # Database-specific circuit breaker
+    resetTimeout: 30000       # 30 seconds for connection recovery
+    monitoringPeriod: 60000   # 1 minute monitoring
+    successThreshold: 2
+
+# Rate Limiting Configuration - Production-level for PostgreSQL
+rateLimiting:
+  googlePlayApi:
+    windowSizeMs: 60000       # 1 minute window
+    maxRequests: 300          # Production limit
+  
+  matrixApi:
+    windowSizeMs: 60000
+    maxRequests: 600          # Higher limit for database operations
+  
+  replyProcessing:
+    baseDelayMs: 100          # Moderate delay
+    maxDelayMs: 3000          # Higher max delay for database operations
+    backoffMultiplier: 2.0    # Aggressive backoff
+    
+  database:
+    connectionAcquisition:
+      windowSizeMs: 10000     # 10 second window
+      maxRequests: 50         # Max connection requests per window
+    queryExecution:
+      windowSizeMs: 60000     # 1 minute window
+      maxQueries: 1000        # Max queries per minute
+
+# Performance Test Specific Settings - Database PostgreSQL Test
+performance:
+  testDuration: 2700000       # 45 minutes in milliseconds
+  metricsCollectionInterval: 3000    # Collect metrics every 3 seconds
+  expectedMetrics:
+    # PostgreSQL-specific performance expectations
+    maxMemoryMB: 400          # 400MB memory limit for connection pools
+    maxCpuPercent: 40         # 40% CPU for database operations
+    maxLatencyMs: 3000        # 3s max latency for complex queries
+    minThroughput: 25         # 25+ reviews per minute
+    maxConnectionPoolSize: 100 # 100 max connections
+    minConnectionPoolEfficiency: 0.80 # 80% pool efficiency
+    maxQueryTimeMs: 2000      # 2s max query time
+    minQueriesPerSec: 15      # 15+ queries per second
+  
+  testScenario:
+    name: "database-postgresql-test"
+    description: "PostgreSQL Database Performance Test for Production Deployments"
+    reviewsPerPoll: 60        # Production-level per app
+    pollIntervalMs: 30000     # 30 seconds
+    concurrentApps: 5         # 5 applications for connection stress
+    duration: "45 minutes"
+    
+    # Connection pool specific test patterns
+    connectionPoolPatterns:
+      type: "production-concurrent-load"
+      connectionStressIntensity: "high"    # High connection stress
+      queryComplexity: "mixed-advanced"    # Advanced query patterns
+      transactionSize: "large"             # Large transaction sizes
+      concurrentConnections: 100           # Peak concurrent connections
+      connectionChurnRate: "moderate"      # Moderate connection churn
+      poolUtilizationTarget: 0.85          # 85% pool utilization target
+      
+    # PostgreSQL-specific testing parameters
+    postgresqlTestParameters:
+      connectionPoolingEnabled: true       # Test connection pooling
+      preparedStatements: true             # Use prepared statements
+      transactionIsolation: "READ_COMMITTED" # Transaction isolation level
+      queryPlanAnalysis: true              # Analyze query execution plans
+      indexUsageAnalysis: true             # Monitor index usage
+      lockAnalysis: true                   # Monitor lock contention
+      deadlockDetection: true              # Monitor deadlock occurrences
+      
+    # Database operation patterns - Production focused
+    operationPatterns:
+      simpleInserts: 25             # 25% simple inserts
+      complexInserts: 15            # 15% complex inserts with joins
+      simpleUpdates: 20             # 20% simple updates
+      complexUpdates: 10            # 10% complex updates
+      simpleSelects: 15             # 15% simple selects
+      complexSelects: 10            # 10% complex selects with joins
+      analyticalQueries: 5          # 5% analytical/reporting queries
+      
+    # Connection management patterns
+    connectionPatterns:
+      shortLivedConnections: 30     # 30% short-lived connections
+      mediumLivedConnections: 50    # 50% medium-lived connections
+      longLivedConnections: 20      # 20% long-lived connections
+      connectionLeakTesting: true   # Test for connection leaks
+      poolExhaustionTesting: true   # Test pool exhaustion scenarios
+      
+    # Performance monitoring focus areas
+    monitoringFocus:
+      connectionPoolUtilization: true     # Pool utilization monitoring
+      queryExecutionPlans: true          # Query plan analysis
+      lockContention: true               # Lock contention monitoring
+      transactionThroughput: true        # Transaction throughput
+      connectionAcquisitionTime: true    # Connection acquisition timing
+      queryResponseTime: true           # Query response time analysis
+      indexHitRatio: true                # Index hit ratio monitoring
+      cacheHitRatio: true                # Buffer cache hit ratio
+
+# PostgreSQL Performance Thresholds
+postgresqlThresholds:
+  connectionPool:
+    utilizationWarning: 0.70        # 70% pool utilization warning
+    utilizationCritical: 0.85       # 85% pool utilization critical
+    utilizationBreaking: 0.95       # 95% pool utilization breaking
+    acquisitionTimeWarning: 1000    # 1s connection acquisition warning
+    acquisitionTimeCritical: 3000   # 3s connection acquisition critical
+    
+  queryPerformance:
+    responseTimeWarning: 500        # 500ms query response warning
+    responseTimeCritical: 1500      # 1.5s query response critical
+    responseTimeBreaking: 3000      # 3s query response breaking point
+    throughputWarning: 10           # 10 queries/sec minimum warning
+    throughputCritical: 5           # 5 queries/sec minimum critical
+    
+  lockContention:
+    lockWaitWarning: 100            # 100ms lock wait warning
+    lockWaitCritical: 500           # 500ms lock wait critical
+    deadlockWarning: 1              # 1 deadlock per minute warning
+    deadlockCritical: 5             # 5 deadlocks per minute critical
+    
+  cachePerformance:
+    bufferHitRatioWarning: 0.90     # 90% buffer cache hit ratio warning
+    bufferHitRatioCritical: 0.80    # 80% buffer cache hit ratio critical
+    indexHitRatioWarning: 0.95      # 95% index hit ratio warning
+    indexHitRatioCritical: 0.85     # 85% index hit ratio critical
+
+# PostgreSQL Specific Configuration
+postgresqlConfiguration:
+  connectionPooling:
+    poolImplementation: "pg-pool"   # Use pg connection pooling
+    connectionValidation: true     # Validate connections
+    connectionRetesting: true      # Retest connections on failure
+    connectionRecycling: true      # Recycle stale connections
+    
+  queryOptimization:
+    preparedStatementCaching: true  # Cache prepared statements
+    queryPlanCaching: true         # Cache query execution plans
+    statisticsUpdateFrequency: "auto" # Auto statistics updates
+    vacuumStrategy: "auto"         # Auto vacuum strategy
+    
+  transactionManagement:
+    defaultIsolationLevel: "READ_COMMITTED"
+    maxTransactionTime: 300000     # 5 minute max transaction time
+    deadlockTimeout: 1000          # 1 second deadlock timeout
+    lockTimeout: 5000              # 5 second lock timeout
+    
+  maintenanceOperations:
+    analyzeFrequency: "daily"      # Update statistics daily
+    vacuumFrequency: "nightly"     # Vacuum nightly
+    reindexFrequency: "weekly"     # Reindex weekly
+    
+  performanceTuning:
+    sharedPreloadLibraries: ["pg_stat_statements"]
+    logStatements: "all"           # Log all statements for analysis
+    logDuration: true              # Log query durations
+    logLockWaits: true             # Log lock waits
+    trackActivities: true          # Track query activities
+    trackCounts: true              # Track table access statistics
+
+# Test Data Generation - PostgreSQL focused
+testDataGeneration:
+  reviewDataComplexity:
+    largeTextFields: true          # Large review text for performance testing
+    jsonDataTypes: true            # JSON columns for complex queries
+    arrayDataTypes: true           # Array columns for advanced operations
+    fulltextSearchData: true       # Full-text search testing
+    
+  transactionComplexity:
+    nestedTransactions: true       # Nested transaction testing
+    savepointUsage: true           # Savepoint testing
+    bulkOperations: true           # Bulk insert/update operations
+    crossTableOperations: true    # Multi-table operations
+    
+  concurrencyPatterns:
+    readWriteConflicts: true       # Read-write conflict scenarios
+    writeWriteConflicts: true      # Write-write conflict scenarios
+    longRunningQueries: true       # Long-running query scenarios
+    highFrequencyUpdates: true     # High-frequency update scenarios
+
+# Production Environment Simulation
+productionSimulation:
+  # Simulate production database characteristics
+  databaseSize: "large"            # Simulate large production database
+  indexComplexity: "high"          # Complex index structures
+  foreignKeyConstraints: true     # Full foreign key constraints
+  triggers: true                   # Database triggers
+  views: true                     # Complex views
+  
+  # Simulate production load patterns
+  peakHours: true                 # Simulate peak hour load patterns
+  batchProcessing: true           # Simulate batch processing loads
+  reportingQueries: true          # Simulate reporting query loads
+  maintenanceWindows: false       # No maintenance during test
+  
+  # Production monitoring simulation
+  queryLogging: true              # Full query logging
+  performanceMonitoring: true     # Performance monitoring
+  connectionMonitoring: true      # Connection monitoring
+  resourceMonitoring: true        # Resource usage monitoring

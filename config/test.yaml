@@ -1,0 +1,86 @@
+# Test Configuration for Matrix Google Play Bridge
+# Optimized for automated testing
+
+# Bridge version
+version: "0.1.0-test"
+
+# Matrix Homeserver Configuration
+homeserver:
+  url: "http://localhost:8008"
+  domain: "localhost"
+
+# Application Service Configuration
+appservice:
+  port: 8080
+  bind: "127.0.0.1"
+  token: "test-appservice-token"
+  id: "googleplay-bridge-test"
+  botUsername: "googleplay-bot"
+
+# Google Play Console API Configuration
+googleplay:
+  auth:
+    # For testing, use mock credentials
+    clientEmail: "test@test.iam.gserviceaccount.com"
+    privateKey: "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDU5Z8P2JrtFPRN\nR6Fo4XB6+kF/7Qc1P5VmTimeGStwcKJdDPpTTjSjZ6nnha3h/lhrVJLPUJGaVQRB\nBAUDAgEAAoIBAQDfLlUfQE6k\n-----END PRIVATE KEY-----\n"
+    projectId: "test-project"
+    scopes:
+      - "https://www.googleapis.com/auth/androidpublisher"
+
+  # Test application
+  applications:
+    - packageName: "com.test.app"
+      matrixRoom: "!test:localhost"
+      appName: "Test App"
+      pollIntervalMs: 1000  # Fast polling for tests
+      maxReviewsPerPoll: 5
+      lookbackDays: 1
+
+  # Global polling settings
+  pollIntervalMs: 1000
+  maxReviewsPerPoll: 10
+  rateLimitDelayMs: 0  # No delay in tests
+
+# Database Configuration
+database:
+  type: "sqlite"
+  path: ":memory:"  # In-memory database for tests
+
+# Test Logging Configuration
+logging:
+  level: "error"  # Only show errors during tests
+  enableFile: false
+  enableStructured: false
+
+# Test Monitoring Configuration
+monitoring:
+  enabled: false  # Disable monitoring during tests
+
+# Circuit Breaker Configuration (disabled for tests)
+circuitBreakers:
+  googlePlayApi:
+    failureThreshold: 999
+    resetTimeout: 0
+    monitoringPeriod: 0
+    successThreshold: 1
+  
+  matrixApi:
+    failureThreshold: 999
+    resetTimeout: 0
+    monitoringPeriod: 0
+    successThreshold: 1
+
+# Rate Limiting Configuration (disabled for tests)
+rateLimiting:
+  googlePlayApi:
+    windowSizeMs: 1000
+    maxRequests: 9999
+  
+  matrixApi:
+    windowSizeMs: 1000
+    maxRequests: 9999
+  
+  replyProcessing:
+    baseDelayMs: 0
+    maxDelayMs: 0
+    backoffMultiplier: 1

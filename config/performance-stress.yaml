@@ -1,0 +1,352 @@
+# Performance Testing Configuration - Stress Test (1.4)
+# Extreme load to find breaking points and validate graceful degradation
+# Expected: Graceful degradation, no crashes, failure point identification
+
+version: "0.1.0-perf-stress"
+
+# Matrix Homeserver Configuration (Test Environment)
+homeserver:
+  url: "http://localhost:8008"
+  domain: "localhost"
+
+# Application Service Configuration
+appservice:
+  port: 8080
+  bind: "127.0.0.1"
+  token: "perf-stress-token"
+  id: "googleplay-bridge-perf-stress"
+  botUsername: "googleplay-bot-stress"
+
+# Google Play Console API Configuration - Stress Test
+googleplay:
+  auth:
+    # Mock credentials for testing
+    clientEmail: "perf-stress@test.iam.gserviceaccount.com"
+    privateKey: "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDU5Z8P2JrtFPRN\nR6Fo4XB6+kF/7Qc1P5VmTimeGStwcKJdDPpTTjSjZ6nnha3h/lhrVJLPUJGaVQRB\nBAUDAgEAAoIBAQDfLlUfQE6k\n-----END PRIVATE KEY-----\n"
+    projectId: "perf-stress-project"
+    scopes:
+      - "https://www.googleapis.com/auth/androidpublisher"
+
+  # 20 app configuration for extreme stress testing
+  applications:
+    # Extreme Load Tier 1: Ultra High Volume (5 apps)
+    - packageName: "com.perftest.stress.app1"
+      matrixRoom: "!stress1:localhost"
+      appName: "Stress Test Ultra App 1"
+      pollIntervalMs: 60000   # 1 minute - very frequent
+      maxReviewsPerPoll: 150  # 100+ reviews per poll
+      lookbackDays: 7
+      
+    - packageName: "com.perftest.stress.app2"
+      matrixRoom: "!stress2:localhost"
+      appName: "Stress Test Ultra App 2"
+      pollIntervalMs: 60000
+      maxReviewsPerPoll: 140
+      lookbackDays: 7
+      
+    - packageName: "com.perftest.stress.app3"
+      matrixRoom: "!stress3:localhost"
+      appName: "Stress Test Ultra App 3"
+      pollIntervalMs: 60000
+      maxReviewsPerPoll: 130
+      lookbackDays: 7
+      
+    - packageName: "com.perftest.stress.app4"
+      matrixRoom: "!stress4:localhost"
+      appName: "Stress Test Ultra App 4"
+      pollIntervalMs: 60000
+      maxReviewsPerPoll: 120
+      lookbackDays: 7
+      
+    - packageName: "com.perftest.stress.app5"
+      matrixRoom: "!stress5:localhost"
+      appName: "Stress Test Ultra App 5"
+      pollIntervalMs: 60000
+      maxReviewsPerPoll: 110
+      lookbackDays: 7
+    
+    # Extreme Load Tier 2: Very High Volume (8 apps)
+    - packageName: "com.perftest.stress.app6"
+      matrixRoom: "!stress6:localhost"
+      appName: "Stress Test Very High App 6"
+      pollIntervalMs: 60000
+      maxReviewsPerPoll: 105
+      lookbackDays: 7
+      
+    - packageName: "com.perftest.stress.app7"
+      matrixRoom: "!stress7:localhost"
+      appName: "Stress Test Very High App 7"
+      pollIntervalMs: 60000
+      maxReviewsPerPoll: 100
+      lookbackDays: 7
+      
+    - packageName: "com.perftest.stress.app8"
+      matrixRoom: "!stress8:localhost"
+      appName: "Stress Test Very High App 8"
+      pollIntervalMs: 60000
+      maxReviewsPerPoll: 95
+      lookbackDays: 7
+      
+    - packageName: "com.perftest.stress.app9"
+      matrixRoom: "!stress9:localhost"
+      appName: "Stress Test Very High App 9"
+      pollIntervalMs: 60000
+      maxReviewsPerPoll: 90
+      lookbackDays: 7
+      
+    - packageName: "com.perftest.stress.app10"
+      matrixRoom: "!stress10:localhost"
+      appName: "Stress Test Very High App 10"
+      pollIntervalMs: 60000
+      maxReviewsPerPoll: 85
+      lookbackDays: 7
+      
+    - packageName: "com.perftest.stress.app11"
+      matrixRoom: "!stress11:localhost"
+      appName: "Stress Test Very High App 11"
+      pollIntervalMs: 60000
+      maxReviewsPerPoll: 80
+      lookbackDays: 7
+      
+    - packageName: "com.perftest.stress.app12"
+      matrixRoom: "!stress12:localhost"
+      appName: "Stress Test Very High App 12"
+      pollIntervalMs: 60000
+      maxReviewsPerPoll: 75
+      lookbackDays: 7
+      
+    - packageName: "com.perftest.stress.app13"
+      matrixRoom: "!stress13:localhost"
+      appName: "Stress Test Very High App 13"
+      pollIntervalMs: 60000
+      maxReviewsPerPoll: 70
+      lookbackDays: 7
+    
+    # Extreme Load Tier 3: High Volume (7 apps)  
+    - packageName: "com.perftest.stress.app14"
+      matrixRoom: "!stress14:localhost"
+      appName: "Stress Test High App 14"
+      pollIntervalMs: 60000
+      maxReviewsPerPoll: 65
+      lookbackDays: 7
+      
+    - packageName: "com.perftest.stress.app15"
+      matrixRoom: "!stress15:localhost"
+      appName: "Stress Test High App 15"
+      pollIntervalMs: 60000
+      maxReviewsPerPoll: 60
+      lookbackDays: 7
+      
+    - packageName: "com.perftest.stress.app16"
+      matrixRoom: "!stress16:localhost"
+      appName: "Stress Test High App 16"
+      pollIntervalMs: 60000
+      maxReviewsPerPoll: 55
+      lookbackDays: 7
+      
+    - packageName: "com.perftest.stress.app17"
+      matrixRoom: "!stress17:localhost"
+      appName: "Stress Test High App 17"
+      pollIntervalMs: 60000
+      maxReviewsPerPoll: 50
+      lookbackDays: 7
+      
+    - packageName: "com.perftest.stress.app18"
+      matrixRoom: "!stress18:localhost"
+      appName: "Stress Test High App 18"
+      pollIntervalMs: 60000
+      maxReviewsPerPoll: 45
+      lookbackDays: 7
+      
+    - packageName: "com.perftest.stress.app19"
+      matrixRoom: "!stress19:localhost"
+      appName: "Stress Test High App 19"
+      pollIntervalMs: 60000
+      maxReviewsPerPoll: 40
+      lookbackDays: 7
+      
+    - packageName: "com.perftest.stress.app20"
+      matrixRoom: "!stress20:localhost"
+      appName: "Stress Test High App 20"
+      pollIntervalMs: 60000
+      maxReviewsPerPoll: 35
+      lookbackDays: 7
+
+  # Extreme polling settings designed to stress the system
+  pollIntervalMs: 60000       # 1 minute - very aggressive
+  maxReviewsPerPoll: 100      # High average volume
+  rateLimitDelayMs: 50        # Minimal delay to maximize stress
+
+# Database Configuration - Optimized for stress testing  
+database:
+  type: "sqlite"
+  path: ":memory:"           # In-memory for maximum performance
+  options:
+    pragma:
+      journal_mode: "WAL"    # Write-Ahead Logging for better concurrency
+      synchronous: "OFF"     # Disable sync for maximum speed (test only!)
+      cache_size: -128000    # 128MB cache - large cache for stress test
+      temp_store: "MEMORY"   # Store temp tables in memory
+      mmap_size: 268435456   # 256MB memory-mapped I/O
+
+# Logging Configuration - Minimal for stress test
+logging:
+  level: "error"             # Only errors to reduce overhead
+  enableFile: false          # No file I/O during stress test  
+  enableStructured: false    # Simple logging only
+
+# Monitoring Configuration - Optimized for stress testing
+monitoring:
+  enabled: true
+  port: 9091
+  host: "127.0.0.1"
+  enableMetrics: true
+  enableHealthCheck: true
+  requestLogging: false      # Disable to reduce overhead
+  metricsCollection:
+    interval: 2000           # Collect every 2 seconds for rapid monitoring
+    enableGC: true           # Monitor garbage collection under stress
+    enableEventLoop: true    # Monitor event loop lag
+    enableMemoryProfile: true # Enable memory profiling
+
+# Circuit Breaker Configuration - Relaxed for stress testing
+circuitBreakers:
+  googlePlayApi:
+    failureThreshold: 20     # Very high threshold - let failures happen
+    resetTimeout: 10000      # 10 seconds - quick recovery attempts
+    monitoringPeriod: 15000  # 15 seconds - fast monitoring
+    successThreshold: 1      # Single success to close circuit
+  
+  matrixApi:
+    failureThreshold: 15     # High threshold
+    resetTimeout: 5000       # 5 seconds - very fast recovery
+    monitoringPeriod: 15000  # 15 seconds
+    successThreshold: 1
+
+# Rate Limiting Configuration - Relaxed to allow maximum stress
+rateLimiting:
+  googlePlayApi:
+    windowSizeMs: 60000      # 1 minute window
+    maxRequests: 1000        # Very high limit - let it stress
+  
+  matrixApi:
+    windowSizeMs: 60000
+    maxRequests: 2000        # Extremely high limit
+  
+  replyProcessing:
+    baseDelayMs: 10          # Minimal delay
+    maxDelayMs: 500          # Low max delay
+    backoffMultiplier: 1.1   # Very gentle backoff
+
+# Performance Test Specific Settings - Stress Test
+performance:
+  testDuration: 1800000      # 30 minutes in milliseconds
+  metricsCollectionInterval: 2000   # Collect metrics every 2 seconds
+  expectedMetrics:
+    # Stress test expectations - designed to be exceeded
+    maxMemoryMB: 1000        # Allow up to 1GB memory
+    maxCpuPercent: 90        # Allow up to 90% CPU
+    maxLatencyMs: 15000      # Allow up to 15s latency
+    minThroughput: 50        # Expect 50+ reviews per minute
+  
+  testScenario:
+    name: "stress-test"
+    description: "Extreme Load Stress Test Beyond Capacity"
+    reviewsPerPoll: 100      # High average per app
+    pollIntervalMs: 60000    # 1 minute
+    concurrentApps: 20       # 20 applications
+    duration: "30 minutes"
+    
+    # Stress test patterns
+    stressPatterns:
+      type: "beyond-capacity"      # Designed to exceed limits
+      intensityRamp: [1.0, 1.5, 2.0, 3.0, 4.0]  # Extreme escalation
+      burstGeneration: true        # Enable burst patterns
+      memoryPressure: true         # Intentionally stress memory
+      cpuSaturation: true          # Push CPU to limits
+      
+    # App stress tiers for extreme load
+    stressTiers:
+      tier1:  # Ultra High Volume (5 apps)
+        reviewsPerPoll: [110, 150]
+        stressMultiplier: 4.0
+        burstProbability: 0.8      # Very high burst probability
+        memoryStress: true
+      tier2:  # Very High Volume (8 apps)  
+        reviewsPerPoll: [70, 110]
+        stressMultiplier: 3.0
+        burstProbability: 0.6
+        memoryStress: true
+      tier3:  # High Volume (7 apps)
+        reviewsPerPoll: [35, 70]
+        stressMultiplier: 2.0
+        burstProbability: 0.4
+        memoryStress: false
+        
+    # Failure testing parameters
+    failureConditions:
+      induceMemoryPressure: true       # Intentionally stress memory
+      induceCpuSaturation: true        # Push CPU beyond limits
+      induceLatencySpikes: true        # Create artificial delays
+      induceNetworkCongestion: true    # Simulate network issues
+      monitorBreakingPoints: true      # Track when system breaks
+      trackGracefulDegradation: true   # Monitor graceful failure modes
+      
+# Resource Stress Testing - Intentional resource exhaustion
+stressConditions:
+  memoryStress:
+    enableMemoryLeaks: false         # Don't create actual leaks
+    largeObjectCreation: true        # Create large temporary objects
+    frequentGarbageGeneration: true  # Force frequent GC
+    
+  cpuStress:
+    computeIntensiveOperations: true # Add CPU-heavy operations
+    eventLoopSaturation: true        # Saturate event loop
+    concurrentProcessing: true       # Maximum parallelism
+    
+  networkStress:
+    highConnectionCount: true        # Many concurrent connections
+    rapidRequestGeneration: true     # Generate requests rapidly
+    timeoutStressing: true           # Test timeout handling
+    
+  databaseStress:
+    highConcurrency: true            # Many concurrent DB operations
+    complexQueries: true             # CPU-intensive queries
+    largeBatchOperations: true       # Batch stress testing
+
+# Breaking Point Detection - Monitor system failure modes
+breakingPointDetection:
+  memoryThresholds:
+    warning: 512                     # 512MB warning
+    critical: 768                    # 768MB critical
+    breaking: 1024                   # 1GB breaking point
+    
+  cpuThresholds:
+    warning: 70                      # 70% CPU warning
+    critical: 85                     # 85% CPU critical  
+    breaking: 95                     # 95% CPU breaking point
+    
+  latencyThresholds:
+    warning: 5000                    # 5s warning
+    critical: 10000                  # 10s critical
+    breaking: 20000                  # 20s breaking point
+    
+  errorThresholds:
+    warningRate: 0.05               # 5% error rate warning
+    criticalRate: 0.15              # 15% error rate critical
+    breakingRate: 0.30              # 30% error rate breaking point
+    
+# Graceful Degradation Testing
+gracefulDegradation:
+  enableLoadShedding: true          # Test load shedding mechanisms
+  enableCircuitBreaking: true       # Test circuit breaker activation
+  enableRateLimiting: true          # Test rate limiting under stress
+  enablePrioritization: true        # Test request prioritization
+  monitorRecoveryTime: true         # Monitor recovery after stress
+  
+# Recovery Testing - Post-stress recovery validation  
+recoveryTesting:
+  cooldownPeriod: 300000            # 5 minutes cooldown after stress
+  recoveryMonitoring: true          # Monitor recovery metrics
+  baselineComparison: true          # Compare to pre-stress baseline
+  persistentDamageDetection: true   # Detect permanent degradation

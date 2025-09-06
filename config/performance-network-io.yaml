@@ -1,0 +1,382 @@
+# Network I/O Performance Test Configuration
+# Scenario 3.3: Network throughput, latency, and connection management
+
+# Basic bridge configuration
+bridge:
+  domain: "localhost"
+  homeserverUrl: "http://localhost:8008"
+  registration: "/data/registration.yaml"
+  bindAddress: "127.0.0.1"
+  port: 9004
+  database:
+    engine: "sqlite"
+    filename: ":memory:"  # In-memory for network testing
+
+# Google Play API configuration
+google:
+  serviceAccountKeyFile: "/path/to/service-account-key.json"
+  pollingInterval: 5000  # 5 seconds for network testing
+  maxRetries: 3
+  retryDelay: 1000
+  timeout: 30000  # 30 second timeout
+
+# Test applications
+apps:
+  - packageName: "com.test.network.app1"
+    matrixRoomId: "!network1:localhost"
+    
+  - packageName: "com.test.network.app2"
+    matrixRoomId: "!network2:localhost"
+    
+  - packageName: "com.test.network.app3"
+    matrixRoomId: "!network3:localhost"
+    
+  - packageName: "com.test.network.app4"
+    matrixRoomId: "!network4:localhost"
+    
+  - packageName: "com.test.network.app5"
+    matrixRoomId: "!network5:localhost"
+
+# Performance test configuration
+performance:
+  # Test duration: 1 hour for network I/O analysis
+  testDuration: 3600000  # 1 hour in milliseconds
+  
+  # Network monitoring configuration
+  networkMonitoring:
+    enabled: true
+    captureInterval: 1000  # Capture metrics every second
+    detailedCapture: true
+    trackConnections: true
+    monitorBandwidth: true
+    
+  # Expected network metrics
+  expectedMetrics:
+    # Latency thresholds (milliseconds)
+    avgLatencyMs: 50      # Average latency should be under 50ms
+    p95LatencyMs: 200     # 95th percentile under 200ms
+    p99LatencyMs: 500     # 99th percentile under 500ms
+    maxLatencyMs: 2000    # Maximum latency under 2 seconds
+    
+    # Throughput thresholds
+    minThroughputMbps: 10    # Minimum 10 Mbps throughput
+    avgThroughputMbps: 50    # Average 50 Mbps throughput
+    
+    # Connection metrics
+    maxConcurrentConnections: 100   # Max 100 concurrent connections
+    connectionPoolSize: 20           # Connection pool size
+    connectionReuseRate: 0.8         # 80% connection reuse rate
+    maxConnectionErrors: 10          # Max 10 connection errors per hour
+    
+    # Request/Response metrics
+    requestsPerSecond: 100           # Handle 100 requests/second
+    responseTimeMs: 100              # Average response time under 100ms
+    errorRate: 0.01                  # Less than 1% error rate
+    timeoutRate: 0.001               # Less than 0.1% timeout rate
+    
+    # Bandwidth utilization
+    avgBandwidthUtilization: 0.6     # 60% average bandwidth utilization
+    peakBandwidthUtilization: 0.9    # 90% peak bandwidth utilization
+    
+  # Network test scenarios
+  networkScenarios:
+    # Scenario 1: Normal conditions
+    - name: "normal_conditions"
+      duration: 900000  # 15 minutes
+      bandwidth: "unlimited"
+      latency: 10
+      packetLoss: 0
+      jitter: 0
+      requestRate: 50
+      payloadSize: "medium"
+      
+    # Scenario 2: High latency
+    - name: "high_latency"
+      duration: 600000  # 10 minutes
+      bandwidth: "unlimited"
+      latency: 500
+      packetLoss: 0
+      jitter: 50
+      requestRate: 30
+      payloadSize: "medium"
+      
+    # Scenario 3: Limited bandwidth
+    - name: "limited_bandwidth"
+      duration: 600000  # 10 minutes
+      bandwidth: "1mbps"
+      latency: 50
+      packetLoss: 0
+      jitter: 10
+      requestRate: 20
+      payloadSize: "large"
+      
+    # Scenario 4: Packet loss
+    - name: "packet_loss"
+      duration: 600000  # 10 minutes
+      bandwidth: "unlimited"
+      latency: 50
+      packetLoss: 5  # 5% packet loss
+      jitter: 20
+      requestRate: 40
+      payloadSize: "medium"
+      
+    # Scenario 5: Network congestion
+    - name: "network_congestion"
+      duration: 600000  # 10 minutes
+      bandwidth: "5mbps"
+      latency: 200
+      packetLoss: 2
+      jitter: 100
+      requestRate: 60
+      payloadSize: "mixed"
+      
+    # Scenario 6: Burst traffic
+    - name: "burst_traffic"
+      duration: 600000  # 10 minutes
+      burstSize: 500
+      burstInterval: 30000  # 30 second bursts
+      idleInterval: 30000   # 30 second idle
+      payloadSize: "mixed"
+      
+  # Connection pool configuration
+  connectionPool:
+    minSize: 5
+    maxSize: 20
+    idleTimeout: 60000      # 1 minute idle timeout
+    acquireTimeout: 5000    # 5 second acquire timeout
+    createRetries: 3
+    validateOnBorrow: true
+    
+  # HTTP client configuration
+  httpClient:
+    keepAlive: true
+    keepAliveMsecs: 1000
+    maxSockets: 50
+    maxFreeSockets: 10
+    timeout: 30000
+    compression: true
+    
+  # Matrix API configuration
+  matrixApi:
+    batchSize: 50           # Batch up to 50 events
+    batchInterval: 1000     # Send batch every second
+    maxRetries: 3
+    retryBackoff: "exponential"
+    retryBaseDelay: 1000
+    retryMaxDelay: 30000
+    
+  # Google Play API configuration  
+  googlePlayApi:
+    batchReviews: true
+    batchSize: 100
+    rateLimit: 60           # 60 requests per minute
+    concurrentRequests: 5
+    cacheEnabled: true
+    cacheTTL: 300000        # 5 minute cache
+    
+  # Payload configurations
+  payloadSizes:
+    small:
+      text: 100           # 100 bytes
+      json: 500           # 500 bytes
+      
+    medium:
+      text: 1000          # 1 KB
+      json: 5000          # 5 KB
+      
+    large:
+      text: 10000         # 10 KB
+      json: 50000         # 50 KB
+      
+    huge:
+      text: 100000        # 100 KB
+      json: 500000        # 500 KB
+      
+  # Network analysis configuration
+  analysis:
+    # Latency analysis
+    latencyAnalysis:
+      enabled: true
+      buckets: [10, 25, 50, 100, 200, 500, 1000, 2000, 5000]
+      percentiles: [50, 75, 90, 95, 99, 99.9]
+      
+    # Throughput analysis
+    throughputAnalysis:
+      enabled: true
+      windowSize: 10000    # 10 second window
+      calculateRates: true
+      
+    # Connection analysis
+    connectionAnalysis:
+      enabled: true
+      trackLifecycle: true
+      measureReuse: true
+      detectLeaks: true
+      
+    # Protocol analysis
+    protocolAnalysis:
+      enabled: true
+      protocols: ["http", "https", "ws", "wss"]
+      measureOverhead: true
+      
+    # Error analysis
+    errorAnalysis:
+      enabled: true
+      categorizeErrors: true
+      trackRetries: true
+      measureRecovery: true
+      
+  # Monitoring and alerts
+  monitoring:
+    # Network metrics collection
+    metrics:
+      - "bytes_sent"
+      - "bytes_received"
+      - "packets_sent"
+      - "packets_received"
+      - "errors_in"
+      - "errors_out"
+      - "dropped_in"
+      - "dropped_out"
+      - "active_connections"
+      - "connection_attempts"
+      - "connection_failures"
+      - "dns_lookups"
+      - "dns_failures"
+      - "ssl_handshakes"
+      - "ssl_failures"
+      
+    # Alert thresholds
+    alerts:
+      highLatency:
+        threshold: 1000     # Alert if latency > 1 second
+        duration: 30000     # For 30 seconds
+        
+      lowThroughput:
+        threshold: 1        # Alert if throughput < 1 Mbps
+        duration: 60000     # For 1 minute
+        
+      connectionErrors:
+        threshold: 10       # Alert if > 10 errors
+        window: 60000       # In 1 minute
+        
+      packetLoss:
+        threshold: 0.05     # Alert if packet loss > 5%
+        duration: 30000     # For 30 seconds
+        
+  # Test data generation
+  testData:
+    # Message generation
+    messagePatterns:
+      - type: "text"
+        frequency: 0.5
+        sizeDistribution: "normal"
+        
+      - type: "json"
+        frequency: 0.3
+        sizeDistribution: "exponential"
+        
+      - type: "binary"
+        frequency: 0.1
+        sizeDistribution: "uniform"
+        
+      - type: "multipart"
+        frequency: 0.1
+        sizeDistribution: "mixed"
+        
+    # Request patterns
+    requestPatterns:
+      - pattern: "steady"
+        rate: 50
+        duration: 0.3
+        
+      - pattern: "increasing"
+        startRate: 10
+        endRate: 100
+        duration: 0.2
+        
+      - pattern: "decreasing"
+        startRate: 100
+        endRate: 10
+        duration: 0.2
+        
+      - pattern: "sine_wave"
+        baseRate: 50
+        amplitude: 40
+        period: 60000
+        duration: 0.2
+        
+      - pattern: "random"
+        minRate: 10
+        maxRate: 100
+        duration: 0.1
+        
+  # Optimization testing
+  optimization:
+    # Connection pooling optimization
+    testConnectionPooling: true
+    poolSizes: [5, 10, 20, 50]
+    
+    # Compression optimization
+    testCompression: true
+    compressionLevels: ["none", "low", "medium", "high"]
+    
+    # Batching optimization
+    testBatching: true
+    batchSizes: [1, 10, 50, 100]
+    
+    # Caching optimization
+    testCaching: true
+    cacheStrategies: ["none", "memory", "redis", "hybrid"]
+    
+  # Report generation
+  reporting:
+    generateReport: true
+    reportFormat: "html"
+    includeGraphs: true
+    includeLatencyHistogram: true
+    includeThroughputGraph: true
+    includeConnectionMetrics: true
+    includeErrorAnalysis: true
+    includeOptimizationResults: true
+    outputPath: "performance-reports/network-io-report.html"
+    
+  # Safety mechanisms
+  safety:
+    # Circuit breaker
+    circuitBreaker:
+      enabled: true
+      threshold: 0.5        # Open if 50% requests fail
+      timeout: 60000        # Reset after 1 minute
+      
+    # Rate limiting
+    rateLimiting:
+      enabled: true
+      maxRequestsPerSecond: 1000
+      
+    # Connection limits
+    connectionLimits:
+      maxTotal: 200
+      maxPerHost: 50
+      
+    # Bandwidth limits
+    bandwidthLimits:
+      maxMbps: 100          # Max 100 Mbps
+      
+# Feature flags for network testing
+features:
+  enableConnectionPooling: true
+  enableCompression: true
+  enableBatching: true
+  enableCaching: true
+  enableRetries: true
+  enableCircuitBreaker: true
+  enableRateLimiting: true
+
+# Logging configuration
+logging:
+  level: "info"
+  networkMetrics: true
+  requestResponse: false  # Too verbose for performance testing
+  connectionEvents: true
+  errorDetails: true

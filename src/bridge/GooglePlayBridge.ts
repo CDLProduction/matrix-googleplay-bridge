@@ -29,6 +29,8 @@ import {
 import { HttpServer } from '../utils/HttpServer';
 import { CircuitBreakerRegistry } from '../utils/CircuitBreaker';
 import { RateLimitingRegistry } from '../utils/RateLimiter';
+import { DatabaseFactory } from '../storage/DatabaseFactory';
+import { DatabaseInterface } from '../storage/Database';
 
 interface ExtendedBridgeController extends BridgeController {
   onBridgeReply?: (
@@ -49,6 +51,7 @@ export class GooglePlayBridge {
   private config: Config;
   private logger: Logger;
   private bridge?: Bridge;
+  private database?: DatabaseInterface;
   private matrixHandler?: MatrixHandler;
   private userManager: UserManager;
   private roomManager: RoomManager;
@@ -249,6 +252,41 @@ export class GooglePlayBridge {
   }
 
   /**
+   * Initialize database based on environment
+   */
+  private async initializeDatabase(): Promise<void> {
+    this.logger.info('Initializing database...');
+    
+    try {
+      // Determine environment
+      const env = process.env.NODE_ENV || 'development';
+      const isTest = env === 'test' || process.env.JEST_WORKER_ID !== undefined;
+      
+      // Get database config
+      const dbConfig = this.config.database || 
+        DatabaseFactory.getRecommendedConfig(
+          isTest ? 'testing' : env as 'development' | 'production'
+        );
+      
+      // Create and initialize database
+      this.database = await DatabaseFactory.create({
+        config: dbConfig,
+        runMigrations: !isTest, // Skip migrations in test environment
+      });
+      
+      this.logger.info(`Database initialized successfully (${dbConfig.type} in ${env} mode)`);
+    } catch (error) {
+      this.logger.error('Database initialization failed:', error);
+      // In production, fail fast if database cannot be initialized
+      if (process.env.NODE_ENV === 'production') {
+        throw error;
+      }
+      // In development/test, continue without database
+      this.logger.warn('Continuing without database - some features may be limited');
+    }
+  }
+
+  /**
    * Initialize all handlers
    */
   private async initializeHandlers(): Promise<void> {
@@ -258,29 +296,33 @@ export class GooglePlayBridge {
 
     this.logger.info('Initializing bridge handlers...');
 
-    // Initialize AppManager (if database is available)
-    // TODO: Properly initialize database for production use
-    try {
-      // For now, create AppManager without database to fix tests
-      this.appManager = new AppManager(
-        this.bridge,
-        this.config as any,
-        {} as any
-      );
-      await this.appManager.initialize();
+    // Initialize database first
+    await this.initializeDatabase();
 
-      // Initialize audit logger
-      // Note: Without proper database, audit logging will use in-memory storage
+    // Initialize AppManager with database
+    if (this.database) {
       try {
-        // TODO: Pass proper database instance when available
-        // await this.auditLogger.initialize(database);
-        this.logger.info('Audit logger initialized (in-memory mode)');
+        this.appManager = new AppManager(
+          this.bridge,
+          this.config as any,
+          this.database
+        );
+        await this.appManager.initialize();
+        this.logger.info('AppManager initialized with database');
+
+        // Initialize audit logger with database
+        try {
+          await this.auditLogger.initialize(this.database);
+          this.logger.info('Audit logger initialized with database persistence');
+        } catch (error) {
+          this.logger.warn('Audit logger initialization failed:', error);
+        }
       } catch (error) {
-        this.logger.warn('Audit logger initialization failed:', error);
+        this.logger.warn('AppManager initialization failed:', error);
+        this.appManager = undefined;
       }
-    } catch (error) {
-      this.logger.warn('AppManager initialization skipped:', error);
-      this.appManager = undefined;
+    } else {
+      this.logger.warn('Running without database - app management and audit features disabled');
     }
 
     // Initialize Matrix handler
@@ -720,6 +762,16 @@ export class GooglePlayBridge {
         // The bridge doesn't have a direct close method, but stopping
         // the process will handle cleanup
         this.logger.debug('Bridge server will be cleaned up on process exit');
+      }
+
+      // Close database connection
+      if (this.database) {
+        try {
+          await this.database.close();
+          this.logger.info('Database connection closed');
+        } catch (error) {
+          this.logger.error('Error closing database connection:', error);
+        }
       }
 
       // Final cleanup

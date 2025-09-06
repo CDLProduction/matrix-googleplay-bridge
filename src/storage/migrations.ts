@@ -163,9 +163,7 @@ export const migrations: Migration[] = [
           has_reply INTEGER NOT NULL DEFAULT 0 CHECK (has_reply IN (0, 1)),
           developer_reply_text TEXT,
           developer_reply_created_at TEXT,
-          developer_reply_last_modified_at TEXT,
-          
-          CONSTRAINT pk_google_play_reviews PRIMARY KEY (review_id)
+          developer_reply_last_modified_at TEXT
         )
       `);
 
@@ -204,7 +202,6 @@ export const migrations: Migration[] = [
           timestamp TEXT NOT NULL,
           is_bridge_message INTEGER NOT NULL DEFAULT 0 CHECK (is_bridge_message IN (0, 1)),
           
-          CONSTRAINT pk_matrix_messages PRIMARY KEY (event_id),
           FOREIGN KEY (room_id) REFERENCES room_mappings(matrix_room_id) ON DELETE CASCADE
         )
       `);
@@ -403,9 +400,7 @@ export const migrations: Migration[] = [
           package_name TEXT PRIMARY KEY,
           config_json TEXT NOT NULL,
           updated_at TEXT NOT NULL DEFAULT (datetime('now')),
-          created_at TEXT NOT NULL DEFAULT (datetime('now')),
-          
-          CONSTRAINT pk_app_configs PRIMARY KEY (package_name)
+          created_at TEXT NOT NULL DEFAULT (datetime('now'))
         )
       `);
 

@@ -1,0 +1,448 @@
+# Concurrent App Processing Test Configuration
+# Scenario 4.1: Multiple apps polling simultaneously, race condition detection
+
+# Basic bridge configuration
+bridge:
+  domain: "localhost"
+  homeserverUrl: "http://localhost:8008"
+  registration: "/data/registration.yaml"
+  bindAddress: "127.0.0.1"
+  port: 9005
+  database:
+    engine: "sqlite"
+    filename: ":memory:"  # In-memory for concurrency testing
+
+# Google Play API configuration
+google:
+  serviceAccountKeyFile: "/path/to/service-account-key.json"
+  pollingInterval: 30000  # 30 seconds for concurrency testing
+  maxRetries: 3
+  retryDelay: 500
+  timeout: 15000
+
+# Test applications for concurrency analysis
+apps:
+  # Tier 1: High-frequency apps (every 30 seconds)
+  - packageName: "com.concurrent.tier1.app1"
+    matrixRoomId: "!concurrent1:localhost"
+    pollingInterval: 30000
+    expectedReviewsPerPoll: 25
+    priority: "high"
+    
+  - packageName: "com.concurrent.tier1.app2"
+    matrixRoomId: "!concurrent2:localhost"
+    pollingInterval: 30000
+    expectedReviewsPerPoll: 20
+    priority: "high"
+    
+  - packageName: "com.concurrent.tier1.app3"
+    matrixRoomId: "!concurrent3:localhost"
+    pollingInterval: 30000
+    expectedReviewsPerPoll: 30
+    priority: "high"
+    
+  # Tier 2: Medium-frequency apps (every 60 seconds)
+  - packageName: "com.concurrent.tier2.app4"
+    matrixRoomId: "!concurrent4:localhost"
+    pollingInterval: 60000
+    expectedReviewsPerPoll: 15
+    priority: "medium"
+    
+  - packageName: "com.concurrent.tier2.app5"
+    matrixRoomId: "!concurrent5:localhost"
+    pollingInterval: 60000
+    expectedReviewsPerPoll: 18
+    priority: "medium"
+    
+  - packageName: "com.concurrent.tier2.app6"
+    matrixRoomId: "!concurrent6:localhost"
+    pollingInterval: 60000
+    expectedReviewsPerPoll: 22
+    priority: "medium"
+    
+  - packageName: "com.concurrent.tier2.app7"
+    matrixRoomId: "!concurrent7:localhost"
+    pollingInterval: 60000
+    expectedReviewsPerPoll: 12
+    priority: "medium"
+    
+  # Tier 3: Low-frequency apps (every 120 seconds)
+  - packageName: "com.concurrent.tier3.app8"
+    matrixRoomId: "!concurrent8:localhost"
+    pollingInterval: 120000
+    expectedReviewsPerPoll: 8
+    priority: "low"
+    
+  - packageName: "com.concurrent.tier3.app9"
+    matrixRoomId: "!concurrent9:localhost"
+    pollingInterval: 120000
+    expectedReviewsPerPoll: 10
+    priority: "low"
+    
+  - packageName: "com.concurrent.tier3.app10"
+    matrixRoomId: "!concurrent10:localhost"
+    pollingInterval: 120000
+    expectedReviewsPerPoll: 6
+    priority: "low"
+
+# Performance test configuration
+performance:
+  # Test duration: 90 minutes for concurrency analysis
+  testDuration: 5400000  # 90 minutes in milliseconds
+  
+  # Concurrency monitoring configuration
+  concurrencyMonitoring:
+    enabled: true
+    sampleInterval: 1000    # Sample every second
+    trackResourceContention: true
+    detectRaceConditions: true
+    monitorLockWaiting: true
+    
+  # Expected concurrency metrics
+  expectedMetrics:
+    # Concurrency thresholds
+    maxConcurrentPolls: 8          # Max 8 simultaneous polls
+    maxConcurrentProcessing: 15    # Max 15 concurrent processing tasks
+    avgConcurrentOperations: 5     # Average 5 concurrent operations
+    
+    # Resource contention
+    maxLockWaitTime: 100           # Max 100ms lock wait time
+    avgLockWaitTime: 10            # Average 10ms lock wait time
+    lockContentionRate: 0.05       # Less than 5% lock contention
+    
+    # Race condition detection
+    maxRaceConditions: 0           # Zero race conditions allowed
+    dataCorruptionRate: 0          # Zero data corruption
+    duplicateProcessingRate: 0.01  # Less than 1% duplicate processing
+    
+    # Processing overlap
+    maxProcessingOverlap: 3        # Max 3 overlapping processes per app
+    avgProcessingOverlap: 1        # Average 1 overlapping process
+    overlapDurationMs: 2000        # Max 2 second overlap duration
+    
+    # Resource utilization during concurrency
+    maxConcurrentMemoryMB: 600     # Max 600MB under concurrent load
+    maxConcurrentCpuPercent: 60    # Max 60% CPU during concurrent operations
+    
+  # Concurrency test scenarios
+  concurrencyScenarios:
+    # Scenario 1: Simultaneous polling start
+    - name: "simultaneous_polling_start"
+      duration: 900000  # 15 minutes
+      description: "All apps start polling at the same time"
+      syncedStart: true
+      pollingAlignment: "synchronized"
+      expectedConcurrency: 10
+      
+    # Scenario 2: Staggered polling intervals
+    - name: "staggered_polling_intervals"
+      duration: 1200000  # 20 minutes
+      description: "Apps poll at different intervals creating overlap patterns"
+      syncedStart: false
+      pollingAlignment: "staggered"
+      staggerDelay: 5000  # 5 second stagger
+      expectedConcurrency: 6
+      
+    # Scenario 3: Peak concurrency stress
+    - name: "peak_concurrency_stress"
+      duration: 600000  # 10 minutes
+      description: "Force maximum concurrent operations"
+      syncedStart: true
+      pollingAlignment: "synchronized"
+      pollingInterval: 15000  # 15 seconds for all apps
+      expectedConcurrency: 10
+      
+    # Scenario 4: Random polling chaos
+    - name: "random_polling_chaos"
+      duration: 1200000  # 20 minutes
+      description: "Random polling intervals to test race conditions"
+      syncedStart: false
+      pollingAlignment: "random"
+      randomIntervalRange: [10000, 90000]  # 10-90 second range
+      expectedConcurrency: 8
+      
+    # Scenario 5: Resource contention simulation
+    - name: "resource_contention_simulation"
+      duration: 900000  # 15 minutes
+      description: "High-load simulation to force resource contention"
+      syncedStart: true
+      pollingAlignment: "synchronized"
+      pollingInterval: 20000  # 20 seconds
+      reviewVolumeMultiplier: 3  # 3x normal review volume
+      expectedConcurrency: 10
+      
+    # Scenario 6: Recovery from concurrent failures
+    - name: "concurrent_failure_recovery"
+      duration: 1200000  # 20 minutes
+      description: "Simulate failures during concurrent operations"
+      syncedStart: false
+      pollingAlignment: "staggered"
+      simulateFailures: true
+      failureRate: 0.1  # 10% failure rate
+      expectedConcurrency: 5
+      
+  # Race condition detection configuration
+  raceConditionDetection:
+    enabled: true
+    
+    # Data race detection
+    dataRaceChecking:
+      enabled: true
+      checkDatabaseConsistency: true
+      validateTransactionIsolation: true
+      detectDirtyReads: true
+      detectPhantomReads: true
+      
+    # Resource race detection
+    resourceRaceChecking:
+      enabled: true
+      checkFileAccess: true
+      checkMemoryAccess: true
+      checkNetworkConnections: true
+      
+    # Application state races
+    stateRaceChecking:
+      enabled: true
+      checkAppStateConsistency: true
+      checkPollingState: true
+      checkProcessingQueue: true
+      
+  # Lock monitoring and analysis
+  lockMonitoring:
+    enabled: true
+    
+    # Database locks
+    databaseLocks:
+      trackAcquisitionTime: true
+      trackHoldTime: true
+      detectDeadlocks: true
+      analyzeContentionPatterns: true
+      
+    # Application locks
+    applicationLocks:
+      trackMutexes: true
+      trackSemaphores: true
+      trackAtomicOperations: true
+      
+    # Lock contention analysis
+    contentionAnalysis:
+      enabled: true
+      identifyHotspots: true
+      suggestOptimizations: true
+      measureWaitTimes: true
+      
+  # Resource contention monitoring
+  resourceContention:
+    # Memory contention
+    memoryContention:
+      enabled: true
+      trackAllocationRaces: true
+      detectMemoryPressure: true
+      monitorGCContention: true
+      
+    # CPU contention
+    cpuContention:
+      enabled: true
+      trackProcessorTime: true
+      detectContextSwitching: true
+      monitorThreadContention: true
+      
+    # I/O contention
+    ioContention:
+      enabled: true
+      trackDiskAccess: true
+      detectFileContentions: true
+      monitorNetworkContention: true
+      
+  # Synchronization testing
+  synchronizationTesting:
+    # Atomic operations testing
+    atomicOperations:
+      enabled: true
+      testCounters: true
+      testFlags: true
+      testCompareAndSwap: true
+      
+    # Mutex effectiveness
+    mutexTesting:
+      enabled: true
+      validateExclusiveAccess: true
+      measurePerformanceImpact: true
+      detectStarvation: true
+      
+    # Barrier synchronization
+    barrierTesting:
+      enabled: true
+      testSynchronization: true
+      validatePhaseCompletion: true
+      
+  # Processing overlap analysis
+  overlapAnalysis:
+    enabled: true
+    
+    # Timeline analysis
+    timelineTracking:
+      enabled: true
+      trackStartTimes: true
+      trackEndTimes: true
+      trackDurations: true
+      visualizeOverlaps: true
+      
+    # Dependency analysis
+    dependencyTracking:
+      enabled: true
+      identifyDependencies: true
+      detectCircularDependencies: true
+      optimizeExecutionOrder: true
+      
+  # Data consistency validation
+  dataConsistency:
+    enabled: true
+    
+    # Database consistency
+    databaseConsistency:
+      validateTransactions: true
+      checkReferentialIntegrity: true
+      detectDataCorruption: true
+      validateConstraints: true
+      
+    # Application state consistency
+    stateConsistency:
+      validateAppStates: true
+      checkInvariantConditions: true
+      detectInconsistentUpdates: true
+      
+    # Message consistency
+    messageConsistency:
+      validateMessageOrdering: true
+      detectDuplicateMessages: true
+      checkMessageIntegrity: true
+      
+  # Performance impact analysis
+  performanceImpact:
+    # Concurrency overhead
+    concurrencyOverhead:
+      measureSynchronizationCost: true
+      analyzeLockingOverhead: true
+      calculateContentionPenalty: true
+      
+    # Scalability analysis
+    scalabilityAnalysis:
+      measureThroughputScaling: true
+      analyzeLatencyImpact: true
+      assessResourceScaling: true
+      
+  # Alert thresholds
+  alerts:
+    # Concurrency alerts
+    highConcurrency:
+      threshold: 12          # Alert if >12 concurrent operations
+      duration: 30000        # For 30 seconds
+      
+    # Lock contention alerts
+    lockContention:
+      threshold: 0.2         # Alert if >20% contention rate
+      duration: 60000        # For 1 minute
+      
+    # Race condition alerts
+    raceCondition:
+      threshold: 1           # Alert on any race condition
+      
+    # Resource contention alerts
+    resourceContention:
+      memoryThreshold: 80    # Alert if >80% memory pressure
+      cpuThreshold: 80       # Alert if >80% CPU contention
+      
+  # Report generation
+  reporting:
+    generateReport: true
+    reportFormat: "html"
+    includeTimeline: true
+    includeContentionAnalysis: true
+    includeRaceConditionReport: true
+    includeLockAnalysis: true
+    includePerformanceImpact: true
+    includeOptimizationRecommendations: true
+    outputPath: "performance-reports/concurrent-apps-report.html"
+    
+  # Optimization testing
+  optimization:
+    # Concurrency optimizations to test
+    testOptimizations:
+      - "lock_free_algorithms"
+      - "atomic_operations"
+      - "read_write_locks"
+      - "thread_local_storage"
+      - "lock_striping"
+      - "optimistic_locking"
+      
+    # Configuration tuning
+    tuningParameters:
+      - parameter: "maxConcurrentPolls"
+        values: [5, 10, 15, 20]
+      - parameter: "lockTimeout"
+        values: [100, 500, 1000, 2000]
+      - parameter: "retryDelay"
+        values: [100, 250, 500, 1000]
+
+# Database configuration for concurrency testing
+database:
+  # Connection pool for concurrent access
+  connectionPool:
+    minConnections: 5
+    maxConnections: 20
+    acquireTimeout: 1000
+    createTimeout: 2000
+    destroyTimeout: 5000
+    idleTimeout: 30000
+    reapInterval: 1000
+    
+  # Transaction isolation
+  transactionIsolation: "READ_COMMITTED"
+  
+  # Lock configuration
+  lockTimeout: 5000
+  deadlockTimeout: 10000
+
+# Matrix API configuration for concurrent messaging
+matrixApi:
+  # Rate limiting for concurrent operations
+  rateLimiting:
+    enabled: true
+    requestsPerSecond: 50
+    burstSize: 100
+    
+  # Connection pooling
+  connectionPooling:
+    enabled: true
+    maxConnections: 10
+    keepAlive: true
+    
+  # Retry configuration
+  retryConfig:
+    maxRetries: 3
+    backoffMultiplier: 2
+    initialDelay: 500
+
+# Feature flags for concurrency testing
+features:
+  # Enable concurrency optimizations
+  enableLockOptimization: true
+  enableAtomicOperations: true
+  enableConnectionPooling: true
+  enableTransactionBatching: true
+  
+  # Disable non-essential features for focus
+  enableCategorization: false
+  enableSuggestions: false
+  enableTemplates: false
+  enableThreading: true
+
+# Logging configuration
+logging:
+  level: "info"
+  concurrencyMetrics: true
+  lockMonitoring: true
+  raceConditionDetection: true
+  resourceContention: true
+  performanceImpact: true
